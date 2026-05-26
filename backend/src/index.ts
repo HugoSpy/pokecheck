@@ -11,12 +11,19 @@ import pokedexRouter from './routes/pokedex';
 const app = express();
 
 app.use(cors({
-  origin: [
-    /\.vercel\.app$/,
-    /\.sigambling\.fr$/,
-    'http://localhost:5173',
-    'http://localhost:3000',
-  ],
+  origin: (origin, callback) => {
+    const allowed = [
+      /https:\/\/.*\.vercel\.app$/,
+      /https:\/\/.*\.pokecheck\.fr$/,
+      /https:\/\/pokecheck\.fr$/,
+      /http:\/\/localhost:\d+$/,
+    ];
+    if (!origin || allowed.some(r => r.test(origin))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS blocked: ${origin}`));
+    }
+  },
   credentials: true,
 }));
 
