@@ -31,7 +31,7 @@ app.use('/leaderboard', leaderboardRouter);
 app.use('/pokedex', pokedexRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
-app.listen(PORT, () => {
+app.listen(PORT, '127.0.0.1', () => {
   console.log(`PokéSchool API running on port ${PORT}`);
 });
 
