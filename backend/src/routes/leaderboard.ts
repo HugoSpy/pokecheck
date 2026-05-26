@@ -1,0 +1,34 @@
+import { Router, Request, Response } from 'express';
+import { PrismaClient } from '@prisma/client';
+
+const router = Router();
+const prisma = new PrismaClient();
+
+router.get('/', async (_req: Request, res: Response): Promise<void> => {
+  const users = await prisma.user.findMany({
+    orderBy: { total_score: 'desc' },
+    take: 50,
+    select: {
+      id: true,
+      display_name: true,
+      total_score: true,
+      trade_count: true,
+      pokemons: {
+        select: { pokemon: { select: { rarity: true } } },
+      },
+    },
+  });
+
+  const result = users.map(user => ({
+    id: user.id,
+    display_name: user.display_name,
+    total_score: user.total_score,
+    trade_count: user.trade_count,
+    pokemon_count: user.pokemons.length,
+    legendary_count: user.pokemons.filter(p => p.pokemon.rarity === 'LEGENDARY').length,
+  }));
+
+  res.json(result);
+});
+
+export default router;

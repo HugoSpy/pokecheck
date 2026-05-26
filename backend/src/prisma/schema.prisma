@@ -1,0 +1,72 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  ms_id        String   @unique
+  display_name String
+  total_score  Int      @default(0)
+  trade_count  Int      @default(0)
+  created_at   DateTime @default(now())
+
+  pokemons        UserPokemon[]
+  trades_sent     Trade[] @relation("TradeSent")
+  trades_recv     Trade[] @relation("TradeReceived")
+  one_shot_tokens OneshotToken[]
+}
+
+model Pokemon {
+  id         Int      @id
+  name       String   @unique
+  generation Int
+  rarity     String
+  points     Int
+  bst        Int
+  sprite_url String
+  types      String[]
+
+  owned_by UserPokemon[]
+}
+
+model UserPokemon {
+  id           String    @id @default(uuid())
+  user_id      String
+  pokemon_id   Int
+  source       String
+  obtained_at  DateTime  @default(now())
+  tradeable_at DateTime?
+
+  user    User    @relation(fields: [user_id], references: [id])
+  pokemon Pokemon @relation(fields: [pokemon_id], references: [id])
+}
+
+model Trade {
+  id              String    @id @default(uuid())
+  from_user_id    String
+  to_user_id      String
+  from_pokemon_id String
+  to_pokemon_id   String
+  status          String
+  created_at      DateTime  @default(now())
+  resolved_at     DateTime?
+
+  from_user User @relation("TradeSent",     fields: [from_user_id], references: [id])
+  to_user   User @relation("TradeReceived", fields: [to_user_id],   references: [id])
+}
+
+model OneshotToken {
+  id         String   @id @default(uuid())
+  user_id    String
+  token_hash String   @unique
+  used       Boolean  @default(false)
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}

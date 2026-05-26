@@ -1,0 +1,118 @@
+.lb-page { display: flex; flex-direction: column; gap: 24px; }
+
+.lb-header { display: flex; flex-direction: column; gap: 4px; }
+
+.lb-title {
+  font-size: clamp(24px, 4vw, 36px);
+  background: linear-gradient(135deg, #fff, rgba(255,255,255,0.5));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.lb-subtitle {
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.lb-table-wrap {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  overflow-x: auto;
+}
+
+.lb-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 560px;
+}
+
+.lb-table thead tr {
+  background: var(--bg-elevated);
+  border-bottom: 1px solid var(--border);
+}
+
+.lb-table th {
+  padding: 12px 16px;
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.lb-row {
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.lb-row:last-child { border-bottom: none; }
+.lb-row:hover { background: var(--bg-elevated); }
+
+.lb-row-top1 { background: rgba(245, 166, 35, 0.04); }
+.lb-row-top2 { background: rgba(156, 163, 175, 0.03); }
+.lb-row-top3 { background: rgba(205, 127, 50, 0.03); }
+.lb-row-top1:hover { background: rgba(245, 166, 35, 0.08); }
+
+.lb-table td {
+  padding: 13px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.lb-rank { width: 60px; }
+.medal { font-size: 20px; }
+.rank-num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.lb-name {
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-primary);
+}
+
+.lb-score {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: #10b981;
+}
+
+.lb-count {
+  font-family: var(--font-mono);
+  color: var(--accent);
+}
+
+.legendary-badge {
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.25);
+  border-radius: 4px;
+  padding: 2px 8px;
+  letter-spacing: 0.06em;
+}
+
+.lb-trades {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
