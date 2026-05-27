@@ -1,0 +1,24 @@
+.pokemon-card-shiny {
+  animation: shinyCardGlow 3s ease-in-out infinite;
+}
+
+@keyframes shinyCardGlow {
+  0%, 100% { box-shadow: 0 0 6px rgba(212,175,55,0.3), 0 0 12px rgba(212,175,55,0.1); }
+  50%       { box-shadow: 0 0 16px rgba(212,175,55,0.6), 0 0 28px rgba(212,175,55,0.22); }
+}
+
+.shiny-card-badge {
+  position: absolute;
+  top: 6px;
+  left: 7px;
+  font-size: 12px;
+  line-height: 1;
+  z-index: 2;
+  filter: drop-shadow(0 0 4px rgba(255,215,0,0.7));
+  animation: shinyBadgeFloat 2.4s ease-in-out infinite;
+}
+
+@keyframes shinyBadgeFloat {
+  0%, 100% { transform: scale(1) rotate(-5deg); opacity: 0.85; }
+  50%       { transform: scale(1.18) rotate(5deg); opacity: 1; }
+}

@@ -27,7 +27,10 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       obtainedAt: up.obtained_at,
       source: up.source,
       tradeable_at: up.tradeable_at,
+      is_shiny: up.is_shiny,
       ...up.pokemon,
+      sprite_url: up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url,
+      points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
     })),
   });
 });
@@ -76,7 +79,10 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       obtainedAt: up.obtained_at,
       source: up.source,
       tradeable_at: up.tradeable_at,
+      is_shiny: up.is_shiny,
       ...up.pokemon,
+      sprite_url: up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url,
+      points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
     })),
   });
 });

@@ -43,6 +43,7 @@ export interface PokemonInfo {
   types: string[];
   generation: number;
   bst: number;
+  is_shiny?: boolean;
 }
 
 export interface UserPokemonInstance extends PokemonInfo {
@@ -99,6 +100,7 @@ export interface RollCardData {
   sprite_url: string;
   rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
   points: number;
+  is_shiny?: boolean;
 }
 
 export async function getRandomPokemons(count: number): Promise<{ pokemons: RollCardData[] }> {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import RarityBadge from './RarityBadge';
 import type { UserPokemonInstance } from '../api';
+import './PokemonCard.css';
 
 interface Props {
   pokemon: UserPokemonInstance;
@@ -16,54 +17,80 @@ const RARITY_COLOR: Record<string, string> = {
   LEGENDARY: '#f5a623',
 };
 
+const SHINY_GOLD = '#d4af37';
+
 export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect }: Props) {
   const [imgError, setImgError] = useState(false);
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
   const isLocked = pokemon.tradeable_at && new Date(pokemon.tradeable_at) > new Date();
+  const isShiny = pokemon.is_shiny ?? false;
+
+  const borderColor = isShiny
+    ? SHINY_GOLD + (selected ? 'cc' : '66')
+    : selected ? accentColor + '55' : 'var(--border)';
+
+  const shadowStyle = isShiny
+    ? `0 0 12px ${SHINY_GOLD}55, 0 0 24px ${SHINY_GOLD}22`
+    : selected ? `0 0 16px ${accentColor}33` : 'var(--shadow-card)';
 
   return (
     <div
       onClick={() => selectable && onSelect?.(pokemon)}
+      className={isShiny ? 'pokemon-card-shiny' : undefined}
       style={{
         position: 'relative',
-        background: selected
-          ? `linear-gradient(145deg, ${accentColor}22, var(--bg-card))`
-          : 'var(--bg-card)',
-        border: `1px solid ${selected ? accentColor + '55' : 'var(--border)'}`,
+        background: isShiny
+          ? `linear-gradient(145deg, ${SHINY_GOLD}18, var(--bg-card))`
+          : selected
+            ? `linear-gradient(145deg, ${accentColor}22, var(--bg-card))`
+            : 'var(--bg-card)',
+        border: `1px solid ${borderColor}`,
         borderRadius: 'var(--radius-lg)',
         padding: '12px',
         cursor: selectable ? 'pointer' : 'default',
         transition: 'all 200ms cubic-bezier(0.4,0,0.2,1)',
-        boxShadow: selected ? `0 0 16px ${accentColor}33` : 'var(--shadow-card)',
+        boxShadow: shadowStyle,
         userSelect: 'none',
         overflow: 'hidden',
       }}
       onMouseEnter={e => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = 'translateY(-3px)';
-        el.style.borderColor = accentColor + (selected ? '77' : '33');
-        el.style.boxShadow = `0 8px 24px ${accentColor}22`;
+        if (isShiny) {
+          el.style.borderColor = SHINY_GOLD + 'aa';
+          el.style.boxShadow = `0 8px 24px ${SHINY_GOLD}44`;
+        } else {
+          el.style.borderColor = accentColor + (selected ? '77' : '33');
+          el.style.boxShadow = `0 8px 24px ${accentColor}22`;
+        }
       }}
       onMouseLeave={e => {
         const el = e.currentTarget as HTMLDivElement;
         el.style.transform = '';
-        el.style.borderColor = selected ? accentColor + '55' : 'var(--border)';
-        el.style.boxShadow = selected ? `0 0 16px ${accentColor}33` : 'var(--shadow-card)';
+        el.style.borderColor = borderColor;
+        el.style.boxShadow = shadowStyle;
       }}
     >
       {/* Rarity accent strip */}
       <div style={{
         position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-        background: `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
-        opacity: selected ? 1 : 0.4,
+        background: isShiny
+          ? `linear-gradient(90deg, transparent, ${SHINY_GOLD}, transparent)`
+          : `linear-gradient(90deg, transparent, ${accentColor}, transparent)`,
+        opacity: isShiny ? 0.9 : (selected ? 1 : 0.4),
       }} />
+
+      {/* Shiny badge */}
+      {isShiny && (
+        <div className="shiny-card-badge">✨</div>
+      )}
 
       {/* Selected indicator */}
       {selected && (
         <div style={{
           position: 'absolute', top: 8, right: 8,
           width: 18, height: 18, borderRadius: '50%',
-          background: accentColor,
+          background: isShiny ? SHINY_GOLD : accentColor,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 10, color: '#000', fontWeight: 700,
         }}>✓</div>
@@ -72,7 +99,7 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
       {/* Lock indicator */}
       {isLocked && (
         <div style={{
-          position: 'absolute', top: 8, left: 8,
+          position: 'absolute', top: 8, left: isShiny ? 26 : 8,
           fontSize: 11, color: 'var(--text-muted)',
         }}>🔒</div>
       )}
@@ -89,17 +116,19 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
             style={{
               maxHeight: 80, maxWidth: '100%', objectFit: 'contain',
               imageRendering: 'pixelated',
-              filter: pokemon.rarity === 'LEGENDARY'
-                ? `drop-shadow(0 0 8px ${accentColor}88)`
-                : `drop-shadow(0 2px 4px rgba(0,0,0,0.5))`,
+              filter: isShiny
+                ? `drop-shadow(0 0 10px ${SHINY_GOLD}cc) drop-shadow(0 0 4px ${SHINY_GOLD}88)`
+                : pokemon.rarity === 'LEGENDARY'
+                  ? `drop-shadow(0 0 8px ${accentColor}88)`
+                  : `drop-shadow(0 2px 4px rgba(0,0,0,0.5))`,
             }}
             onError={() => setImgError(true)}
           />
         ) : (
           <div style={{
             width: 60, height: 60, borderRadius: '50%',
-            background: `${accentColor}22`,
-            border: `2px solid ${accentColor}33`,
+            background: isShiny ? `${SHINY_GOLD}22` : `${accentColor}22`,
+            border: `2px solid ${isShiny ? SHINY_GOLD + '44' : accentColor + '33'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 24,
           }}>?</div>
@@ -129,7 +158,7 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
         <span style={{
           fontFamily: 'var(--font-mono)',
           fontSize: 11,
-          color: accentColor,
+          color: isShiny ? SHINY_GOLD : accentColor,
           fontWeight: 600,
         }}>
           +{pokemon.points}

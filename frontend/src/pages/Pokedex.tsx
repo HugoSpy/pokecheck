@@ -36,6 +36,7 @@ export default function Pokedex() {
   const [filterGen, setFilterGen] = useState<number | null>(null);
   const [filterRarity, setFilterRarity] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
+  const [filterShiny, setFilterShiny] = useState(false);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -56,12 +57,14 @@ export default function Pokedex() {
       if (filterGen !== null && p.generation !== filterGen) return false;
       if (filterRarity !== null && p.rarity !== filterRarity) return false;
       if (filterType !== null && !p.types.includes(filterType)) return false;
+      if (filterShiny && !p.is_shiny) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     }),
-  [pokemons, filterGen, filterRarity, filterType, search]);
+  [pokemons, filterGen, filterRarity, filterType, filterShiny, search]);
 
   const legendaryCount = pokemons.filter(p => p.rarity === 'LEGENDARY').length;
+  const shinyCount = pokemons.filter(p => p.is_shiny).length;
 
   if (loading) return (
     <div className="loading-screen">
@@ -90,6 +93,7 @@ export default function Pokedex() {
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
           <StatChip label="Score" value={user.total_score.toLocaleString()} color="#10b981" />
           <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
+          {shinyCount > 0 && <StatChip label="Shiny ✨" value={shinyCount} color="#d4af37" />}
           <StatChip label="Échanges" value={user.trade_count} color="var(--rarity-epic)" />
         </div>
       </div>
@@ -137,6 +141,17 @@ export default function Pokedex() {
                 onClick={() => setFilterRarity(filterRarity === r ? null : r)}
               >{RARITY_FR[r]}</button>
             ))}
+          </div>
+        </div>
+
+        {/* Shiny */}
+        <div className="filter-row">
+          <div className="filter-label">Divers</div>
+          <div className="filter-group">
+            <button
+              className={`filter-chip shiny-chip${filterShiny ? ' active' : ''}`}
+              onClick={() => setFilterShiny(!filterShiny)}
+            >✨ Shiny</button>
           </div>
         </div>
 

@@ -5,18 +5,11 @@ import { authMiddleware } from '../middleware/authMiddleware';
 const router = Router();
 const prisma = new PrismaClient();
 
-const RARITY_WEIGHTS: Record<string, number> = {
-  COMMON: 60,
-  RARE: 25,
-  EPIC: 12,
-  LEGENDARY: 3,
-};
-
 function pickRarity(): string {
   const roll = Math.random() * 100;
-  if (roll < 60) return 'COMMON';
-  if (roll < 85) return 'RARE';
-  if (roll < 97) return 'EPIC';
+  if (roll < 78.9) return 'COMMON';
+  if (roll < 98.9) return 'RARE';
+  if (roll < 99.9) return 'EPIC';
   return 'LEGENDARY';
 }
 
@@ -38,7 +31,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       },
     });
 
-    if (drawCount >= 3) {
+    if (drawCount >= 100) {
       res.status(403).json({ error: 'Already drawn today' });
       return;
     }
@@ -54,28 +47,37 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
 
   const pokemon = pokemonsOfRarity[Math.floor(Math.random() * pokemonsOfRarity.length)];
 
+  // Shiny: 1/4096 (forced true for visual testing — revert to 1/4096 before prod)
+  const isShiny = true;
+  const spriteUrl = isShiny
+    ? pokemon.sprite_url.replace('/normal/', '/shiny/')
+    : pokemon.sprite_url;
+  const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
+
   await prisma.userPokemon.create({
     data: {
       user_id: userId,
       pokemon_id: pokemon.id,
       source,
       tradeable_at: null,
+      is_shiny: isShiny,
     },
   });
 
   await prisma.user.update({
     where: { id: userId },
-    data: { total_score: { increment: pokemon.points } },
+    data: { total_score: { increment: finalPoints } },
   });
 
   res.json({
     pokemon: {
       id: pokemon.id,
       name: pokemon.name,
-      sprite_url: pokemon.sprite_url,
+      sprite_url: spriteUrl,
       rarity: pokemon.rarity,
-      points: pokemon.points,
+      points: finalPoints,
       types: pokemon.types,
+      is_shiny: isShiny,
     },
   });
 });

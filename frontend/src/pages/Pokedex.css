@@ -152,6 +152,11 @@
   color: white;
 }
 
+/* Shiny chip */
+.shiny-chip { color: #d4af37; border-color: rgba(212,175,55,0.25); }
+.shiny-chip:hover { border-color: rgba(212,175,55,0.5); color: #FFD700; }
+.shiny-chip.active { background: rgba(212,175,55,0.12); border-color: #d4af37; color: #FFD700; }
+
 /* ── Count ── */
 .pokedex-count {
   font-family: var(--font-condensed);

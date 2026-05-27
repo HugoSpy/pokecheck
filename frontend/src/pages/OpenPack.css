@@ -340,6 +340,67 @@
   letter-spacing: 0.07em;
 }
 
+/* ── Shiny ── */
+.shiny-flash {
+  animation: shinyFlashAnim 600ms ease-out forwards !important;
+}
+@keyframes shinyFlashAnim {
+  0%   { opacity: 1; }
+  40%  { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+.roll-card-shiny {
+  border-color: rgba(212, 175, 55, 0.5) !important;
+}
+.roll-shiny-icon {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 11px;
+  line-height: 1;
+  filter: drop-shadow(0 0 4px #FFD70099);
+  z-index: 2;
+}
+
+.reveal-block-shiny {
+  position: relative;
+}
+
+.sparkle {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #FFD700;
+  box-shadow: 0 0 6px #FFD700, 0 0 12px #FFD70066;
+  left: calc(5% + var(--i, 0) * 11.4%);
+  bottom: -8px;
+  animation: sparkleRise 2.2s ease-out calc(var(--i, 0) * 0.18s) infinite;
+  pointer-events: none;
+}
+@keyframes sparkleRise {
+  0%   { transform: translateY(0) scale(0.4); opacity: 0; }
+  15%  { opacity: 1; }
+  80%  { opacity: 0.6; }
+  100% { transform: translateY(-90px) scale(0.1); opacity: 0; }
+}
+
+.shiny-badge {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  color: #FFD700;
+  text-shadow: 0 0 14px #FFD70088, 0 0 30px #FFD70044;
+  animation: shinyBadgePulse 1.8s ease-in-out infinite;
+  text-transform: uppercase;
+}
+@keyframes shinyBadgePulse {
+  0%, 100% { opacity: 1; text-shadow: 0 0 14px #FFD70088, 0 0 30px #FFD70044; }
+  50%       { opacity: 0.75; text-shadow: 0 0 24px #FFD700cc, 0 0 48px #FFD70066; }
+}
+
 /* ── Reveal Block ── */
 .reveal-block {
   display: flex;

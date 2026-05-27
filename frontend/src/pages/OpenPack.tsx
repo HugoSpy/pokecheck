@@ -74,7 +74,14 @@ export default function OpenPack() {
         draw('draw'),
       ]);
 
-      const strip = [...randResult.pokemons] as RollCardData[];
+      const strip = randResult.pokemons.map(card => {
+        const shiny = Math.random() < 1 / 4096;
+        return {
+          ...card,
+          is_shiny: shiny,
+          sprite_url: shiny ? card.sprite_url.replace('/normal/', '/shiny/') : card.sprite_url,
+        };
+      }) as RollCardData[];
       strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
 
       setCards(strip);
@@ -131,8 +138,8 @@ export default function OpenPack() {
 
       {showFlash && pokemon && (
         <div
-          className="rarity-flash"
-          style={{ background: RARITY_FLASH[pokemon.rarity] ?? 'rgba(255,255,255,0.3)' }}
+          className={`rarity-flash${pokemon.is_shiny ? ' shiny-flash' : ''}`}
+          style={{ background: pokemon.is_shiny ? 'rgba(255,255,255,0.98)' : (RARITY_FLASH[pokemon.rarity] ?? 'rgba(255,255,255,0.3)') }}
         />
       )}
 
@@ -200,15 +207,19 @@ export default function OpenPack() {
               <div className="roll-strip" ref={stripRef}>
                 {cards.map((card, i) => {
                   const isWinner = i === TARGET_INDEX && (phase === 'reveal' || phase === 'done');
+                  const winnerShiny = isWinner && !!pokemon?.is_shiny;
+                  const borderColor = winnerShiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563');
+                  const glowColor  = winnerShiny ? '#FFD700' : rarityGlow;
                   return (
                     <div
                       key={`${i}-${card.id}`}
-                      className={`roll-card${isWinner ? ' roll-card-winner' : ''}`}
+                      className={`roll-card${isWinner ? ' roll-card-winner' : ''}${card.is_shiny && !isWinner ? ' roll-card-shiny' : ''}`}
                       style={{
-                        '--card-border': RARITY_BORDER[card.rarity] ?? '#4b5563',
-                        ...(isWinner ? { '--card-glow': rarityGlow } : {}),
+                        '--card-border': borderColor,
+                        ...(isWinner ? { '--card-glow': glowColor } : {}),
                       } as React.CSSProperties}
                     >
+                      {card.is_shiny && <span className="roll-shiny-icon">✨</span>}
                       <img
                         src={card.sprite_url}
                         alt={card.name}
@@ -218,7 +229,7 @@ export default function OpenPack() {
                       <div className="roll-card-name">{card.name}</div>
                       <div
                         className="roll-card-rarity"
-                        style={{ color: RARITY_BORDER[card.rarity] ?? '#4b5563' }}
+                        style={{ color: card.is_shiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563') }}
                       >
                         {card.rarity === 'LEGENDARY' ? '★ ' : ''}
                         {RARITY_LABELS[card.rarity] ?? card.rarity}
@@ -232,13 +243,21 @@ export default function OpenPack() {
 
           {/* Reveal info */}
           {(phase === 'reveal' || phase === 'done') && pokemon && (
-            <div className={`reveal-block${showBadge ? ' reveal-block-visible' : ''}`}>
-              <div className="reveal-rarity" style={{ color: rarityGlow }}>
+            <div className={`reveal-block${showBadge ? ' reveal-block-visible' : ''}${pokemon.is_shiny ? ' reveal-block-shiny' : ''}`}>
+              {pokemon.is_shiny && (
+                <>
+                  {Array.from({ length: 8 }).map((_, i) => (
+                    <div key={i} className="sparkle" style={{ '--i': i } as React.CSSProperties} />
+                  ))}
+                  <div className="shiny-badge">✨ SHINY</div>
+                </>
+              )}
+              <div className="reveal-rarity" style={{ color: pokemon.is_shiny ? '#FFD700' : rarityGlow }}>
                 {pokemon.rarity === 'LEGENDARY' ? '★ ' : ''}
                 {RARITY_LABELS[pokemon.rarity]}
               </div>
               <div className="reveal-poke-name">{pokemon.name}</div>
-              <div className="reveal-pts" style={{ color: rarityGlow }}>
+              <div className="reveal-pts" style={{ color: pokemon.is_shiny ? '#FFD700' : rarityGlow }}>
                 +{pokemon.points} pts
               </div>
             </div>
