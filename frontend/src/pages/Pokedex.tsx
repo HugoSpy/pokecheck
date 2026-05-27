@@ -6,6 +6,27 @@ import './Pokedex.css';
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
 const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const;
 
+const TYPE_FR: Record<string, string> = {
+  normal: 'Normal', fire: 'Feu', water: 'Eau', electric: 'Électrik',
+  grass: 'Plante', ice: 'Glace', fighting: 'Combat', poison: 'Poison',
+  ground: 'Sol', flying: 'Vol', psychic: 'Psy', bug: 'Insecte',
+  rock: 'Roche', ghost: 'Spectre', dragon: 'Dragon', dark: 'Ténèbres',
+  steel: 'Acier', fairy: 'Fée',
+};
+
+const RARITY_FR: Record<string, string> = {
+  COMMON: 'Commun', RARE: 'Rare', EPIC: 'Épique', LEGENDARY: 'Légendaire',
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  normal: '#9CA3AF', fire: '#F97316', water: '#3B82F6',
+  electric: '#EAB308', grass: '#22C55E', ice: '#67E8F9',
+  fighting: '#DC2626', poison: '#A855F7', ground: '#D97706',
+  flying: '#818CF8', psychic: '#EC4899', bug: '#84CC16',
+  rock: '#78716C', ghost: '#6D28D9', dragon: '#7C3AED',
+  dark: '#6B7280', steel: '#94A3B8', fairy: '#F472B6',
+};
+
 export default function Pokedex() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [pokemons, setPokemons] = useState<UserPokemonInstance[]>([]);
@@ -83,43 +104,60 @@ export default function Pokedex() {
           onChange={e => setSearch(e.target.value)}
         />
 
-        <div className="filter-group">
-          <button
-            className={`filter-chip ${filterGen === null ? 'active' : ''}`}
-            onClick={() => setFilterGen(null)}
-          >Toutes</button>
-          {GENERATIONS.map(g => (
+        {/* Génération */}
+        <div className="filter-row">
+          <div className="filter-label">Génération</div>
+          <div className="filter-group">
             <button
-              key={g}
-              className={`filter-chip ${filterGen === g ? 'active' : ''}`}
-              onClick={() => setFilterGen(filterGen === g ? null : g)}
-            >G{g}</button>
-          ))}
-        </div>
-
-        <div className="filter-group">
-          {RARITIES.map(r => (
-            <button
-              key={r}
-              className={`filter-chip rarity-chip rarity-${r.toLowerCase()} ${filterRarity === r ? 'active' : ''}`}
-              onClick={() => setFilterRarity(filterRarity === r ? null : r)}
-            >{r}</button>
-          ))}
-        </div>
-
-        {allTypes.length > 0 && (
-          <div className="filter-group filter-types">
-            <button
-              className={`filter-chip ${filterType === null ? 'active' : ''}`}
-              onClick={() => setFilterType(null)}
-            >Tous types</button>
-            {allTypes.map(t => (
+              className={`filter-chip ${filterGen === null ? 'active' : ''}`}
+              onClick={() => setFilterGen(null)}
+            >Toutes</button>
+            {GENERATIONS.map(g => (
               <button
-                key={t}
-                className={`filter-chip type-chip type-${t} ${filterType === t ? 'active' : ''}`}
-                onClick={() => setFilterType(filterType === t ? null : t)}
-              >{t}</button>
+                key={g}
+                className={`filter-chip ${filterGen === g ? 'active' : ''}`}
+                onClick={() => setFilterGen(filterGen === g ? null : g)}
+              >Gén. {g}</button>
             ))}
+          </div>
+        </div>
+
+        {/* Rareté */}
+        <div className="filter-row">
+          <div className="filter-label">Rareté</div>
+          <div className="filter-group">
+            <button
+              className={`filter-chip ${filterRarity === null ? 'active' : ''}`}
+              onClick={() => setFilterRarity(null)}
+            >Toutes</button>
+            {RARITIES.map(r => (
+              <button
+                key={r}
+                className={`filter-chip rarity-chip rarity-${r.toLowerCase()} ${filterRarity === r ? 'active' : ''}`}
+                onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+              >{RARITY_FR[r]}</button>
+            ))}
+          </div>
+        </div>
+
+        {/* Type */}
+        {allTypes.length > 0 && (
+          <div className="filter-row">
+            <div className="filter-label">Type</div>
+            <div className="filter-group filter-types">
+              <button
+                className={`filter-chip ${filterType === null ? 'active' : ''}`}
+                onClick={() => setFilterType(null)}
+              >Tous</button>
+              {allTypes.map(t => (
+                <button
+                  key={t}
+                  className={`filter-chip type-chip ${filterType === t ? 'active' : ''}`}
+                  style={{ '--type-color': TYPE_COLORS[t] ?? '#9CA3AF' } as React.CSSProperties}
+                  onClick={() => setFilterType(filterType === t ? null : t)}
+                >{TYPE_FR[t] ?? t}</button>
+              ))}
+            </div>
           </div>
         )}
       </div>

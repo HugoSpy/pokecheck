@@ -63,11 +63,26 @@
 .pokedex-filters {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 14px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 16px;
+}
+
+.filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.filter-label {
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
 }
 
 .filter-search {
@@ -121,17 +136,21 @@
 .rarity-chip.rarity-legendary { color: #f5a623; }
 .rarity-chip.rarity-legendary.active { background: rgba(245,166,35,0.1); border-color: #f5a623; }
 
-/* Type chips */
-.type-chip { font-size: 10px; }
-.type-chip.type-fire.active    { background: rgba(239,68,68,0.1);    border-color: #ef4444; color: #ef4444; }
-.type-chip.type-water.active   { background: rgba(59,130,246,0.1);   border-color: #3b82f6; color: #3b82f6; }
-.type-chip.type-grass.active   { background: rgba(34,197,94,0.1);    border-color: #22c55e; color: #22c55e; }
-.type-chip.type-electric.active { background: rgba(234,179,8,0.1);   border-color: #eab308; color: #eab308; }
-.type-chip.type-psychic.active { background: rgba(236,72,153,0.1);   border-color: #ec4899; color: #ec4899; }
-.type-chip.type-ice.active     { background: rgba(103,232,249,0.1);  border-color: #67e8f9; color: #67e8f9; }
-.type-chip.type-dragon.active  { background: rgba(99,102,241,0.1);   border-color: #6366f1; color: #6366f1; }
-.type-chip.type-dark.active    { background: rgba(107,114,128,0.1);  border-color: #6b7280; color: #9ca3af; }
-.type-chip.type-fairy.active   { background: rgba(244,114,182,0.1);  border-color: #f472b6; color: #f472b6; }
+/* Type chips — color driven by --type-color CSS variable set inline */
+.type-chip {
+  background: color-mix(in srgb, var(--type-color, #9CA3AF) 12%, var(--bg-deep));
+  color: color-mix(in srgb, var(--type-color, #9CA3AF) 90%, white);
+  border-color: color-mix(in srgb, var(--type-color, #9CA3AF) 28%, transparent);
+}
+.type-chip:hover {
+  background: color-mix(in srgb, var(--type-color, #9CA3AF) 20%, var(--bg-deep));
+  border-color: color-mix(in srgb, var(--type-color, #9CA3AF) 50%, transparent);
+}
+.type-chip.active {
+  background: color-mix(in srgb, var(--type-color, #9CA3AF) 22%, var(--bg-deep));
+  border-color: var(--type-color, #9CA3AF);
+  color: white;
+}
 
 /* ── Count ── */
 .pokedex-count {
