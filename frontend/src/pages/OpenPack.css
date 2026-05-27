@@ -301,7 +301,7 @@
 }
 
 .roll-card-winner {
-  transform: scale(1.12);
+  transform: scale(1.32);
   border-color: var(--card-glow, var(--card-border));
   box-shadow:
     0 0 20px var(--card-glow, var(--card-border)),
@@ -319,7 +319,7 @@
 
 .roll-card-name {
   font-family: var(--font-condensed);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 700;
   text-align: center;
   color: var(--text-primary);
