@@ -45,7 +45,7 @@ app.use('/admin', adminRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.listen(PORT, '127.0.0.1', () => {
-  console.log(`PokéSchool API running on port ${PORT}`);
+  console.log(`PokéCheck API running on port ${PORT}`);
 });
 
 export default app;

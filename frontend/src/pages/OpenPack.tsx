@@ -153,7 +153,7 @@ export default function OpenPack() {
       )}
 
       <div className="pack-logo">
-        <span style={{ color: 'var(--accent)' }}>Poké</span>School
+        <span style={{ color: 'var(--accent)' }}>Poké</span>Check
       </div>
 
       {/* ── Idle ── */}

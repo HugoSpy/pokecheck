@@ -53,7 +53,7 @@ export default function Layout() {
       <nav className="nav">
         <NavLink to="/leaderboard" className="nav-logo">
           <span className="nav-logo-pk">Poké</span>
-          <span className="nav-logo-school">School</span>
+          <span className="nav-logo-check">Check</span>
         </NavLink>
 
         <div className="nav-links">

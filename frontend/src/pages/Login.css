@@ -17,7 +17,7 @@
   letter-spacing: -0.02em;
 }
 .login-logo-pk     { color: var(--accent); }
-.login-logo-school { color: var(--text-primary); }
+.login-logo-check { color: var(--text-primary); }
 
 .login-subtitle {
   font-family: var(--font-condensed);

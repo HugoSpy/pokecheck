@@ -9,7 +9,7 @@ export default function Login() {
 
       <div className="login-logo">
         <span className="login-logo-pk">Poké</span>
-        <span className="login-logo-school">School</span>
+        <span className="login-logo-check">Check</span>
       </div>
 
       <div className="pokeball-wrap pulsing">

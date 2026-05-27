@@ -1,5 +1,5 @@
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
-const SESSION_KEY = 'pokeschool_session';
+const SESSION_KEY = 'pokecheck_session';
 
 export function getToken(): string | null {
   return localStorage.getItem(SESSION_KEY);
