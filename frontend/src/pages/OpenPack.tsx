@@ -5,7 +5,7 @@ import './OpenPack.css';
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
 
-const CARD_WIDTH = 120;
+const CARD_WIDTH = 155;
 const CARD_GAP = 12;
 const CARD_STRIDE = CARD_WIDTH + CARD_GAP;
 const TOTAL_CARDS = 30;
@@ -184,7 +184,7 @@ export default function OpenPack() {
 
       {/* ── Roll / Reveal / Done ── */}
       {(phase === 'rolling' || phase === 'reveal' || phase === 'done') && (
-        <div className="roll-scene">
+        <div className="roll-frame">
 
           <div className="roll-container">
             {/* Center indicator */}
@@ -257,3 +257,4 @@ export default function OpenPack() {
     </div>
   );
 }
+
