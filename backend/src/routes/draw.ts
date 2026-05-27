@@ -30,7 +30,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const existingDraw = await prisma.userPokemon.findFirst({
+    const drawCount = await prisma.userPokemon.count({
       where: {
         user_id: userId,
         source: 'draw',
@@ -38,7 +38,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       },
     });
 
-    if (existingDraw) {
+    if (drawCount >= 3) {
       res.status(403).json({ error: 'Already drawn today' });
       return;
     }
