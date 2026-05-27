@@ -85,6 +85,12 @@ export async function consumeOneShotToken(token: string): Promise<{ sessionToken
   return data;
 }
 
+export async function consumeOneShotCode(code: string): Promise<{ sessionToken: string; user: UserInfo }> {
+  const data = await apiFetch<{ sessionToken: string; user: UserInfo }>(`/auth/one-shot?code=${encodeURIComponent(code)}`);
+  setToken(data.sessionToken);
+  return data;
+}
+
 /* ── Draw ── */
 export async function draw(source?: 'draw' | 'bonus'): Promise<{ pokemon: PokemonInfo }> {
   return apiFetch<{ pokemon: PokemonInfo }>('/draw', {

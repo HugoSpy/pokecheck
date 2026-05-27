@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { consumeOneShotToken, draw, getRandomPokemons, type RollCardData, type PokemonInfo } from '../api';
+import { consumeOneShotToken, consumeOneShotCode, draw, getRandomPokemons, type RollCardData, type PokemonInfo } from '../api';
 import './OpenPack.css';
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
@@ -43,6 +43,7 @@ const RARITY_LABELS: Record<string, string> = {
 export default function OpenPack() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
+  const code = params.get('code');
   const token = params.get('token');
 
   const [phase, setPhase] = useState<Phase>('idle');
@@ -55,12 +56,16 @@ export default function OpenPack() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   async function handleOpen() {
-    if (!token) { setError('Token manquant.'); return; }
+    if (!code && !token) { setError('Token manquant.'); return; }
     setPhase('loading');
     setError(null);
 
     try {
-      await consumeOneShotToken(token);
+      if (code) {
+        await consumeOneShotCode(code);
+      } else {
+        await consumeOneShotToken(token!);
+      }
     } catch (err) {
       const e = err as Error & { status?: number };
       setError(e.status === 410 ? 'Token déjà utilisé.' : e.message);
@@ -167,7 +172,7 @@ export default function OpenPack() {
             </div>
           )}
 
-          <button className="open-btn" onClick={handleOpen} disabled={!token}>
+          <button className="open-btn" onClick={handleOpen} disabled={!code && !token}>
             <span className="open-btn-shine" />
             Ouvrir mon pack
           </button>
