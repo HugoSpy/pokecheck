@@ -1,13 +1,53 @@
-import { NavLink, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { getToken, clearToken, generateAdminPack } from '../api';
 import './Layout.css';
 
+const ADMIN_MS_ID = import.meta.env.VITE_ADMIN_MS_ID ?? 'c3ef6ac9-008e-4c9d-9f9d-1c3421104c45';
+
+function parseJwt(token: string): { display_name?: string; ms_id?: string } | null {
+  try {
+    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+  } catch {
+    return null;
+  }
+}
+
 const NAV_LINKS = [
-  { to: '/pokedex',     label: 'Pokédex'     },
-  { to: '/trades',      label: 'Échanges'    },
-  { to: '/leaderboard', label: 'Classement'  },
+  { to: '/pokedex',     label: 'Pokédex'    },
+  { to: '/trades',      label: 'Échanges'   },
+  { to: '/leaderboard', label: 'Classement' },
 ];
 
 export default function Layout() {
+  const navigate = useNavigate();
+  const token = getToken();
+  const user = token ? parseJwt(token) : null;
+  const isAdmin = user?.ms_id === ADMIN_MS_ID;
+
+  const [showModal, setShowModal] = useState(false);
+  const [forceShiny, setForceShiny] = useState(false);
+  const [packLoading, setPackLoading] = useState(false);
+
+  function handleLogout() {
+    clearToken();
+    window.location.reload();
+  }
+
+  async function handleOpenPack() {
+    setPackLoading(true);
+    try {
+      const { code } = await generateAdminPack(forceShiny);
+      setShowModal(false);
+      setForceShiny(false);
+      navigate(`/open?code=${code}`);
+    } catch {
+      // modal stays open on error
+    } finally {
+      setPackLoading(false);
+    }
+  }
+
   return (
     <div className="layout">
       <nav className="nav">
@@ -27,11 +67,72 @@ export default function Layout() {
             </NavLink>
           ))}
         </div>
+
+        <div className="nav-user">
+          {isAdmin && (
+            <button className="btn btn-ghost nav-admin-btn" onClick={() => setShowModal(true)}>
+              Ouvrir un pack
+            </button>
+          )}
+          {user ? (
+            <>
+              <span className="nav-username">
+                {user.display_name}
+                {isAdmin && <span className="nav-admin-badge">ADMIN</span>}
+              </span>
+              <button className="btn btn-ghost nav-logout" onClick={handleLogout}>
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <a
+              href={`${import.meta.env.VITE_API_URL ?? 'https://api.pokecheck.fr'}/auth/microsoft`}
+              className="btn btn-primary nav-login"
+            >
+              <MsIcon /> Connexion
+            </a>
+          )}
+        </div>
       </nav>
 
       <main className="main-content">
         <Outlet />
       </main>
+
+      {showModal && (
+        <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="admin-modal" onClick={e => e.stopPropagation()}>
+            <div className="admin-modal-title">Ouvrir un pack</div>
+            <label className="admin-modal-shiny">
+              <input
+                type="checkbox"
+                checked={forceShiny}
+                onChange={e => setForceShiny(e.target.checked)}
+              />
+              Force Shiny ✨
+            </label>
+            <div className="admin-modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
+                Annuler
+              </button>
+              <button className="btn btn-primary" onClick={handleOpenPack} disabled={packLoading}>
+                {packLoading ? 'Génération…' : 'Ouvrir'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+  );
+}
+
+function MsIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 21 21" style={{ flexShrink: 0 }}>
+      <rect x="1"  y="1"  width="9" height="9" fill="#f25022"/>
+      <rect x="11" y="1"  width="9" height="9" fill="#7fba00"/>
+      <rect x="1"  y="11" width="9" height="9" fill="#00a4ef"/>
+      <rect x="11" y="11" width="9" height="9" fill="#ffb900"/>
+    </svg>
   );
 }

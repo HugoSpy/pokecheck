@@ -1,0 +1,141 @@
+.login-page {
+  position: relative;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 40px;
+  background: var(--bg-void);
+  overflow: hidden;
+}
+
+.login-logo {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.login-logo-pk     { color: var(--accent); }
+.login-logo-school { color: var(--text-primary); }
+
+.login-subtitle {
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+  text-align: center;
+  max-width: 340px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.ms-login-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 32px;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  border-radius: var(--radius);
+  border: 1px solid #e0e0e0;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.4);
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+.ms-login-btn:hover {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.6);
+  transform: translateY(-2px);
+}
+
+/* Pokéball (shared with OpenPack) */
+.pokeball-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pokeball {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 3px solid rgba(255,255,255,0.1);
+}
+.pokeball-top {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(135deg, #e53e3e, #c53030);
+}
+.pokeball-band {
+  position: absolute;
+  top: 50%; left: 0; right: 0;
+  height: 8px;
+  margin-top: -4px;
+  background: #111;
+  z-index: 1;
+}
+.pokeball-bottom {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(135deg, #1e2231, #111827);
+}
+.pokeball-center {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  background: #111;
+  border: 4px solid #2a2a2a;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pokeball-button {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #f0f4f8, #c3cfe2);
+  box-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+.pokeball-glow {
+  position: absolute;
+  inset: -32px;
+  border-radius: 50%;
+  pointer-events: none;
+  background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+}
+.pokeball-wrap.pulsing .pokeball-glow {
+  animation: ballPulse 2.4s ease-in-out infinite;
+}
+.pokeball-wrap.pulsing .pokeball {
+  animation: ballFloat 3.2s ease-in-out infinite;
+}
+@keyframes ballPulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.18); }
+}
+@keyframes ballFloat {
+  0%, 100% { transform: translateY(0); }
+  50%       { transform: translateY(-14px); }
+}
+
+.scanlines {
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg, transparent, transparent 2px,
+    rgba(0,0,0,0.07) 2px, rgba(0,0,0,0.07) 4px
+  );
+  pointer-events: none;
+  z-index: 1;
+}

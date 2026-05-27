@@ -1,12 +1,15 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import passport from 'passport';
 
 import authRouter from './routes/auth';
 import drawRouter from './routes/draw';
 import tradeRouter from './routes/trade';
 import leaderboardRouter from './routes/leaderboard';
 import pokedexRouter from './routes/pokedex';
+import adminRouter from './routes/admin';
 
 const app = express();
 
@@ -28,6 +31,8 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 
@@ -36,6 +41,7 @@ app.use('/draw', drawRouter);
 app.use('/trade', tradeRouter);
 app.use('/leaderboard', leaderboardRouter);
 app.use('/pokedex', pokedexRouter);
+app.use('/admin', adminRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.listen(PORT, '127.0.0.1', () => {

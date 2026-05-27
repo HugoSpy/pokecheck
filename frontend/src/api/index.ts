@@ -85,17 +85,25 @@ export async function consumeOneShotToken(token: string): Promise<{ sessionToken
   return data;
 }
 
-export async function consumeOneShotCode(code: string): Promise<{ sessionToken: string; user: UserInfo }> {
-  const data = await apiFetch<{ sessionToken: string; user: UserInfo }>(`/auth/one-shot?code=${encodeURIComponent(code)}`);
+export async function consumeOneShotCode(code: string): Promise<{ sessionToken: string; user: UserInfo; force_shiny: boolean }> {
+  const data = await apiFetch<{ sessionToken: string; user: UserInfo; force_shiny: boolean }>(`/auth/one-shot?code=${encodeURIComponent(code)}`);
   setToken(data.sessionToken);
   return data;
 }
 
+/* ── Admin ── */
+export async function generateAdminPack(force_shiny: boolean): Promise<{ code: string }> {
+  return apiFetch<{ code: string }>('/admin/generate-pack', {
+    method: 'POST',
+    body: JSON.stringify({ force_shiny }),
+  });
+}
+
 /* ── Draw ── */
-export async function draw(source?: 'draw' | 'bonus'): Promise<{ pokemon: PokemonInfo }> {
+export async function draw(source?: 'draw' | 'bonus', force_shiny?: boolean): Promise<{ pokemon: PokemonInfo }> {
   return apiFetch<{ pokemon: PokemonInfo }>('/draw', {
     method: 'POST',
-    body: JSON.stringify({ source: source ?? 'draw' }),
+    body: JSON.stringify({ source: source ?? 'draw', ...(force_shiny ? { force_shiny: true } : {}) }),
   });
 }
 

@@ -62,13 +62,14 @@ model Trade {
 }
 
 model OneshotToken {
-  id         String   @id @default(uuid())
-  user_id    String
-  token_hash String   @unique
-  short_code String   @unique
-  used       Boolean  @default(false)
-  expires_at DateTime
-  created_at DateTime @default(now())
+  id          String   @id @default(uuid())
+  user_id     String
+  token_hash  String   @unique
+  short_code  String   @unique
+  used        Boolean  @default(false)
+  force_shiny Boolean  @default(false)
+  expires_at  DateTime
+  created_at  DateTime @default(now())
 
   user User @relation(fields: [user_id], references: [id])
 }

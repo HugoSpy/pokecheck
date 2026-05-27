@@ -47,8 +47,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
 
   const pokemon = pokemonsOfRarity[Math.floor(Math.random() * pokemonsOfRarity.length)];
 
-  // Shiny: 1/4096 (forced true for visual testing — revert to 1/4096 before prod)
-  const isShiny = true;
+  const isAdmin = req.user!.ms_id === process.env.ADMIN_MS_ID;
+  const forceShiny = isAdmin && (req.body as { force_shiny?: boolean }).force_shiny === true;
+  const isShiny = forceShiny || Math.random() < (1 / 4096);
   const spriteUrl = isShiny
     ? pokemon.sprite_url.replace('/normal/', '/shiny/')
     : pokemon.sprite_url;

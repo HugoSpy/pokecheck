@@ -7,11 +7,10 @@ export interface AuthPayload {
   display_name: string;
 }
 
+// Extend Express.User so passport and our JWT middleware share the same type
 declare global {
   namespace Express {
-    interface Request {
-      user?: AuthPayload;
-    }
+    interface User extends AuthPayload {}
   }
 }
 

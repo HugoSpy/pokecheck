@@ -532,3 +532,15 @@
   .pokeball { width: 110px; height: 110px; }
   .open-btn { padding: 14px 36px; font-size: 14px; }
 }
+
+/* ── Intranet-only message ── */
+.pack-intranet-msg {
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 320px;
+  line-height: 1.6;
+  letter-spacing: 0.02em;
+}

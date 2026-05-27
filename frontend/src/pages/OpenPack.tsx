@@ -52,6 +52,7 @@ export default function OpenPack() {
   const [error, setError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
+  const [forceShiny, setForceShiny] = useState(false);
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -60,9 +61,12 @@ export default function OpenPack() {
     setPhase('loading');
     setError(null);
 
+    let resolvedForceShiny = forceShiny;
     try {
       if (code) {
-        await consumeOneShotCode(code);
+        const result = await consumeOneShotCode(code);
+        resolvedForceShiny = result.force_shiny ?? false;
+        setForceShiny(resolvedForceShiny);
       } else {
         await consumeOneShotToken(token!);
       }
@@ -76,7 +80,7 @@ export default function OpenPack() {
     try {
       const [randResult, drawResult] = await Promise.all([
         getRandomPokemons(TOTAL_CARDS),
-        draw('draw'),
+        draw('draw', resolvedForceShiny),
       ]);
 
       const strip = randResult.pokemons.map(card => {
@@ -155,7 +159,7 @@ export default function OpenPack() {
       {/* ── Idle ── */}
       {phase === 'idle' && (
         <div className="pack-stage">
-          <div className="pokeball-wrap pulsing">
+          <div className={`pokeball-wrap${code || token ? ' pulsing' : ''}`} style={!code && !token ? { opacity: 0.3 } : {}}>
             <div className="pokeball">
               <div className="pokeball-top" />
               <div className="pokeball-band" />
@@ -165,17 +169,24 @@ export default function OpenPack() {
             <div className="pokeball-glow" />
           </div>
 
-          {error && (
-            <div className="pack-error">
-              <div className="pack-error-icon">⚠</div>
-              <div className="pack-error-msg">{error}</div>
-            </div>
+          {!code && !token ? (
+            <p className="pack-intranet-msg">
+              Ce lien est réservé aux présences validées depuis l'intranet EPITA.
+            </p>
+          ) : (
+            <>
+              {error && (
+                <div className="pack-error">
+                  <div className="pack-error-icon">⚠</div>
+                  <div className="pack-error-msg">{error}</div>
+                </div>
+              )}
+              <button className="open-btn" onClick={handleOpen}>
+                <span className="open-btn-shine" />
+                Ouvrir mon pack
+              </button>
+            </>
           )}
-
-          <button className="open-btn" onClick={handleOpen} disabled={!code && !token}>
-            <span className="open-btn-shine" />
-            Ouvrir mon pack
-          </button>
         </div>
       )}
 
@@ -282,4 +293,3 @@ export default function OpenPack() {
     </div>
   );
 }
-
