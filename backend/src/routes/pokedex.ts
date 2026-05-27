@@ -32,6 +32,24 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
   });
 });
 
+router.get('/random', async (req: Request, res: Response): Promise<void> => {
+  const count = Math.min(Math.max(parseInt(String(req.query.count ?? '30'), 10) || 30, 1), 60);
+
+  const allIds = await prisma.pokemon.findMany({ select: { id: true } });
+  const shuffled = allIds.sort(() => Math.random() - 0.5).slice(0, count);
+  const ids = shuffled.map(p => p.id);
+
+  const pokemons = await prisma.pokemon.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, name: true, sprite_url: true, rarity: true, points: true },
+  });
+
+  const orderMap = new Map(ids.map((id, i) => [id, i]));
+  pokemons.sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+
+  res.json({ pokemons });
+});
+
 router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   const userId = String(req.params.userId);
 

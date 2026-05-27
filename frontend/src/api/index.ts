@@ -93,6 +93,18 @@ export async function draw(source?: 'draw' | 'bonus'): Promise<{ pokemon: Pokemo
 }
 
 /* ── Pokédex ── */
+export interface RollCardData {
+  id: number;
+  name: string;
+  sprite_url: string;
+  rarity: 'COMMON' | 'RARE' | 'EPIC' | 'LEGENDARY';
+  points: number;
+}
+
+export async function getRandomPokemons(count: number): Promise<{ pokemons: RollCardData[] }> {
+  return apiFetch<{ pokemons: RollCardData[] }>(`/pokedex/random?count=${count}`);
+}
+
 export async function getMyPokedex(): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[] }> {
   return apiFetch<{ user: UserInfo; pokemons: UserPokemonInstance[] }>('/pokedex/me');
 }

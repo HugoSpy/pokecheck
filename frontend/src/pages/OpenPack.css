@@ -5,14 +5,35 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #030408;
+  background: var(--bg-void);
   overflow: hidden;
-  --rarity-primary: #9ca3af;
-  --rarity-secondary: #6b7280;
-  --rarity-particles: #d1d5db;
 }
 
-/* Scanlines overlay */
+.pack-page.legendary {
+  background: radial-gradient(ellipse at center, #120900 0%, var(--bg-void) 65%);
+}
+.pack-page.legendary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-conic-gradient(
+    rgba(245, 166, 35, 0.025) 0deg,
+    transparent 10deg,
+    transparent 30deg
+  );
+  animation: legendaryRotate 24s linear infinite;
+  pointer-events: none;
+}
+.pack-page.epic {
+  background: radial-gradient(ellipse at center, #0c0514 0%, var(--bg-void) 65%);
+}
+.pack-page.rare {
+  background: radial-gradient(ellipse at center, #040c1a 0%, var(--bg-void) 65%);
+}
+
+@keyframes legendaryRotate { to { transform: rotate(360deg); } }
+
+/* ── Scanlines ── */
 .scanlines {
   position: absolute;
   inset: 0;
@@ -20,71 +41,41 @@
     0deg,
     transparent,
     transparent 2px,
-    rgba(0, 0, 0, 0.08) 2px,
-    rgba(0, 0, 0, 0.08) 4px
+    rgba(0, 0, 0, 0.07) 2px,
+    rgba(0, 0, 0, 0.07) 4px
   );
   pointer-events: none;
   z-index: 1;
 }
 
-/* ── Flash ── */
-.flash-overlay {
-  position: absolute;
+/* ── Rarity Flash ── */
+.rarity-flash {
+  position: fixed;
   inset: 0;
-  background: white;
-  opacity: 0;
+  z-index: 100;
   pointer-events: none;
-  z-index: 50;
-  transition: opacity 100ms;
+  animation: rarityFlashAnim 300ms ease-out forwards;
 }
 
-.flash-overlay.flash-active {
-  animation: bigFlash 1.4s ease-out forwards;
-}
-
-@keyframes bigFlash {
-  0%   { opacity: 0; }
-  10%  { opacity: 0.85; }
-  30%  { opacity: 0.1; }
-  50%  { opacity: 0.6; }
-  70%  { opacity: 0; }
+@keyframes rarityFlashAnim {
+  0%   { opacity: 1; }
   100% { opacity: 0; }
 }
 
-/* ── Particles ── */
-.particles {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  z-index: 2;
+/* ── Logo ── */
+.pack-logo {
+  position: fixed;
+  top: 20px;
+  left: 24px;
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: -0.01em;
+  z-index: 20;
 }
 
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  border-radius: 50%;
-  background: var(--rarity-particles);
-  top: 50%;
-  left: 50%;
-  animation: particleBurst 1.6s ease-out calc(var(--i) * 0.07s) both;
-  box-shadow: 0 0 6px var(--rarity-primary);
-}
-
-@keyframes particleBurst {
-  0%   { transform: translate(-50%, -50%) scale(0); opacity: 1; }
-  100% {
-    transform:
-      translate(
-        calc(-50% + cos(calc(var(--i) * 26deg)) * 220px),
-        calc(-50% + sin(calc(var(--i) * 26deg)) * 180px)
-      )
-      scale(0.3);
-    opacity: 0;
-  }
-}
-
-/* ── Stage ── */
+/* ── Idle / Loading stage ── */
 .pack-stage {
   position: relative;
   z-index: 10;
@@ -92,7 +83,6 @@
   flex-direction: column;
   align-items: center;
   gap: 40px;
-  text-align: center;
   padding: 40px 24px;
 }
 
@@ -110,9 +100,7 @@
   height: 140px;
   border-radius: 50%;
   overflow: hidden;
-  border: 4px solid rgba(255,255,255,0.15);
-  box-shadow: 0 0 40px rgba(255,255,255,0.05);
-  cursor: pointer;
+  border: 3px solid rgba(255, 255, 255, 0.1);
 }
 
 .pokeball-top {
@@ -121,269 +109,297 @@
   height: 50%;
   background: linear-gradient(135deg, #e53e3e, #c53030);
 }
-
 .pokeball-band {
   position: absolute;
   top: 50%; left: 0; right: 0;
   height: 8px;
   margin-top: -4px;
-  background: #1a1a1a;
+  background: #111;
   z-index: 1;
 }
-
 .pokeball-bottom {
   position: absolute;
   bottom: 0; left: 0; right: 0;
   height: 50%;
-  background: linear-gradient(135deg, #2d3748, #1a202c);
+  background: linear-gradient(135deg, #1e2231, #111827);
 }
-
 .pokeball-center {
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
-  background: #1a1a1a;
-  border: 4px solid #333;
+  background: #111;
+  border: 4px solid #2a2a2a;
   z-index: 2;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-
 .pokeball-button {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f7fafc, #cbd5e0);
-  box-shadow: 0 0 8px rgba(255,255,255,0.4);
+  background: linear-gradient(135deg, #f0f4f8, #c3cfe2);
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
 }
-
 .pokeball-glow {
   position: absolute;
-  inset: -30px;
+  inset: -32px;
   border-radius: 50%;
   pointer-events: none;
-  background: radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.06) 0%, transparent 70%);
 }
 
 /* Pokéball animations */
 .pokeball-wrap.pulsing .pokeball-glow {
-  animation: ballPulse 2.2s ease-in-out infinite;
+  animation: ballPulse 2.4s ease-in-out infinite;
 }
-
 .pokeball-wrap.pulsing .pokeball {
-  animation: ballFloat 3s ease-in-out infinite;
+  animation: ballFloat 3.2s ease-in-out infinite;
 }
-
 .pokeball-wrap.spinning .pokeball {
   animation: ballSpin 0.4s linear infinite;
 }
-
 .pokeball-wrap.spinning .pokeball-glow {
-  animation: spinGlow 0.4s ease-in-out infinite;
+  animation: spinGlow 0.5s ease-in-out infinite;
 }
 
 @keyframes ballPulse {
   0%, 100% { opacity: 0.4; transform: scale(1); }
-  50%       { opacity: 0.8; transform: scale(1.15); }
+  50%       { opacity: 0.9; transform: scale(1.18); }
 }
-
 @keyframes ballFloat {
   0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-12px); }
+  50%       { transform: translateY(-14px); }
 }
-
 @keyframes ballSpin {
-  0%   { transform: rotate(0deg) scale(1.1); }
-  100% { transform: rotate(360deg) scale(1.1); }
+  0%   { transform: rotate(0deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1.08); }
 }
-
 @keyframes spinGlow {
-  0%, 100% { opacity: 0.3; }
-  50%       { opacity: 1; }
+  0%, 100% { opacity: 0.2; }
+  50%       { opacity: 0.8; }
 }
 
-/* ── Reveal ── */
-.reveal-container {
+/* Loading label */
+.loading-label {
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* ── Roll Scene ── */
+.roll-scene {
+  position: relative;
+  z-index: 10;
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
-  opacity: 1;
+  gap: 40px;
+  padding: 0 0 60px;
 }
 
-.reveal-container.reveal-enter {
-  animation: revealIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-@keyframes revealIn {
-  from { transform: scale(0.5) translateY(30px); opacity: 0; }
-  to   { transform: scale(1) translateY(0); opacity: 1; }
-}
-
-.reveal-glow {
-  position: absolute;
-  width: 280px;
-  height: 280px;
-  border-radius: 50%;
-  background: radial-gradient(circle, var(--rarity-primary) 0%, transparent 70%);
-  opacity: 0.12;
-  pointer-events: none;
-  animation: glowPulse 2s ease-in-out infinite;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: -1;
-}
-
-@keyframes glowPulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.1; }
-  50%       { transform: translate(-50%, -50%) scale(1.2); opacity: 0.18; }
-}
-
-.reveal-sprite-wrap {
+/* Wrapper keeps indicator outside overflow:hidden */
+.roll-container {
   position: relative;
-  height: 180px;
+  width: 100%;
+}
+
+/* Center indicator */
+.roll-indicator {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  transform: translateX(-50%);
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.indicator-tri {
+  width: 0;
+  height: 0;
+  border-left: 9px solid transparent;
+  border-right: 9px solid transparent;
+  filter: drop-shadow(0 0 5px var(--accent));
+}
+.indicator-top {
+  border-top: 14px solid var(--accent);
+}
+.indicator-bottom {
+  border-bottom: 14px solid var(--accent);
+}
+.indicator-line {
+  flex: 1;
+  width: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent), 0 0 16px var(--accent-glow);
+}
+
+/* Viewport clips the strip */
+.roll-viewport {
+  width: 100%;
+  height: 190px;
+  overflow: hidden;
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
+}
+
+/* Strip */
+.roll-strip {
+  display: flex;
+  gap: 12px;
+  height: 100%;
+  align-items: center;
+  will-change: transform;
+}
+
+/* ── Roll Card ── */
+.roll-card {
+  flex-shrink: 0;
+  width: 120px;
+  height: 158px;
+  border-radius: 10px;
+  background: var(--bg-card);
+  border: 2px solid var(--card-border, #4b5563);
+  display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 5px;
+  padding: 8px 4px 10px;
+  position: relative;
+  transition: transform 450ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              box-shadow 450ms ease,
+              border-color 450ms ease;
 }
 
-.reveal-sprite {
-  max-height: 180px;
-  max-width: 220px;
+.roll-card-winner {
+  transform: scale(1.12);
+  border-color: var(--card-glow, var(--card-border));
+  box-shadow:
+    0 0 20px var(--card-glow, var(--card-border)),
+    0 0 50px var(--card-glow, var(--card-border)),
+    inset 0 0 14px rgba(255, 255, 255, 0.04);
+  z-index: 5;
+}
+
+.roll-card-img {
+  width: 76px;
+  height: 76px;
   object-fit: contain;
   image-rendering: pixelated;
-  filter: drop-shadow(0 0 20px var(--rarity-primary));
-  animation: spriteEntry 0.6s ease-out both;
 }
 
-.reveal-sprite.legendary-float {
-  animation: spriteEntry 0.6s ease-out both, legendFloat 3s ease-in-out 0.6s infinite;
-}
-
-@keyframes spriteEntry {
-  from { transform: scale(0.4) translateY(40px); opacity: 0; filter: drop-shadow(0 0 40px white) brightness(3); }
-  to   { transform: scale(1) translateY(0); opacity: 1; filter: drop-shadow(0 0 20px var(--rarity-primary)); }
-}
-
-@keyframes legendFloat {
-  0%, 100% { transform: translateY(0) scale(1); }
-  50%       { transform: translateY(-10px) scale(1.02); }
-}
-
-/* Name */
-.reveal-name {
-  font-family: var(--font-display);
-  font-size: clamp(28px, 6vw, 48px);
+.roll-card-name {
+  font-family: var(--font-condensed);
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: -0.01em;
-  color: #fff;
+  text-align: center;
+  color: var(--text-primary);
   text-transform: capitalize;
-  text-shadow: 0 0 40px var(--rarity-primary);
-  min-height: 1.2em;
+  letter-spacing: 0.02em;
+  line-height: 1.2;
+  max-width: 110px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.cursor {
-  animation: blink 0.7s step-end infinite;
-  opacity: 0.7;
-  color: var(--rarity-primary);
+.roll-card-rarity {
+  font-family: var(--font-condensed);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
 }
 
-@keyframes blink { 0%, 100% { opacity: 0.7; } 50% { opacity: 0; } }
-
-/* Info row */
-.reveal-info {
+/* ── Reveal Block ── */
+.reveal-block {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 4px;
   opacity: 0;
-  transform: translateY(12px);
-  transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(22px);
+  transition: opacity 600ms ease, transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.reveal-info.info-visible {
+.reveal-block.reveal-block-visible {
   opacity: 1;
   transform: translateY(0);
 }
 
-.reveal-points {
-  display: flex;
-  align-items: baseline;
-  gap: 4px;
-}
-
-.points-value {
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--rarity-primary);
-  text-shadow: 0 0 16px var(--rarity-primary);
-}
-
-.points-label {
+.reveal-rarity {
   font-family: var(--font-condensed);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--rarity-secondary);
-  letter-spacing: 0.1em;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
+  text-shadow: 0 0 20px currentColor;
 }
 
-/* ── Rarity-specific background augmentation ── */
-.pack-page.legendary {
-  background: radial-gradient(ellipse at center, #1a0f00 0%, #030408 60%);
+.reveal-poke-name {
+  font-family: var(--font-display);
+  font-size: clamp(26px, 5.5vw, 46px);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  letter-spacing: -0.01em;
+  line-height: 1;
 }
 
-.pack-page.legendary::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: repeating-conic-gradient(
-    rgba(245,166,35,0.02) 0deg,
-    transparent 10deg,
-    transparent 30deg
-  );
-  animation: legendaryRotate 20s linear infinite;
-}
-
-.pack-page.epic {
-  background: radial-gradient(ellipse at center, #0d0714 0%, #030408 60%);
-}
-
-.pack-page.rare {
-  background: radial-gradient(ellipse at center, #05091a 0%, #030408 60%);
-}
-
-@keyframes legendaryRotate {
-  to { transform: rotate(360deg); }
+.reveal-pts {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  text-shadow: 0 0 16px currentColor;
+  margin-top: 4px;
 }
 
 /* ── Open button ── */
 .open-btn {
   position: relative;
   overflow: hidden;
-  padding: 16px 48px;
+  padding: 16px 52px;
   font-family: var(--font-display);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: #000;
-  background: var(--accent, #00d4ff);
+  background: var(--accent);
   border: none;
-  border-radius: 6px;
+  border-radius: var(--radius);
   cursor: pointer;
   transition: all 200ms ease;
-  box-shadow: 0 0 30px rgba(0, 212, 255, 0.3);
+  box-shadow: 0 0 32px var(--accent-glow);
 }
 
 .open-btn:hover:not(:disabled) {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow: 0 0 50px rgba(0, 212, 255, 0.5);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 0 50px var(--accent-glow);
 }
 
 .open-btn:disabled {
@@ -397,26 +413,25 @@
   top: 0; left: -100%;
   width: 60%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
   transform: skewX(-20deg);
-  animation: shine 3s ease-in-out infinite;
+  animation: shine 3.2s ease-in-out infinite;
 }
 
 @keyframes shine {
-  0%, 70%  { left: -100%; }
+  0%, 65% { left: -100%; }
   100%     { left: 160%; }
 }
 
 .open-btn-secondary {
   background: transparent;
-  color: var(--rarity-primary, #00d4ff);
-  border: 2px solid var(--rarity-primary, #00d4ff);
-  box-shadow: 0 0 20px var(--rarity-primary, rgba(0,212,255,0.3));
+  color: var(--btn-color, var(--accent));
+  border: 2px solid var(--btn-color, var(--accent));
+  box-shadow: none;
 }
-
 .open-btn-secondary:hover:not(:disabled) {
-  background: rgba(255,255,255,0.05);
-  box-shadow: 0 0 40px var(--rarity-primary, rgba(0,212,255,0.5));
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
 }
 
 /* ── Error ── */
@@ -425,54 +440,29 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  padding: 20px 32px;
-  background: rgba(239,68,68,0.08);
-  border: 1px solid rgba(239,68,68,0.2);
-  border-radius: 10px;
+  padding: 18px 32px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius);
   animation: errorShake 0.4s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
-
-.pack-error-icon {
-  font-size: 28px;
-  color: #f87171;
-}
-
+.pack-error-icon { font-size: 26px; color: #f87171; }
 .pack-error-msg {
   font-family: var(--font-condensed);
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
   color: #f87171;
   letter-spacing: 0.04em;
 }
 
 @keyframes errorShake {
-  10%, 90%  { transform: translateX(-2px); }
-  20%, 80%  { transform: translateX(4px); }
-  30%, 50%, 70% { transform: translateX(-6px); }
-  40%, 60%  { transform: translateX(6px); }
-}
-
-/* ── Logo ── */
-.pack-logo {
-  position: fixed;
-  top: 20px;
-  left: 24px;
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.3);
-  letter-spacing: -0.01em;
-  z-index: 20;
-}
-
-/* ── Legendary animation for badge ── */
-@keyframes legendaryPulse {
-  0%, 100% { box-shadow: 0 0 10px #f5a62355, 0 0 20px #f5a62322; }
-  50%       { box-shadow: 0 0 20px #f5a62388, 0 0 40px #f5a62344; }
+  10%, 90%       { transform: translateX(-2px); }
+  20%, 80%       { transform: translateX(4px); }
+  30%, 50%, 70%  { transform: translateX(-6px); }
+  40%, 60%       { transform: translateX(6px); }
 }
 
 @media (max-width: 480px) {
   .pokeball { width: 110px; height: 110px; }
-  .reveal-sprite { max-height: 140px; }
   .open-btn { padding: 14px 36px; font-size: 14px; }
 }

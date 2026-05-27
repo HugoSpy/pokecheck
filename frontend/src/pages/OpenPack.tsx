@@ -1,15 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { consumeOneShotToken, draw, type PokemonInfo } from '../api';
+import { consumeOneShotToken, draw, getRandomPokemons, type RollCardData, type PokemonInfo } from '../api';
 import './OpenPack.css';
 
-type Phase = 'idle' | 'opening' | 'reveal' | 'done';
+type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
 
-const RARITY_THEME: Record<string, { primary: string; secondary: string; particles: string }> = {
-  COMMON:    { primary: '#9ca3af', secondary: '#6b7280', particles: '#d1d5db' },
-  RARE:      { primary: '#3b82f6', secondary: '#1d4ed8', particles: '#93c5fd' },
-  EPIC:      { primary: '#a855f7', secondary: '#7c3aed', particles: '#d8b4fe' },
-  LEGENDARY: { primary: '#f5a623', secondary: '#d97706', particles: '#fde68a' },
+const CARD_WIDTH = 120;
+const CARD_GAP = 12;
+const CARD_STRIDE = CARD_WIDTH + CARD_GAP;
+const TOTAL_CARDS = 30;
+const TARGET_INDEX = 22;
+const ROLL_DURATION = 4000;
+
+const RARITY_BORDER: Record<string, string> = {
+  COMMON: '#4b5563',
+  RARE: '#2563eb',
+  EPIC: '#9333ea',
+  LEGENDARY: '#d97706',
+};
+
+const RARITY_GLOW: Record<string, string> = {
+  COMMON: '#9ca3af',
+  RARE: '#3b82f6',
+  EPIC: '#a855f7',
+  LEGENDARY: '#f5a623',
+};
+
+const RARITY_FLASH: Record<string, string> = {
+  COMMON: 'rgba(255,255,255,0.25)',
+  RARE: 'rgba(59,130,246,0.55)',
+  EPIC: 'rgba(168,85,247,0.55)',
+  LEGENDARY: 'rgba(245,166,35,0.6)',
+};
+
+const RARITY_LABELS: Record<string, string> = {
+  COMMON: 'Commun',
+  RARE: 'Rare',
+  EPIC: 'Épique',
+  LEGENDARY: 'Légendaire',
 };
 
 export default function OpenPack() {
@@ -18,202 +46,214 @@ export default function OpenPack() {
   const token = params.get('token');
 
   const [phase, setPhase] = useState<Phase>('idle');
+  const [cards, setCards] = useState<RollCardData[]>([]);
   const [pokemon, setPokemon] = useState<PokemonInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [displayedName, setDisplayedName] = useState('');
+  const [showFlash, setShowFlash] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
 
-  const typewriterRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const theme = pokemon ? (RARITY_THEME[pokemon.rarity] ?? RARITY_THEME.COMMON) : null;
+  const stripRef = useRef<HTMLDivElement>(null);
 
   async function handleOpen() {
     if (!token) { setError('Token manquant.'); return; }
-
-    setPhase('opening');
+    setPhase('loading');
     setError(null);
 
     try {
       await consumeOneShotToken(token);
     } catch (err) {
       const e = err as Error & { status?: number };
-      if (e.status === 410) { setError('Token déjà utilisé.'); setPhase('idle'); return; }
-      setError(e.message); setPhase('idle'); return;
+      setError(e.status === 410 ? 'Token déjà utilisé.' : e.message);
+      setPhase('idle');
+      return;
     }
 
     try {
-      const result = await draw('draw');
-      setPokemon(result.pokemon);
-      await new Promise(r => setTimeout(r, 1200));
-      setPhase('reveal');
+      const [randResult, drawResult] = await Promise.all([
+        getRandomPokemons(TOTAL_CARDS),
+        draw('draw'),
+      ]);
 
-      await new Promise(r => setTimeout(r, 600));
-      startTypewriter(result.pokemon.name);
+      const strip = [...randResult.pokemons] as RollCardData[];
+      strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
 
-      await new Promise(r => setTimeout(r, result.pokemon.name.length * 60 + 500));
-      setShowBadge(true);
-
-      await new Promise(r => setTimeout(r, 800));
-      setPhase('done');
+      setCards(strip);
+      setPokemon(drawResult.pokemon);
+      setShowBadge(false);
+      setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      if (e.status === 403) {
-        setError('Tu as déjà tiré aujourd\'hui !');
-      } else {
-        setError(e.message);
-      }
+      setError(e.status === 403 ? "Tu as déjà tiré aujourd'hui !" : (err as Error).message);
       setPhase('idle');
     }
   }
 
-  function startTypewriter(name: string) {
-    if (typewriterRef.current) clearInterval(typewriterRef.current);
-    let i = 0;
-    setDisplayedName('');
-    typewriterRef.current = setInterval(() => {
-      i++;
-      setDisplayedName(name.slice(0, i));
-      if (i >= name.length && typewriterRef.current) {
-        clearInterval(typewriterRef.current);
-      }
-    }, 55);
-  }
+  // Set strip to start position before paint (avoids flash)
+  useLayoutEffect(() => {
+    if (phase !== 'rolling' || !stripRef.current) return;
+    const strip = stripRef.current;
+    strip.style.transition = 'none';
+    strip.style.transform = `translateX(${window.innerWidth + 300}px)`;
+  }, [phase]);
 
-  useEffect(() => () => { if (typewriterRef.current) clearInterval(typewriterRef.current); }, []);
+  // Trigger roll animation after layout
+  useEffect(() => {
+    if (phase !== 'rolling' || !stripRef.current) return;
+    const strip = stripRef.current;
+    const vw = window.innerWidth;
+    const endX = vw / 2 - TARGET_INDEX * CARD_STRIDE - CARD_WIDTH / 2;
 
-  const isLegendary = pokemon?.rarity === 'LEGENDARY';
+    const raf = requestAnimationFrame(() => {
+      strip.style.transition = `transform ${ROLL_DURATION}ms cubic-bezier(0.05, 0, 0.12, 1)`;
+      strip.style.transform = `translateX(${endX}px)`;
+    });
+
+    const timer = setTimeout(() => {
+      setShowFlash(true);
+      setTimeout(() => setShowFlash(false), 300);
+      setPhase('reveal');
+      setTimeout(() => setShowBadge(true), 500);
+      setTimeout(() => setPhase('done'), 1800);
+    }, ROLL_DURATION);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(timer);
+    };
+  }, [phase]);
+
+  const rarityGlow = pokemon ? (RARITY_GLOW[pokemon.rarity] ?? '#9ca3af') : '#9ca3af';
 
   return (
-    <div
-      className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}
-      style={theme ? { '--rarity-primary': theme.primary, '--rarity-secondary': theme.secondary, '--rarity-particles': theme.particles } as React.CSSProperties : undefined}
-    >
-      {/* Ambient scanlines */}
+    <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}>
       <div className="scanlines" />
 
-      {/* Particle field */}
-      {phase === 'reveal' || phase === 'done' ? (
-        <div className="particles" aria-hidden>
-          {Array.from({ length: isLegendary ? 24 : 12 }).map((_, i) => (
-            <div key={i} className="particle" style={{ '--i': i } as React.CSSProperties} />
-          ))}
-        </div>
-      ) : null}
+      {showFlash && pokemon && (
+        <div
+          className="rarity-flash"
+          style={{ background: RARITY_FLASH[pokemon.rarity] ?? 'rgba(255,255,255,0.3)' }}
+        />
+      )}
 
-      {/* Flash overlay */}
-      <div className={`flash-overlay ${phase === 'opening' ? 'flash-active' : ''}`} />
+      <div className="pack-logo">
+        <span style={{ color: 'var(--accent)' }}>Poké</span>School
+      </div>
 
-      {/* Main stage */}
-      <div className="pack-stage">
-
-        {/* IDLE & OPENING: Pokéball */}
-        {(phase === 'idle' || phase === 'opening') && (
-          <div className={`pokeball-wrap ${phase === 'opening' ? 'spinning' : 'pulsing'}`}>
+      {/* ── Idle ── */}
+      {phase === 'idle' && (
+        <div className="pack-stage">
+          <div className="pokeball-wrap pulsing">
             <div className="pokeball">
               <div className="pokeball-top" />
               <div className="pokeball-band" />
               <div className="pokeball-bottom" />
-              <div className="pokeball-center">
-                <div className="pokeball-button" />
-              </div>
+              <div className="pokeball-center"><div className="pokeball-button" /></div>
             </div>
             <div className="pokeball-glow" />
           </div>
-        )}
 
-        {/* REVEAL & DONE: Pokémon */}
-        {(phase === 'reveal' || phase === 'done') && pokemon && (
-          <div className={`reveal-container ${phase === 'reveal' ? 'reveal-enter' : ''}`}>
+          {error && (
+            <div className="pack-error">
+              <div className="pack-error-icon">⚠</div>
+              <div className="pack-error-msg">{error}</div>
+            </div>
+          )}
 
-            {/* Radial glow behind sprite */}
-            <div className="reveal-glow" />
+          <button className="open-btn" onClick={handleOpen} disabled={!token}>
+            <span className="open-btn-shine" />
+            Ouvrir mon pack
+          </button>
+        </div>
+      )}
 
-            {/* Sprite */}
-            <div className="reveal-sprite-wrap">
-              <img
-                src={pokemon.sprite_url}
-                alt={pokemon.name}
-                className={`reveal-sprite ${isLegendary ? 'legendary-float' : ''}`}
-              />
+      {/* ── Loading ── */}
+      {phase === 'loading' && (
+        <div className="pack-stage">
+          <div className="pokeball-wrap spinning">
+            <div className="pokeball">
+              <div className="pokeball-top" />
+              <div className="pokeball-band" />
+              <div className="pokeball-bottom" />
+              <div className="pokeball-center"><div className="pokeball-button" /></div>
+            </div>
+            <div className="pokeball-glow" />
+          </div>
+          <div className="loading-label">Chargement…</div>
+        </div>
+      )}
+
+      {/* ── Roll / Reveal / Done ── */}
+      {(phase === 'rolling' || phase === 'reveal' || phase === 'done') && (
+        <div className="roll-scene">
+
+          <div className="roll-container">
+            {/* Center indicator */}
+            <div className="roll-indicator" aria-hidden>
+              <div className="indicator-tri indicator-top" />
+              <div className="indicator-line" />
+              <div className="indicator-tri indicator-bottom" />
             </div>
 
-            {/* Name typewriter */}
-            <div className="reveal-name">
-              {displayedName}
-              <span className="cursor">|</span>
-            </div>
-
-            {/* Badge + points */}
-            <div className={`reveal-info ${showBadge ? 'info-visible' : ''}`}>
-              <RarityBadgeLarge rarity={pokemon.rarity} />
-              <div className="reveal-points">
-                <span className="points-value">+{pokemon.points}</span>
-                <span className="points-label">pts</span>
+            {/* Scrolling strip */}
+            <div className="roll-viewport">
+              <div className="roll-strip" ref={stripRef}>
+                {cards.map((card, i) => {
+                  const isWinner = i === TARGET_INDEX && (phase === 'reveal' || phase === 'done');
+                  return (
+                    <div
+                      key={`${i}-${card.id}`}
+                      className={`roll-card${isWinner ? ' roll-card-winner' : ''}`}
+                      style={{
+                        '--card-border': RARITY_BORDER[card.rarity] ?? '#4b5563',
+                        ...(isWinner ? { '--card-glow': rarityGlow } : {}),
+                      } as React.CSSProperties}
+                    >
+                      <img
+                        src={card.sprite_url}
+                        alt={card.name}
+                        className="roll-card-img"
+                        loading="lazy"
+                      />
+                      <div className="roll-card-name">{card.name}</div>
+                      <div
+                        className="roll-card-rarity"
+                        style={{ color: RARITY_BORDER[card.rarity] ?? '#4b5563' }}
+                      >
+                        {card.rarity === 'LEGENDARY' ? '★ ' : ''}
+                        {RARITY_LABELS[card.rarity] ?? card.rarity}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
-        )}
 
-        {/* Error state */}
-        {error && (
-          <div className="pack-error">
-            <div className="pack-error-icon">⚠</div>
-            <div className="pack-error-msg">{error}</div>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div className="pack-cta">
-          {phase === 'idle' && !error && (
-            <button
-              className="open-btn"
-              onClick={handleOpen}
-              disabled={!token}
-            >
-              <span className="open-btn-shine" />
-              Ouvrir mon pack
-            </button>
+          {/* Reveal info */}
+          {(phase === 'reveal' || phase === 'done') && pokemon && (
+            <div className={`reveal-block${showBadge ? ' reveal-block-visible' : ''}`}>
+              <div className="reveal-rarity" style={{ color: rarityGlow }}>
+                {pokemon.rarity === 'LEGENDARY' ? '★ ' : ''}
+                {RARITY_LABELS[pokemon.rarity]}
+              </div>
+              <div className="reveal-poke-name">{pokemon.name}</div>
+              <div className="reveal-pts" style={{ color: rarityGlow }}>
+                +{pokemon.points} pts
+              </div>
+            </div>
           )}
 
           {phase === 'done' && (
             <button
               className="open-btn open-btn-secondary"
+              style={{ '--btn-color': rarityGlow } as React.CSSProperties}
               onClick={() => navigate('/pokedex')}
             >
               Voir mon Pokédex →
             </button>
           )}
         </div>
-      </div>
-
-      {/* Corner logo */}
-      <div className="pack-logo">
-        <span style={{ color: 'var(--accent)' }}>Poké</span>School
-      </div>
+      )}
     </div>
-  );
-}
-
-function RarityBadgeLarge({ rarity }: { rarity: PokemonInfo['rarity'] }) {
-  const CONFIG = {
-    COMMON:    { label: 'Commun',     color: '#9ca3af' },
-    RARE:      { label: 'Rare',       color: '#3b82f6' },
-    EPIC:      { label: 'Épique',     color: '#a855f7' },
-    LEGENDARY: { label: 'Légendaire', color: '#f5a623' },
-  };
-  const { label, color } = CONFIG[rarity];
-
-  return (
-    <span style={{
-      fontFamily: 'var(--font-condensed)',
-      fontWeight: 800,
-      fontSize: 18,
-      letterSpacing: '0.12em',
-      textTransform: 'uppercase',
-      color,
-      textShadow: `0 0 20px ${color}88`,
-    }}>
-      {rarity === 'LEGENDARY' && '★ '}{label}
-    </span>
   );
 }
