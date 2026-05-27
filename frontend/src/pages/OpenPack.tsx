@@ -92,16 +92,17 @@ export default function OpenPack() {
   useLayoutEffect(() => {
     if (phase !== 'rolling' || !stripRef.current) return;
     const strip = stripRef.current;
+    const vpW = (strip.parentElement as HTMLElement).offsetWidth;
     strip.style.transition = 'none';
-    strip.style.transform = `translateX(${window.innerWidth + 300}px)`;
+    strip.style.transform = `translateX(${vpW + 300}px)`;
   }, [phase]);
 
   // Trigger roll animation after layout
   useEffect(() => {
     if (phase !== 'rolling' || !stripRef.current) return;
     const strip = stripRef.current;
-    const vw = window.innerWidth;
-    const endX = vw / 2 - TARGET_INDEX * CARD_STRIDE - CARD_WIDTH / 2;
+    const vpW = (strip.parentElement as HTMLElement).offsetWidth;
+    const endX = vpW / 2 - TARGET_INDEX * CARD_STRIDE - CARD_WIDTH / 2;
 
     const raf = requestAnimationFrame(() => {
       strip.style.transition = `transform ${ROLL_DURATION}ms cubic-bezier(0.05, 0, 0.12, 1)`;
