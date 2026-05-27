@@ -109,9 +109,9 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
         res.redirect(`${process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
         return;
       }
-      const u = user as { id: string; ms_id: string; display_name: string; total_score: number };
+      const u = user as { userId: string; ms_id: string; display_name: string };
       const sessionToken = jwt.sign(
-        { userId: u.id, ms_id: u.ms_id, display_name: u.display_name },
+        { userId: u.userId, ms_id: u.ms_id, display_name: u.display_name },
         process.env.JWT_SECRET!,
         { expiresIn: '24h' }
       );
