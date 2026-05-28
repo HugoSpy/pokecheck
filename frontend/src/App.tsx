@@ -7,9 +7,10 @@ import Pokedex from './pages/Pokedex';
 import Trades from './pages/Trades';
 import Leaderboard from './pages/Leaderboard';
 import UserPokedex from './pages/UserPokedex';
+import DevTradeAnim from './pages/DevTradeAnim';
 import Layout from './components/Layout';
 
-function parseJwt(token: string): { exp?: number } | null {
+function parseJwt(token: string): { exp?: number; isAdmin?: boolean } | null {
   try {
     return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
   } catch {
@@ -28,7 +29,10 @@ function AppRoutes() {
   const location = useLocation();
   const authed = isTokenValid(getToken());
 
-  if (!authed && location.pathname !== '/open') {
+  const token = getToken();
+  const isAdmin = authed && token !== null && (parseJwt(token)?.isAdmin === true);
+
+  if (!authed && location.pathname !== '/open' && location.pathname !== '/dev/trade-anim') {
     return <Login />;
   }
 
@@ -41,6 +45,10 @@ function AppRoutes() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/u/:id"       element={<UserPokedex />} />
       </Route>
+      <Route
+        path="/dev/trade-anim"
+        element={isAdmin ? <DevTradeAnim /> : <Navigate to="/leaderboard" replace />}
+      />
       <Route path="*" element={<Navigate to="/leaderboard" replace />} />
     </Routes>
   );

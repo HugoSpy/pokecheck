@@ -6,6 +6,7 @@ import {
   type TradeOffer, type UserPokemonInstance,
 } from '../api';
 import PokemonCard from '../components/PokemonCard';
+import TradeAnimation3D from '../components/TradeAnimation3D';
 import './Trades.css';
 
 interface LocationState {
@@ -33,6 +34,13 @@ export default function Trades() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [userSearchInput, setUserSearchInput] = useState(state?.targetUserId ?? '');
+
+  const [animation, setAnimation] = useState<{
+    given:      { sprite_url: string; name: string };
+    received:   { sprite_url: string; name: string };
+    shinyProc:  boolean;
+    shinyName?: string;
+  } | null>(null);
 
   useEffect(() => {
     getTradeOffers()
@@ -68,11 +76,24 @@ export default function Trades() {
     }
   }
 
-  async function handleAccept(id: string) {
+  async function handleAccept(offer: TradeOffer) {
     try {
-      await acceptTrade(id);
-      setOffers(prev => prev.filter(o => o.id !== id));
-      setSuccess('Échange accepté !');
+      const res = await acceptTrade(offer.id);
+      setOffers(prev => prev.filter(o => o.id !== offer.id));
+
+      const given    = offer.toPokemon?.pokemon;
+      const received = offer.fromPokemon?.pokemon;
+
+      if (given && received) {
+        setAnimation({
+          given,
+          received,
+          shinyProc: res.shiny_proc ?? false,
+          shinyName: res.shiny_pokemon_name,
+        });
+      } else {
+        setSuccess('Échange accepté !');
+      }
     } catch (e) {
       setError((e as Error).message);
     }
@@ -111,8 +132,23 @@ export default function Trades() {
     p => !p.tradeable_at || new Date(p.tradeable_at) <= new Date()
   );
 
+  function handleAnimationComplete() {
+    setAnimation(null);
+    getTradeOffers().then(setOffers).catch(() => null);
+  }
+
   return (
     <div className="trades-page">
+      {animation && (
+        <TradeAnimation3D
+          givenPokemon={animation.given}
+          receivedPokemon={animation.received}
+          shinyProc={animation.shinyProc}
+          shinyPokemonName={animation.shinyName}
+          onComplete={handleAnimationComplete}
+        />
+      )}
+
       <h1 className="trades-title">Échanges</h1>
 
       {error && (
@@ -145,7 +181,7 @@ export default function Trades() {
               <OfferCard
                 key={offer.id}
                 offer={offer}
-                onAccept={() => handleAccept(offer.id)}
+                onAccept={() => handleAccept(offer)}
                 onDecline={() => handleDecline(offer.id)}
               />
             ))}

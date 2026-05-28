@@ -1,0 +1,408 @@
+/* ── TradeAnimation3D ─────────────────────────────────────────────────────── */
+
+.trade-anim-root {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  overflow: hidden;
+  font-family: var(--font-body, 'Barlow', sans-serif);
+}
+
+/* ── Background gradient animé par phase ── */
+.trade-anim-bg {
+  position: absolute;
+  inset: 0;
+  transition: background 1.2s ease;
+}
+
+.trade-anim-bg--sparkle-cover,
+.trade-anim-bg--dissolve,
+.trade-anim-bg--pokeball-form {
+  background:
+    radial-gradient(ellipse 70% 50% at 50% 55%, #0c1a2e 0%, #060d1a 45%, #020509 100%);
+}
+
+.trade-anim-bg--ascend {
+  background:
+    radial-gradient(ellipse 60% 40% at 50% 25%, #15083a 0%, #0a0520 50%, #020408 100%);
+}
+
+.trade-anim-bg--descend {
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 75%, #080e28 0%, #040818 50%, #020408 100%);
+}
+
+.trade-anim-bg--open {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, #00d4ff22 0%, #06101e 35%, #020408 100%);
+}
+
+.trade-anim-bg--emerge {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, #071622 0%, #040c18 45%, #020408 100%);
+}
+
+.trade-anim-bg--shiny {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 50%, #1a1400 0%, #0d0b02 45%, #020408 100%) !important;
+}
+
+/* ── Stars de fond ── */
+.trade-anim-stars {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.trade-anim-star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: star-twinkle ease-in-out infinite;
+}
+
+/* ── Canvas Three.js ── */
+.trade-anim-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* ── Overlay sprites / textes ── */
+.trade-anim-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* ── Sprite wrapper ── */
+.trade-anim-sprite-wrap {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trade-anim-sprite-wrap.entering {
+  animation: sprite-enter 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.trade-anim-sprite-wrap.dissolving {
+  animation: sprite-dissolve 0.8s ease-in forwards;
+}
+
+.trade-anim-sprite-wrap.emerging {
+  animation: sprite-emerge 1.0s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.trade-anim-sprite-wrap.shiny-glow img {
+  filter: drop-shadow(0 0 12px #f5c842) drop-shadow(0 0 28px #f5a62388);
+  animation: shiny-pulse 1.8s ease-in-out infinite;
+}
+
+.trade-anim-sprite {
+  width: 128px;
+  height: 128px;
+  image-rendering: pixelated;
+  object-fit: contain;
+}
+
+/* ── Sparkle ring ── */
+.trade-anim-sparkle-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.trade-anim-sparkle {
+  position: absolute;
+  transform: translate(-50%, -50%) scale(0);
+  clip-path: polygon(
+    50% 0%,   55% 38%, 100% 50%, 55% 62%,
+    50% 100%, 45% 62%, 0%   50%, 45% 38%
+  );
+  background: #e8f0ff;
+  filter: drop-shadow(0 0 3px #00d4ff);
+}
+
+.trade-anim-sparkle.gold {
+  background: #f5e060;
+  filter: drop-shadow(0 0 4px #f5a623);
+}
+
+.trade-anim-sparkle.appear {
+  animation: sparkle-appear ease-in-out infinite alternate;
+}
+
+.trade-anim-sparkle.burst {
+  animation: sparkle-burst 0.7s ease-out forwards;
+}
+
+.trade-anim-sparkle.emerge-sparkle {
+  animation: sparkle-emerge 0.9s ease-out forwards;
+}
+
+/* ── Flash overlay ── */
+.trade-anim-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.trade-anim-flash.white {
+  background: white;
+  animation: flash-white 0.4s ease-out forwards;
+}
+
+.trade-anim-flash.gold {
+  background: #f5c84244;
+  animation: flash-gold 0.8s ease-out forwards;
+}
+
+/* ── Texte SHINY ── */
+.trade-anim-shiny-text {
+  position: absolute;
+  top: 33%;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-display, 'Chakra Petch', monospace);
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: #f5c842;
+  text-shadow: 0 0 20px #f5a623, 0 0 50px #f5a62366;
+  letter-spacing: 0.06em;
+  white-space: nowrap;
+  animation: shiny-text-enter 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  pointer-events: none;
+}
+
+/* ── Skip button ── */
+.trade-anim-skip {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  z-index: 20;
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: rgba(255, 255, 255, 0.65);
+  font-family: var(--font-body, 'Barlow', sans-serif);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  padding: 8px 20px;
+  border-radius: 100px;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.trade-anim-skip:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: white;
+}
+
+/* ── Écran de résultat ── */
+.trade-anim-result {
+  position: fixed;
+  inset: 0;
+  z-index: 1001;
+  background: var(--bg-void, #03040a);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: result-fade-in 0.5s ease-out forwards;
+}
+
+.trade-anim-result-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 48px 24px;
+  max-width: 460px;
+  width: 100%;
+}
+
+.trade-anim-result-title {
+  font-family: var(--font-display, 'Chakra Petch', monospace);
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--text-primary, #e6e8f2);
+  letter-spacing: -0.01em;
+}
+
+.trade-anim-shiny-badge {
+  font-family: var(--font-display, 'Chakra Petch', monospace);
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: #f5c842;
+  text-shadow: 0 0 16px #f5a623;
+  animation: pulse-gold 2s ease-in-out infinite;
+}
+
+.trade-anim-result-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+}
+
+.trade-anim-result-poke {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 24px 16px;
+  background: var(--bg-card, #0d0e18);
+  border: 1px solid var(--border, rgba(255, 255, 255, 0.06));
+  border-radius: 14px;
+  transition: border-color 0.3s;
+}
+
+.trade-anim-result-poke img {
+  width: 80px;
+  height: 80px;
+  image-rendering: pixelated;
+  object-fit: contain;
+  opacity: 0.45;
+}
+
+.trade-anim-result-poke.received img {
+  opacity: 1;
+}
+
+.trade-anim-result-poke.is-shiny {
+  border-color: #f5a62344;
+  background: linear-gradient(135deg, #0d0e18 0%, #110e05 100%);
+}
+
+.trade-anim-result-poke.is-shiny img {
+  opacity: 1;
+  filter: drop-shadow(0 0 10px #f5a623) drop-shadow(0 0 22px #f5a62344);
+  animation: shiny-pulse 2s ease-in-out infinite;
+}
+
+.trade-anim-result-poke-name {
+  font-family: var(--font-display, 'Chakra Petch', monospace);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-primary, #e6e8f2);
+  text-transform: capitalize;
+  text-align: center;
+}
+
+.trade-anim-result-label {
+  font-size: 0.68rem;
+  color: var(--text-muted, #3d4058);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.trade-anim-result-arrow {
+  font-size: 1.4rem;
+  color: var(--accent, #00d4ff);
+  flex-shrink: 0;
+  filter: drop-shadow(0 0 8px var(--accent, #00d4ff));
+}
+
+.trade-anim-continue-btn {
+  background: var(--accent, #00d4ff);
+  color: #020509;
+  border: none;
+  font-family: var(--font-display, 'Chakra Petch', monospace);
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 13px 40px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+
+.trade-anim-continue-btn:hover {
+  opacity: 0.85;
+  transform: translateY(-2px);
+}
+
+/* ── Keyframes ──────────────────────────────────────────────────────────── */
+
+@keyframes star-twinkle {
+  0%, 100% { opacity: var(--op, 0.4); transform: scale(1); }
+  50%       { opacity: 0.05;           transform: scale(0.4); }
+}
+
+@keyframes sprite-enter {
+  from { opacity: 0; transform: scale(0.5); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes sprite-dissolve {
+  0%   { opacity: 1; transform: scale(1);    filter: brightness(1) saturate(1); }
+  40%  {             transform: scale(1.05); filter: brightness(2.5) saturate(0.2); }
+  100% { opacity: 0; transform: scale(1.2);  filter: brightness(4) saturate(0); }
+}
+
+@keyframes sprite-emerge {
+  0%  { opacity: 0; transform: scale(0.15); }
+  55% { opacity: 1; }
+  100%{ opacity: 1; transform: scale(1); }
+}
+
+@keyframes sparkle-appear {
+  from { transform: translate(-50%, -50%) scale(0) rotate(0deg);  opacity: 0; }
+  to   { transform: translate(-50%, -50%) scale(1) rotate(45deg); opacity: 1; }
+}
+
+@keyframes sparkle-burst {
+  0%   { transform: translate(-50%, -50%) scale(1) rotate(0deg);   opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(0) rotate(90deg);  opacity: 0; }
+}
+
+@keyframes sparkle-emerge {
+  0%   { transform: translate(-50%, -50%) scale(0) rotate(-30deg); opacity: 0; }
+  40%  {                                                            opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.3) rotate(15deg);opacity: 0; }
+}
+
+@keyframes flash-white {
+  0%   { opacity: 0.85; }
+  100% { opacity: 0; }
+}
+
+@keyframes flash-gold {
+  0%   { opacity: 0; }
+  25%  { opacity: 0.75; }
+  100% { opacity: 0; }
+}
+
+@keyframes shiny-text-enter {
+  0%   { opacity: 0; transform: translateX(-50%) scale(0.4) translateY(12px); }
+  100% { opacity: 1; transform: translateX(-50%) scale(1)   translateY(0); }
+}
+
+@keyframes result-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulse-gold {
+  0%, 100% { text-shadow: 0 0 14px #f5a623, 0 0 36px #f5a62366; }
+  50%       { text-shadow: 0 0 22px #f5c842, 0 0 58px #f5a623aa; }
+}
+
+@keyframes shiny-pulse {
+  0%, 100% { filter: drop-shadow(0 0 10px #f5a623) drop-shadow(0 0 22px #f5a62344); }
+  50%       { filter: drop-shadow(0 0 16px #f5c842) drop-shadow(0 0 38px #f5c84266); }
+}

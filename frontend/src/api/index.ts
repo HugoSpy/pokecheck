@@ -152,8 +152,18 @@ export async function proposeTrade(payload: ProposeTradePayload): Promise<{ id: 
   });
 }
 
-export async function acceptTrade(id: string): Promise<{ success: boolean; bonusDraws: string[] }> {
-  return apiFetch<{ success: boolean; bonusDraws: string[] }>(`/trade/accept/${id}`, { method: 'POST' });
+export async function acceptTrade(id: string): Promise<{
+  success: boolean;
+  bonusDraws: string[];
+  shiny_proc?: boolean;
+  shiny_pokemon_name?: string;
+}> {
+  return apiFetch<{
+    success: boolean;
+    bonusDraws: string[];
+    shiny_proc?: boolean;
+    shiny_pokemon_name?: string;
+  }>(`/trade/accept/${id}`, { method: 'POST' });
 }
 
 export async function declineTrade(id: string): Promise<{ success: boolean }> {
