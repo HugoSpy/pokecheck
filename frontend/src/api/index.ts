@@ -134,6 +134,11 @@ export async function getLeaderboard(): Promise<LeaderboardEntry[]> {
   return apiFetch<LeaderboardEntry[]>('/leaderboard');
 }
 
+/* ── Users ── */
+export async function searchUsers(q: string): Promise<{ users: { id: string; display_name: string }[] }> {
+  return apiFetch<{ users: { id: string; display_name: string }[] }>(`/users/search?q=${encodeURIComponent(q)}`);
+}
+
 /* ── Trades ── */
 export async function getTradeOffers(): Promise<TradeOffer[]> {
   return apiFetch<TradeOffer[]>('/trade/offers');

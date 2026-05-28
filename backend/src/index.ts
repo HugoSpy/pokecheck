@@ -10,6 +10,7 @@ import tradeRouter from './routes/trade';
 import leaderboardRouter from './routes/leaderboard';
 import pokedexRouter from './routes/pokedex';
 import adminRouter from './routes/admin';
+import usersRouter from './routes/users';
 
 const app = express();
 
@@ -42,6 +43,7 @@ app.use('/trade', tradeRouter);
 app.use('/leaderboard', leaderboardRouter);
 app.use('/pokedex', pokedexRouter);
 app.use('/admin', adminRouter);
+app.use('/users', usersRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.listen(PORT, '127.0.0.1', () => {

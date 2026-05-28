@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import {
   getTradeOffers, getMyPokedex, getPublicPokedex,
-  proposeTrade, acceptTrade, declineTrade,
+  proposeTrade, acceptTrade, declineTrade, searchUsers,
   type TradeOffer, type UserPokemonInstance,
 } from '../api';
 import PokemonCard from '../components/PokemonCard';
@@ -33,7 +33,11 @@ export default function Trades() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [userSearchInput, setUserSearchInput] = useState(state?.targetUserId ?? '');
+
+  const [nameQuery, setNameQuery] = useState(state?.targetUserName ?? '');
+  const [suggestions, setSuggestions] = useState<{ id: string; display_name: string }[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [animation, setAnimation] = useState<{
     given:      { sprite_url: string; name: string };
@@ -58,6 +62,25 @@ export default function Trades() {
     if (!state?.targetUserId) return;
     loadTargetUser(state.targetUserId);
   }, [state?.targetUserId]);
+
+  function handleNameChange(q: string) {
+    setNameQuery(q);
+    setShowSuggestions(true);
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    if (q.trim().length < 2) { setSuggestions([]); return; }
+    searchDebounceRef.current = setTimeout(() => {
+      searchUsers(q.trim())
+        .then(r => setSuggestions(r.users))
+        .catch(() => setSuggestions([]));
+    }, 280);
+  }
+
+  function handleSelectUser(user: { id: string; display_name: string }) {
+    setSuggestions([]);
+    setShowSuggestions(false);
+    setNameQuery(user.display_name);
+    loadTargetUser(user.id);
+  }
 
   async function loadTargetUser(userId: string) {
     if (!userId.trim()) return;
@@ -194,22 +217,30 @@ export default function Trades() {
         <h2 className="trades-section-title">Proposer un échange</h2>
 
         {/* Target user search */}
-        <div className="user-search">
+        <div className="user-search" style={{ position: 'relative' }}>
           <input
             className="user-search-input"
             type="text"
-            placeholder="ID de l'élève (UUID)"
-            value={userSearchInput}
-            onChange={e => setUserSearchInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && loadTargetUser(userSearchInput)}
+            placeholder="Rechercher un élève par nom…"
+            value={nameQuery}
+            autoComplete="off"
+            onChange={e => handleNameChange(e.target.value)}
+            onFocus={() => nameQuery.trim().length >= 2 && setShowSuggestions(true)}
+            onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           />
-          <button
-            className="btn btn-ghost"
-            onClick={() => loadTargetUser(userSearchInput)}
-            disabled={!userSearchInput.trim()}
-          >
-            Rechercher
-          </button>
+          {showSuggestions && suggestions.length > 0 && (
+            <ul className="user-search-suggestions">
+              {suggestions.map(u => (
+                <li
+                  key={u.id}
+                  className="user-search-suggestion-item"
+                  onMouseDown={() => handleSelectUser(u)}
+                >
+                  {u.display_name}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="propose-grid">

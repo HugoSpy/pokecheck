@@ -148,8 +148,8 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 9px 14px;
-  font-family: var(--font-mono);
-  font-size: 13px;
+  font-family: var(--font-body);
+  font-size: 14px;
   color: var(--text-primary);
   outline: none;
   transition: border-color 200ms;
@@ -157,6 +157,36 @@
 
 .user-search-input::placeholder { color: var(--text-muted); }
 .user-search-input:focus { border-color: var(--accent); }
+
+.user-search-suggestions {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  z-index: 50;
+  box-shadow: var(--shadow-elevated);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.user-search-suggestion-item {
+  padding: 10px 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 150ms;
+}
+
+.user-search-suggestion-item:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
 
 /* ── Propose grid ── */
 .propose-grid {
