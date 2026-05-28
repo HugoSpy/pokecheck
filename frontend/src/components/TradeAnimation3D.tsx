@@ -14,6 +14,11 @@ const TIMINGS = {
   POKEMON_EMERGE:   1000,
 } as const;
 
+// ── Helpers ────────────────────────────────────────────────────────────────
+function getSlugFromSpriteUrl(spriteUrl: string): string {
+  return spriteUrl.split('/').pop()?.replace('.png', '') ?? '';
+}
+
 // ── Types ──────────────────────────────────────────────────────────────────
 type Phase =
   | 'sparkle-cover'
@@ -150,6 +155,17 @@ export default function TradeAnimation3D({
   const [flashGold,     setFlashGold]     = useState(false);
   const [showShinyText, setShowShinyText] = useState(false);
   const [stars]                           = useState<StarDot[]>(() => genStars(55));
+
+  const givenSlug    = getSlugFromSpriteUrl(givenPokemon.sprite_url);
+  const receivedSlug = getSlugFromSpriteUrl(receivedPokemon.sprite_url);
+  const [givenImgSrc,    setGivenImgSrc]    = useState(
+    `https://projectpokemon.org/images/normal-sprite/${givenSlug}.gif`
+  );
+  const [receivedImgSrc, setReceivedImgSrc] = useState(
+    shinyProc
+      ? `https://projectpokemon.org/images/shiny-sprite/${receivedSlug}.gif`
+      : `https://projectpokemon.org/images/normal-sprite/${receivedSlug}.gif`
+  );
 
   // ── Helpers
   const clearTimers = useCallback(() => {
@@ -453,7 +469,8 @@ export default function TradeAnimation3D({
         {showGiven && (
           <div className={`trade-anim-sprite-wrap ${dissolving ? 'dissolving' : 'entering'}`}>
             <img
-              src={givenPokemon.sprite_url}
+              src={givenImgSrc}
+              onError={() => setGivenImgSrc(givenPokemon.sprite_url)}
               alt={givenPokemon.name}
               className="trade-anim-sprite"
             />
@@ -480,7 +497,8 @@ export default function TradeAnimation3D({
         {showReceived && (
           <div className={`trade-anim-sprite-wrap emerging${shinyProc ? ' shiny-glow' : ''}`}>
             <img
-              src={receivedPokemon.sprite_url}
+              src={receivedImgSrc}
+              onError={() => setReceivedImgSrc(receivedPokemon.sprite_url)}
               alt={receivedPokemon.name}
               className="trade-anim-sprite"
             />

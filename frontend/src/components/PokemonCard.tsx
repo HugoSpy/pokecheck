@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import RarityBadge from './RarityBadge';
+import PokemonDetailModal from './PokemonDetailModal';
 import type { UserPokemonInstance } from '../api';
 import './PokemonCard.css';
 
@@ -20,7 +21,8 @@ const RARITY_COLOR: Record<string, string> = {
 const SHINY_GOLD = '#d4af37';
 
 export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect }: Props) {
-  const [imgError, setImgError] = useState(false);
+  const [imgError,    setImgError]    = useState(false);
+  const [showDetail,  setShowDetail]  = useState(false);
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
   const isLocked = pokemon.tradeable_at && new Date(pokemon.tradeable_at) > new Date();
   const isShiny = pokemon.is_shiny ?? false;
@@ -34,8 +36,12 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
     : selected ? `0 0 16px ${accentColor}33` : 'var(--shadow-card)';
 
   return (
+    <>
+    {showDetail && (
+      <PokemonDetailModal pokemon={pokemon} onClose={() => setShowDetail(false)} />
+    )}
     <div
-      onClick={() => selectable && onSelect?.(pokemon)}
+      onClick={() => selectable ? onSelect?.(pokemon) : setShowDetail(true)}
       className={isShiny ? 'pokemon-card-shiny' : undefined}
       style={{
         position: 'relative',
@@ -47,7 +53,7 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
         border: `1px solid ${borderColor}`,
         borderRadius: 'var(--radius-lg)',
         padding: '12px',
-        cursor: selectable ? 'pointer' : 'default',
+        cursor: 'pointer',
         transition: 'all 200ms cubic-bezier(0.4,0,0.2,1)',
         boxShadow: shadowStyle,
         userSelect: 'none',
@@ -165,5 +171,6 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
         </span>
       </div>
     </div>
+    </>
   );
 }
