@@ -5,6 +5,7 @@ export interface AuthPayload {
   userId: string;
   ms_id: string;
   display_name: string;
+  isAdmin?: boolean;
 }
 
 // Extend Express.User so passport and our JWT middleware share the same type

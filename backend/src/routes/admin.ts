@@ -17,8 +17,7 @@ function generateShortCode(length = 10): string {
 }
 
 router.post('/generate-pack', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  const adminId = process.env.ADMIN_MS_ID;
-  if (!adminId || req.user!.ms_id !== adminId) {
+  if (req.user!.isAdmin !== true) {
     res.status(403).json({ error: 'Admin only' });
     return;
   }

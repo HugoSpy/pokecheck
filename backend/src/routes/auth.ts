@@ -8,6 +8,22 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
+function signSessionToken(
+  user: { id: string; ms_id: string; display_name: string; is_admin: boolean },
+  expiresIn: jwt.SignOptions['expiresIn'] = '24h'
+): string {
+  return jwt.sign(
+    {
+      userId: user.id,
+      ms_id: user.ms_id,
+      display_name: user.display_name,
+      isAdmin: user.is_admin === true,
+    },
+    process.env.JWT_SECRET!,
+    { expiresIn }
+  );
+}
+
 // ── State cookie CSRF (pattern SIGambling) ──────────────────────────────────
 const STATE_COOKIE = 'ms_oauth_state';
 const STATE_TTL_MS = 10 * 60 * 1000;
@@ -71,7 +87,12 @@ if (process.env.MICROSOFT_CLIENT_ID) {
           update: { display_name: profile.displayName ?? email },
           create: { ms_id: profile.id, display_name: profile.displayName ?? email },
         });
-        done(null, { userId: user.id, ms_id: user.ms_id, display_name: user.display_name });
+        done(null, {
+          userId: user.id,
+          ms_id: user.ms_id,
+          display_name: user.display_name,
+          is_admin: user.is_admin,
+        });
       } catch (e) {
         done(e);
       }
@@ -109,12 +130,13 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
         res.redirect(`${process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
         return;
       }
-      const u = user as { userId: string; ms_id: string; display_name: string };
-      const sessionToken = jwt.sign(
-        { userId: u.userId, ms_id: u.ms_id, display_name: u.display_name },
-        process.env.JWT_SECRET!,
-        { expiresIn: '24h' }
-      );
+      const u = user as { userId: string; ms_id: string; display_name: string; is_admin: boolean };
+      const sessionToken = signSessionToken({
+        id: u.userId,
+        ms_id: u.ms_id,
+        display_name: u.display_name,
+        is_admin: u.is_admin,
+      });
       res.redirect(`${process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app'}?session=${sessionToken}`);
     }
   )(req, res, next);
@@ -174,10 +196,9 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     await prisma.oneshotToken.update({ where: { id: record.id }, data: { used: true } });
     const user = await prisma.user.findUnique({ where: { id: record.user_id } });
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
-    const sessionToken = jwt.sign(
-      { userId: user.id, ms_id: user.ms_id, display_name: user.display_name },
-      process.env.JWT_SECRET!,
-      { expiresIn: (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'] }
+    const sessionToken = signSessionToken(
+      user,
+      (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
     );
     res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
     return;
@@ -198,10 +219,9 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     update: { display_name: payload.display_name },
     create: { ms_id: payload.ms_id, display_name: payload.display_name },
   });
-  const sessionToken = jwt.sign(
-    { userId: user.id, ms_id: user.ms_id, display_name: user.display_name },
-    process.env.JWT_SECRET!,
-    { expiresIn: (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'] }
+  const sessionToken = signSessionToken(
+    user,
+    (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
   );
   res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
 });

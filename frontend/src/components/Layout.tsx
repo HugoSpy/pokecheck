@@ -3,9 +3,7 @@ import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getToken, clearToken, generateAdminPack } from '../api';
 import './Layout.css';
 
-const ADMIN_MS_ID = import.meta.env.VITE_ADMIN_MS_ID ?? 'c3ef6ac9-008e-4c9d-9f9d-1c3421104c45';
-
-function parseJwt(token: string): { display_name?: string; ms_id?: string } | null {
+function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
   try {
     return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
   } catch {
@@ -23,7 +21,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const token = getToken();
   const user = token ? parseJwt(token) : null;
-  const isAdmin = user?.ms_id === ADMIN_MS_ID;
+  const isAdmin = user?.isAdmin === true;
 
   const [showModal, setShowModal] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);

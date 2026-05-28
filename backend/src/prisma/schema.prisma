@@ -11,6 +11,7 @@ model User {
   id           String   @id @default(uuid())
   ms_id        String   @unique
   display_name String
+  is_admin     Boolean  @default(false)
   total_score  Int      @default(0)
   trade_count  Int      @default(0)
   created_at   DateTime @default(now())
