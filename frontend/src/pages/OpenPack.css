@@ -254,7 +254,8 @@
 .roll-viewport {
   width: 100%;
   height: 230px;
-  overflow: hidden;
+  overflow-x: clip;    /* clip sans BFC — permet overflow-y: visible */
+  overflow-y: visible; /* la carte winner peut scaler sans être rognée */
   mask-image: linear-gradient(
     to right,
     transparent 0%,
