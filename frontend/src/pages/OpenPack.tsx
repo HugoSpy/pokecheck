@@ -40,6 +40,17 @@ const RARITY_LABELS: Record<string, string> = {
   LEGENDARY: 'Légendaire',
 };
 
+async function preloadImages(urls: string[]): Promise<void> {
+  await Promise.all(
+    urls.map(url => new Promise<void>((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve();
+      img.onerror = () => resolve();
+      img.src = url;
+    }))
+  );
+}
+
 export default function OpenPack() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
@@ -92,6 +103,15 @@ export default function OpenPack() {
         };
       }) as RollCardData[];
       strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
+
+      const allSprites = [
+        drawResult.pokemon.sprite_url,
+        ...randResult.pokemons.map(p => p.sprite_url),
+      ];
+      await Promise.race([
+        preloadImages(allSprites),
+        new Promise<void>(resolve => setTimeout(resolve, 8000)),
+      ]);
 
       setCards(strip);
       setPokemon(drawResult.pokemon);
@@ -240,7 +260,6 @@ export default function OpenPack() {
                         src={card.sprite_url}
                         alt={card.name}
                         className="roll-card-img"
-                        loading="lazy"
                       />
                       <div className="roll-card-name">{card.name}</div>
                       <div
