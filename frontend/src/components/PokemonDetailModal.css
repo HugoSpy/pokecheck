@@ -73,8 +73,8 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  height: 148px;
-  width: 148px;
+  height: 250px;
+  width: 250px;
 }
 
 .pdm-shiny-shimmer {
@@ -91,8 +91,8 @@
 }
 
 .pdm-sprite {
-  max-height: 148px;
-  max-width: 148px;
+  width: 250px;
+  height: 250px;
   object-fit: contain;
   image-rendering: pixelated;
   position: relative;
@@ -195,5 +195,13 @@
     max-width: 100%;
     border-radius: 20px 20px 0 0;
     padding-bottom: max(28px, env(safe-area-inset-bottom, 28px));
+  }
+  .pdm-sprite-wrap {
+    height: 180px;
+    width: 180px;
+  }
+  .pdm-sprite {
+    width: 180px;
+    height: 180px;
   }
 }

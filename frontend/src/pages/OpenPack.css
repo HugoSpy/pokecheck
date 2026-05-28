@@ -221,7 +221,7 @@
   position: absolute;
   left: 50%;
   top: 0;
-  height: 230px;
+  height: 280px;
   transform: translateX(-50%);
   display: flex;
   flex-direction: column;
@@ -253,9 +253,9 @@
 /* Viewport clips the strip */
 .roll-viewport {
   width: 100%;
-  height: 230px;
-  overflow-x: clip;    /* clip sans BFC — permet overflow-y: visible */
-  overflow-y: visible; /* la carte winner peut scaler sans être rognée */
+  height: 280px; /* 200px carte × 1.32 scale = 264px — 280px évite tout clip */
+  overflow-x: clip;
+  overflow-y: visible;
   mask-image: linear-gradient(
     to right,
     transparent 0%,
