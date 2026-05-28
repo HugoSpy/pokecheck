@@ -99,10 +99,6 @@ export default function PokemonDetailModal({ pokemon, onClose }: Props) {
             <span className="pdm-stat-value">{pokemon.generation}</span>
           </div>
           <div className="pdm-stat">
-            <span className="pdm-stat-label">BST</span>
-            <span className="pdm-stat-value">{pokemon.bst}</span>
-          </div>
-          <div className="pdm-stat">
             <span className="pdm-stat-label">Obtenu</span>
             <span className="pdm-stat-value">
               {new Date(pokemon.obtainedAt).toLocaleDateString('fr-FR')}
