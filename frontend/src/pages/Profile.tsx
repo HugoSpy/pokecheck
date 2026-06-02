@@ -235,7 +235,7 @@ export default function Profile() {
                     {!badge.unlocked && <span className="badge-lock-overlay">🔒</span>}
                     <div className="badge-card-icon">
                       {badge.icon_url ? (
-                        <img src={badge.icon_url} alt={badge.name} width={28} height={28} />
+                        <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
                       ) : (
                         categoryFallbackEmoji(badge.category)
                       )}
@@ -252,7 +252,7 @@ export default function Profile() {
                       >
                         {claimingBadge === badge.id
                           ? <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                          : `💰 ${badge.coin_reward}`}
+                          : `Récupérer 💰 ${badge.coin_reward}`}
                       </button>
                     )}
                   </div>
@@ -319,7 +319,7 @@ export default function Profile() {
               >
                 <div className="badge-card-icon">
                   {badge.icon_url ? (
-                    <img src={badge.icon_url} alt={badge.name} width={28} height={28} />
+                    <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
                   ) : (
                     categoryFallbackEmoji(badge.category)
                   )}
