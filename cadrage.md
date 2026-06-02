@@ -1,4 +1,4 @@
-# PokéSchool — Document de cadrage projet
+# PokéCheck — Document de cadrage projet
 
 ## Vue d'ensemble
 
@@ -17,11 +17,11 @@ Identique au projet SIGambling existant :
 | Backend | Express.js, géré par PM2 |
 | Base de données | PostgreSQL 15, accès local uniquement (127.0.0.1:5432) |
 | ORM | Prisma |
-| Exposition réseau | Cloudflare Tunnel → `api.pokeschool.fr` |
+| Exposition réseau | Cloudflare Tunnel → `api.pokecheck.fr` |
 | DNS / Proxy | Cloudflare |
 | Infra | VM Ubuntu 24 dans Proxmox (NAS perso) |
 
-Deploy frontend = `git push main` sur Vercel. Backend = `pm2 restart pokeschool`.
+Deploy frontend = `git push main` sur Vercel. Backend = `pm2 restart pokecheck`.
 
 ---
 
@@ -582,7 +582,7 @@ Même animation réutilisée pour les packs événement.
 
 ```env
 # Backend (.env)
-DATABASE_URL="postgresql://user:password@127.0.0.1:5432/pokeschool"
+DATABASE_URL="postgresql://user:password@127.0.0.1:5432/pokecheck"
 JWT_SECRET="..."
 JWT_ONE_SHOT_SECRET="..."  # secret partagé avec l'intranet pour valider les tokens entrants
 SESSION_DURATION="1h"
@@ -591,7 +591,7 @@ COIN_EXPIRY_DAYS=14
 PORT=3001
 
 # Frontend (.env.local)
-VITE_API_URL="https://api.pokeschool.fr"
+VITE_API_URL="https://api.pokecheck.fr"
 ```
 
 ---
@@ -599,7 +599,7 @@ VITE_API_URL="https://api.pokeschool.fr"
 ## Structure du projet
 
 ```
-pokeschool/
+pokecheck/
 ├── frontend/               # Vite + React
 │   ├── src/
 │   │   ├── pages/          # OpenPack, Pokedex, Trades, Market, Events, Leaderboard, UserProfile, Admin

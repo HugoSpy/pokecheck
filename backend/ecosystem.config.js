@@ -1,7 +1,7 @@
 module.exports = {
   apps: [
     {
-      name: 'pokeschool',
+      name: 'pokecheck',
       script: 'dist/index.js',
       env: { NODE_ENV: 'production' },
     },
