@@ -29,8 +29,8 @@ export async function markBadgesNotified(badgeIds: string[]): Promise<void> {
 }
 
 export async function updateFeaturedBadges(badgeIds: string[]): Promise<void> {
-  await apiFetch<void>('/users/badges/featured', {
-    method: 'POST',
+  await apiFetch<void>('/users/featured-badges', {
+    method: 'PATCH',
     body: JSON.stringify({ badgeIds }),
   });
 }
