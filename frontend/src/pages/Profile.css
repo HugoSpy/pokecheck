@@ -179,6 +179,41 @@
   letter-spacing: 0;
 }
 
+.badge-card--unclaimed {
+  border-color: #f5a62366;
+  box-shadow: 0 0 8px #f5a62322;
+}
+
+.badge-claim-btn {
+  margin-top: 2px;
+  padding: 3px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: #f5a623;
+  background: rgba(245, 166, 35, 0.12);
+  border: 1px solid rgba(245, 166, 35, 0.4);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 150ms, transform 100ms;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 64px;
+  min-height: 22px;
+}
+
+.badge-claim-btn:hover:not(:disabled) {
+  background: rgba(245, 166, 35, 0.22);
+  transform: translateY(-1px);
+}
+
+.badge-claim-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* ── Vitrine hint ── */
 .profile-vitrine-hint {
   font-family: var(--font-condensed);

@@ -98,11 +98,13 @@ model Badge {
 }
 
 model UserBadge {
-  id          String   @id @default(uuid())
+  id          String    @id @default(uuid())
   user_id     String
   badge_id    String
-  unlocked_at DateTime @default(now())
-  notified    Boolean  @default(false)
+  unlocked_at DateTime  @default(now())
+  notified    Boolean   @default(false)
+  claimed     Boolean   @default(false)
+  claimed_at  DateTime?
 
   user  User  @relation(fields: [user_id], references: [id])
   badge Badge @relation(fields: [badge_id], references: [id])

@@ -66,7 +66,7 @@ export default function BadgeNotification() {
         </div>
         <div className="badge-notif-name">{current.badge.name}</div>
         <div className="badge-notif-desc">{current.badge.description}</div>
-        <div className="badge-notif-coins">+{current.badge.coin_reward} coins</div>
+        <div className="badge-notif-coins">💰 {current.badge.coin_reward} coins à récupérer</div>
       </div>
     </div>
   );

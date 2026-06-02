@@ -1,5 +1,4 @@
 import { PrismaClient } from '@prisma/client';
-import { addCoins } from './coinService';
 
 const prisma = new PrismaClient();
 
@@ -54,11 +53,8 @@ async function unlockBadge(
   if (!badge) return null;
 
   try {
-    await prisma.$transaction(async tx => {
-      await tx.userBadge.create({
-        data: { user_id: userId, badge_id: badgeId, notified: false },
-      });
-      await addCoins(tx, userId, badge.coin_reward, 'badge');
+    await prisma.userBadge.create({
+      data: { user_id: userId, badge_id: badgeId, notified: false },
     });
     return badgeId;
   } catch {

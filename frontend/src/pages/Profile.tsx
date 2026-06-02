@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getMyProfile, getAllBadges, claimDailyLogin, updateFeaturedBadges } from '../api/userApi';
+import { getMyProfile, getAllBadges, claimDailyLogin, updateFeaturedBadges, claimBadge } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry } from '../api/types';
 import './Profile.css';
@@ -55,6 +55,7 @@ export default function Profile() {
   } | null>(null);
   const [featuredDraft, setFeaturedDraft] = useState<string[]>([]);
   const [featuredSaving, setFeaturedSaving] = useState(false);
+  const [claimingBadge, setClaimingBadge] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = useCallback((msg: string, type: 'success' | 'error') => {
@@ -113,6 +114,23 @@ export default function Profile() {
       showToast(e instanceof Error ? e.message : 'Erreur', 'error');
     } finally {
       setClaimLoading(false);
+    }
+  }
+
+  async function handleClaimBadge(badge: AllBadgeEntry) {
+    if (claimingBadge) return;
+    setClaimingBadge(badge.id);
+    try {
+      const result = await claimBadge(badge.id);
+      setCoins(result.total_coins);
+      setBadges(prev => prev.map(b =>
+        b.id === badge.id ? { ...b, claimed: true, claimed_at: new Date().toISOString() } : b
+      ));
+      showToast(`+${result.coins_earned} coins récupérés !`, 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erreur', 'error');
+    } finally {
+      setClaimingBadge(null);
     }
   }
 
@@ -211,7 +229,7 @@ export default function Profile() {
                 {catBadges.map(badge => (
                   <div
                     key={badge.id}
-                    className={`badge-card${badge.unlocked ? '' : ' locked'}`}
+                    className={`badge-card${badge.unlocked ? '' : ' locked'}${badge.unlocked && !badge.claimed ? ' badge-card--unclaimed' : ''}`}
                     title={badge.description}
                   >
                     {!badge.unlocked && <span className="badge-lock-overlay">🔒</span>}
@@ -223,8 +241,19 @@ export default function Profile() {
                       )}
                     </div>
                     <span className="badge-card-name">{badge.name}</span>
-                    {badge.unlocked && badge.unlocked_at && (
+                    {badge.unlocked && badge.claimed && badge.unlocked_at && (
                       <span className="badge-card-date">{formatDate(badge.unlocked_at)}</span>
+                    )}
+                    {badge.unlocked && !badge.claimed && (
+                      <button
+                        className="badge-claim-btn"
+                        onClick={() => handleClaimBadge(badge)}
+                        disabled={claimingBadge === badge.id}
+                      >
+                        {claimingBadge === badge.id
+                          ? <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
+                          : `💰 ${badge.coin_reward}`}
+                      </button>
                     )}
                   </div>
                 ))}

@@ -147,6 +147,8 @@ export interface MyProfile {
 export interface AllBadgeEntry extends Badge {
   unlocked: boolean;
   unlocked_at: string | null;
+  claimed: boolean;
+  claimed_at: string | null;
 }
 
 export interface PublicUserInfo {

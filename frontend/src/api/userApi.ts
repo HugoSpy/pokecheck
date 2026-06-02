@@ -42,3 +42,9 @@ export async function updateFeaturedBadges(badgeIds: string[]): Promise<void> {
     body: JSON.stringify({ badgeIds }),
   });
 }
+
+export async function claimBadge(badgeId: string): Promise<{ coins_earned: number; total_coins: number }> {
+  return apiFetch<{ coins_earned: number; total_coins: number }>(`/users/badges/${badgeId}/claim`, {
+    method: 'POST',
+  });
+}

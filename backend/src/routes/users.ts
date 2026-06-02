@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { addCoins } from '../services/coinService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -129,15 +130,55 @@ router.get('/all-badges', authMiddleware, async (req: Request, res: Response): P
     prisma.badge.findMany({ orderBy: [{ category: 'asc' }, { id: 'asc' }] }),
     prisma.userBadge.findMany({
       where: { user_id: userId },
-      select: { badge_id: true, unlocked_at: true },
+      select: { badge_id: true, unlocked_at: true, claimed: true, claimed_at: true },
     }),
   ]);
-  const unlockedMap = new Map(userBadges.map(ub => [ub.badge_id, ub.unlocked_at]));
-  res.json(allBadges.map(badge => ({
-    ...badge,
-    unlocked: unlockedMap.has(badge.id),
-    unlocked_at: unlockedMap.get(badge.id) ?? null,
-  })));
+  const unlockedMap = new Map(userBadges.map(ub => [ub.badge_id, ub]));
+  res.json(allBadges.map(badge => {
+    const ub = unlockedMap.get(badge.id);
+    return {
+      ...badge,
+      unlocked: !!ub,
+      unlocked_at: ub?.unlocked_at ?? null,
+      claimed: ub?.claimed ?? false,
+      claimed_at: ub?.claimed_at ?? null,
+    };
+  }));
+});
+
+// POST /users/badges/:badgeId/claim — réclamer les coins d'un badge débloqué
+router.post('/badges/:badgeId/claim', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const badgeId = String(req.params.badgeId);
+
+  const userBadge = await prisma.userBadge.findUnique({
+    where: { user_id_badge_id: { user_id: userId, badge_id: badgeId } },
+    include: { badge: true },
+  });
+
+  if (!userBadge) {
+    res.status(404).json({ error: 'Badge not unlocked' });
+    return;
+  }
+  if (userBadge.claimed) {
+    res.status(409).json({ error: 'Already claimed' });
+    return;
+  }
+
+  await prisma.$transaction(async tx => {
+    await tx.userBadge.update({
+      where: { user_id_badge_id: { user_id: userId, badge_id: badgeId } },
+      data: { claimed: true, claimed_at: new Date() },
+    });
+    await addCoins(tx, userId, userBadge.badge.coin_reward, 'badge');
+  });
+
+  const updated = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { coins: true },
+  });
+
+  res.json({ coins_earned: userBadge.badge.coin_reward, total_coins: updated?.coins ?? 0 });
 });
 
 export default router;
