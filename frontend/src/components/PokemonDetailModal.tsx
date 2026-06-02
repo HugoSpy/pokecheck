@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import type { UserPokemonInstance } from '../api';
+import type { UserPokemonInstance } from '../api/types';
 import RarityBadge from './RarityBadge';
 import './PokemonDetailModal.css';
 

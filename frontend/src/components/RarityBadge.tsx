@@ -1,4 +1,4 @@
-import type { PokemonInfo } from '../api';
+import type { PokemonInfo } from '../api/types';
 
 interface Props {
   rarity: PokemonInfo['rarity'];

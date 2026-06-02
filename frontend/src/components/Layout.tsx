@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { getToken, clearToken, generateAdminPack } from '../api';
+import { getToken, clearToken } from '../api/client';
+import { generateAdminPack } from '../api/adminApi';
 import './Layout.css';
 
 function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {

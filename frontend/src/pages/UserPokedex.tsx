@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { getPublicPokedex, type UserInfo, type UserPokemonInstance } from '../api';
+import { getPublicPokedex } from '../api/pokemonApi';
+import type { UserInfo, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import './Pokedex.css';
 

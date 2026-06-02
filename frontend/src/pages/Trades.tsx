@@ -1,10 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import {
-  getTradeOffers, getMyPokedex, getPublicPokedex,
-  proposeTrade, acceptTrade, declineTrade, searchUsers,
-  type TradeOffer, type UserPokemonInstance,
-} from '../api';
+import { getTradeOffers, proposeTrade, acceptTrade, declineTrade } from '../api/tradeApi';
+import { getMyPokedex, getPublicPokedex } from '../api/pokemonApi';
+import { searchUsers } from '../api/userApi';
+import type { TradeOffer, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import TradeAnimation3D from '../components/TradeAnimation3D';
 import './Trades.css';

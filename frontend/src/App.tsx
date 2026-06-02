@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { setToken, getToken } from './api';
+import { setToken, getToken } from './api/client';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
 import Pokedex from './pages/Pokedex';

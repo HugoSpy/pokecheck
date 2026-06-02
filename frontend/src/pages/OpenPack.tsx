@@ -1,6 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { consumeOneShotToken, consumeOneShotCode, draw, getRandomPokemons, type RollCardData, type PokemonInfo } from '../api';
+import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
+import { draw, getRandomPokemons } from '../api/pokemonApi';
+import type { RollCardData, PokemonInfo } from '../api/types';
 import './OpenPack.css';
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';

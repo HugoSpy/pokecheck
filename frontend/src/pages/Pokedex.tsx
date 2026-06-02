@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getMyPokedex, type UserInfo, type UserPokemonInstance } from '../api';
+import { getMyPokedex } from '../api/pokemonApi';
+import type { UserInfo, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import './Pokedex.css';
 

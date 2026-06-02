@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { getToken } from '../api';
+import { getToken } from '../api/client';
 import MicrosoftLoginButton from './MicrosoftLoginButton';
 
 interface Props {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getLeaderboard, type LeaderboardEntry } from '../api';
+import { getLeaderboard } from '../api/leaderboardApi';
+import type { LeaderboardEntry } from '../api/types';
 import './Leaderboard.css';
 
 const MEDAL = ['🥇', '🥈', '🥉'];

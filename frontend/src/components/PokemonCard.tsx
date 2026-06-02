@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import RarityBadge from './RarityBadge';
 import PokemonDetailModal from './PokemonDetailModal';
-import type { UserPokemonInstance } from '../api';
+import type { UserPokemonInstance } from '../api/types';
 import './PokemonCard.css';
 
 interface Props {
