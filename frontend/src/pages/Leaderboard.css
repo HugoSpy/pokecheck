@@ -7,7 +7,7 @@
 .lb-tab {
   padding: 7px 18px;
   font-family: var(--font-condensed);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -23,13 +23,13 @@
 
 .lb-coins {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
-  color: #f5a623;
+  color: var(--gold);
 }
 
 .lb-title {
-  font-size: clamp(24px, 4vw, 36px);
+  font-size: var(--text-display);
   background: linear-gradient(135deg, #fff, rgba(255,255,255,0.5));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -38,7 +38,7 @@
 
 .lb-subtitle {
   font-family: var(--font-condensed);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text-secondary);
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -66,7 +66,7 @@
 .lb-table th {
   padding: 12px 16px;
   font-family: var(--font-condensed);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -91,16 +91,16 @@
 
 .lb-table td {
   padding: 13px 16px;
-  font-size: 14px;
+  font-size: var(--text-md);
   color: var(--text-primary);
   vertical-align: middle;
 }
 
 .lb-rank { width: 60px; }
-.medal { font-size: 20px; }
+.medal { font-size: var(--text-2xl); }
 .rank-num {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text-muted);
   font-weight: 600;
 }
@@ -115,9 +115,9 @@
 
 .lb-score {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
-  color: #10b981;
+  color: var(--success);
 }
 
 .lb-count {
@@ -127,18 +127,18 @@
 
 .legendary-badge {
   font-family: var(--font-condensed);
-  font-size: 12px;
+  font-size: var(--text-sm);
   font-weight: 700;
-  color: #f5a623;
+  color: var(--gold);
   background: rgba(245, 166, 35, 0.1);
   border: 1px solid rgba(245, 166, 35, 0.25);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 2px 8px;
   letter-spacing: 0.06em;
 }
 
 .lb-trades {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text-secondary);
 }

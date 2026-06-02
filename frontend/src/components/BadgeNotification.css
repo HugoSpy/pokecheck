@@ -30,11 +30,11 @@
 
 .badge-notif-header {
   font-family: var(--font-condensed);
-  font-size: 11px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #f5a623;
+  color: var(--gold);
   margin-bottom: 8px;
 }
 
@@ -51,7 +51,7 @@
 
 .badge-notif-name {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text-primary);
   margin-bottom: 4px;
@@ -59,7 +59,7 @@
 
 .badge-notif-desc {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: var(--text-base);
   color: var(--text-secondary);
   margin-bottom: 8px;
   line-height: 1.4;
@@ -67,7 +67,7 @@
 
 .badge-notif-coins {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--accent);
 }

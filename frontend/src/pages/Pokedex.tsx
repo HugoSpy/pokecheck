@@ -116,8 +116,8 @@ export default function Pokedex() {
         </div>
         <div className="pokedex-stats">
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
-          <StatChip label="Score" value={user.total_score.toLocaleString()} color="#10b981" />
-          <StatChip label="Coins 💰" value={coins.toLocaleString()} color="#f5a623" />
+          <StatChip label="Score" value={user.total_score.toLocaleString()} color="var(--success)" />
+          <StatChip label="Coins 💰" value={coins.toLocaleString()} color="var(--gold)" />
           <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
           {shinyCount > 0 && <StatChip label="Shiny ✨" value={shinyCount} color="#d4af37" />}
           <StatChip label="Échanges" value={user.trade_count} color="var(--rarity-epic)" />

@@ -66,7 +66,7 @@ export default function UserPokedex() {
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 12 }}>
           <div className="pokedex-stats">
             <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
-            <StatChip label="Score" value={user.total_score.toLocaleString()} color="#10b981" />
+            <StatChip label="Score" value={user.total_score.toLocaleString()} color="var(--success)" />
             <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
           </div>
 
@@ -87,7 +87,7 @@ export default function UserPokedex() {
                     fontFamily: 'var(--font-condensed)',
                     fontSize: 12,
                     fontWeight: 600,
-                    color: '#f5a623',
+                    color: 'var(--gold)',
                     letterSpacing: '0.04em',
                   }}
                 >

@@ -17,6 +17,16 @@
   --accent-dim: rgba(0, 212, 255, 0.15);
   --accent-glow: rgba(0, 212, 255, 0.4);
 
+  /* ── Semantic status colors ── */
+  --success: #34d399;
+  --success-dim: rgba(52, 211, 153, 0.12);
+  --danger: #f87171;
+  --danger-dim: rgba(248, 113, 113, 0.12);
+  --warning: #fbbf24;
+  --warning-dim: rgba(251, 191, 36, 0.12);
+  --gold: #f5a623;            /* coins / currency (shares value with rarity-legendary) */
+  --gold-dim: rgba(245, 166, 35, 0.12);
+
   --rarity-common: #9ca3af;
   --rarity-common-glow: rgba(156, 163, 175, 0.25);
   --rarity-rare: #3b82f6;
@@ -31,9 +41,22 @@
   --font-condensed: 'Barlow Condensed', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 
+  /* ── Type scale (floor at 11px; 9–10px micro-labels stay literal) ── */
+  --text-xs: 11px;
+  --text-sm: 12px;
+  --text-base: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 18px;
+  --text-2xl: 20px;
+  --text-3xl: 24px;
+  --text-display: clamp(24px, 4vw, 36px);
+
   --nav-h: 64px;
+  --radius-sm: 4px;
   --radius: 8px;
   --radius-lg: 14px;
+  --radius-pill: 999px;
 
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.6);
   --shadow-elevated: 0 8px 40px rgba(0, 0, 0, 0.8);
@@ -99,7 +122,7 @@ h1, h2, h3, h4 {
   gap: 8px;
   padding: 10px 22px;
   font-family: var(--font-condensed);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -137,7 +160,7 @@ h1, h2, h3, h4 {
 
 .btn-danger {
   background: rgba(239, 68, 68, 0.15);
-  color: #ef4444;
+  color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.25);
 }
 .btn-danger:hover {
@@ -199,7 +222,7 @@ h1, h2, h3, h4 {
   font-family: var(--font-condensed);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  font-size: 13px;
+  font-size: var(--text-base);
 }
 
 /* ── Error Banner ── */
@@ -208,7 +231,7 @@ h1, h2, h3, h4 {
   border: 1px solid rgba(239, 68, 68, 0.2);
   border-radius: var(--radius);
   padding: 12px 16px;
-  color: #f87171;
-  font-size: 14px;
+  color: var(--danger);
+  font-size: var(--text-md);
   font-family: var(--font-condensed);
 }

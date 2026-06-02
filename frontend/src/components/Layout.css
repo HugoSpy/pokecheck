@@ -20,7 +20,7 @@
 
 .nav-logo {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: var(--text-2xl);
   font-weight: 700;
   text-decoration: none;
   letter-spacing: -0.02em;
@@ -46,7 +46,7 @@
   padding: 7px 12px;
   white-space: nowrap;
   font-family: var(--font-condensed);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -76,7 +76,7 @@
 
 @media (max-width: 640px) {
   .nav { padding: 0 16px; }
-  .nav-link { padding: 6px 10px; font-size: 12px; }
+  .nav-link { padding: 6px 10px; font-size: var(--text-sm); }
   .main-content { padding: 20px 16px; }
 }
 
@@ -89,9 +89,9 @@
 
 .nav-coins {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
-  color: #f5a623;
+  color: var(--gold);
   letter-spacing: 0.02em;
   white-space: nowrap;
   padding: 4px 10px;
@@ -102,7 +102,7 @@
 
 .nav-username {
   font-family: var(--font-condensed);
-  font-size: 13px;
+  font-size: var(--text-base);
   font-weight: 600;
   color: var(--text-secondary);
   letter-spacing: 0.04em;
@@ -114,12 +114,12 @@
 
 .nav-logout {
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--text-sm);
 }
 
 .nav-login {
   padding: 7px 14px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -148,7 +148,7 @@
 
 .nav-admin-btn {
   padding: 5px 12px;
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--accent);
   border-color: var(--accent);
 }
@@ -182,7 +182,7 @@
 
 .admin-modal-title {
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: var(--text-xl);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -192,7 +192,7 @@
   align-items: center;
   gap: 10px;
   font-family: var(--font-condensed);
-  font-size: 14px;
+  font-size: var(--text-md);
   font-weight: 600;
   color: var(--text-primary);
   cursor: pointer;
