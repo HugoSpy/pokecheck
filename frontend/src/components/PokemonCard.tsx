@@ -133,7 +133,7 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
             src={pokemon.sprite_url}
             alt={pokemon.name}
             style={{
-              maxHeight: 80, maxWidth: '100%', objectFit: 'contain',
+              minWidth: 0, maxHeight: 80, maxWidth: '100%', objectFit: 'contain',
               imageRendering: 'pixelated',
               filter: isShiny
                 ? `drop-shadow(0 0 10px ${SHINY_GOLD}cc) drop-shadow(0 0 4px ${SHINY_GOLD}88)`
