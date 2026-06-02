@@ -193,6 +193,24 @@
   color: var(--text-secondary);
 }
 
+/* ── Preload progress bar ── */
+.preload-bar-wrap {
+  width: 200px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 14px;
+}
+
+.preload-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 120ms ease;
+  min-width: 0%;
+}
+
 /* ── Roll Frame (card container) ── */
 .roll-frame {
   position: relative;

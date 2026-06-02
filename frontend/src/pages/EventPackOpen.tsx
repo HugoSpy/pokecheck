@@ -43,12 +43,14 @@ const RARITY_LABELS: Record<string, string> = {
   LEGENDARY: 'Légendaire',
 };
 
-async function preloadImages(urls: string[]): Promise<void> {
+async function preloadImages(urls: string[], onProgress?: (loaded: number, total: number) => void): Promise<void> {
+  const total = urls.length;
+  let loaded = 0;
   await Promise.all(
     urls.map(url => new Promise<void>((resolve) => {
       const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
+      img.onload = () => { loaded++; onProgress?.(loaded, total); resolve(); };
+      img.onerror = () => { loaded++; onProgress?.(loaded, total); resolve(); };
       img.src = url;
     }))
   );
@@ -68,6 +70,7 @@ export default function EventPackOpen() {
   const [error, setError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -82,6 +85,14 @@ export default function EventPackOpen() {
       ]);
       setCoins(drawResult.coins_remaining);
 
+      console.log('randResult raretés:', randResult.pokemons.map(p => p.rarity));
+      console.log('Résumé:', {
+        COMMON: randResult.pokemons.filter(p => p.rarity === 'COMMON').length,
+        RARE: randResult.pokemons.filter(p => p.rarity === 'RARE').length,
+        EPIC: randResult.pokemons.filter(p => p.rarity === 'EPIC').length,
+        LEGENDARY: randResult.pokemons.filter(p => p.rarity === 'LEGENDARY').length,
+      });
+
       const strip = randResult.pokemons.map(card => {
         const shiny = Math.random() < 1 / 4096;
         return {
@@ -92,12 +103,21 @@ export default function EventPackOpen() {
       }) as RollCardData[];
       strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
 
+      console.log('Strip final raretés:', strip.map(p => p.rarity));
+      console.log('Strip résumé:', {
+        COMMON: strip.filter(p => p.rarity === 'COMMON').length,
+        RARE: strip.filter(p => p.rarity === 'RARE').length,
+        EPIC: strip.filter(p => p.rarity === 'EPIC').length,
+        LEGENDARY: strip.filter(p => p.rarity === 'LEGENDARY').length,
+      });
+
       const allSprites = [
         drawResult.pokemon.sprite_url,
         ...randResult.pokemons.map(p => p.sprite_url),
       ];
+      setProgress(0);
       await Promise.race([
-        preloadImages(allSprites),
+        preloadImages(allSprites, (loaded, total) => setProgress(loaded / total)),
         new Promise<void>(resolve => setTimeout(resolve, 8000)),
       ]);
 
@@ -204,6 +224,9 @@ export default function EventPackOpen() {
             <div className="pokeball-glow" />
           </div>
           <div className="loading-label">Chargement…</div>
+          <div className="preload-bar-wrap">
+            <div className="preload-bar" style={{ width: `${progress * 100}%` }} />
+          </div>
         </div>
       )}
 
