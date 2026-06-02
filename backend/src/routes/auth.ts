@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import { PrismaClient } from '@prisma/client';
+import { claimDailyLogin } from '../services/streakService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -201,6 +202,8 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
       (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
     );
     res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
+    // Fire-and-forget streak claim — errors are non-fatal
+    claimDailyLogin(user.id).catch(() => {});
     return;
   }
   if (!token) { res.status(400).json({ error: 'Token or code is required' }); return; }
@@ -224,6 +227,7 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
   );
   res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
+  claimDailyLogin(user.id).catch(() => {});
 });
 
 export default router;

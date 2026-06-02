@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { recalculateUserPokedexValue } from '../services/pokedexValue';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -55,19 +56,18 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
     : pokemon.sprite_url;
   const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
 
-  await prisma.userPokemon.create({
-    data: {
-      user_id: userId,
-      pokemon_id: pokemon.id,
-      source,
-      tradeable_at: null,
-      is_shiny: isShiny,
-    },
-  });
+  await prisma.$transaction(async tx => {
+    await tx.userPokemon.create({
+      data: {
+        user_id: userId,
+        pokemon_id: pokemon.id,
+        source,
+        tradeable_at: null,
+        is_shiny: isShiny,
+      },
+    });
 
-  await prisma.user.update({
-    where: { id: userId },
-    data: { total_score: { increment: finalPoints } },
+    await recalculateUserPokedexValue(tx, userId);
   });
 
   res.json({

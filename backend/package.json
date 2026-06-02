@@ -8,6 +8,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "seed": "ts-node --transpile-only src/prisma/seed.ts",
+    "seed:badges": "ts-node --transpile-only src/prisma/seedBadges.ts",
+    "pokedex:recalculate": "ts-node --transpile-only src/prisma/recalculate-pokedex-values.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
   },

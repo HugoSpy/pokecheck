@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
@@ -23,29 +24,61 @@ function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function fetchPokemon(id: number) {
-  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-  if (!res.ok) throw new Error(`Failed to fetch pokemon ${id}: ${res.status}`);
-  return res.json() as Promise<{
-    id: number;
-    name: string;
-    types: { type: { name: string } }[];
-    stats: { base_stat: number }[];
-  }>;
+async function fetchPokemon(id: number, retries = 3): Promise<{
+  id: number;
+  name: string;
+  types: { type: { name: string } }[];
+  stats: { base_stat: number }[];
+}> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+    if (res.status === 429 || res.status === 503) {
+      if (attempt < retries) {
+        await sleep(2000 * (attempt + 1));
+        continue;
+      }
+      throw new Error(`PokeAPI rate-limited for #${id} after ${retries} retries`);
+    }
+    if (!res.ok) throw new Error(`PokeAPI returned ${res.status} for #${id}`);
+    return res.json() as Promise<{
+      id: number;
+      name: string;
+      types: { type: { name: string } }[];
+      stats: { base_stat: number }[];
+    }>;
+  }
+  throw new Error(`unreachable`);
 }
 
 async function main() {
-  console.log('Starting Pokémon seed (Gen 1–7, ids 1–809)...');
+  // Fail fast if DB is unreachable
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+  } catch {
+    console.error('Cannot connect to database. Check DATABASE_URL and that PostgreSQL is running.');
+    process.exit(1);
+  }
+
+  const existing = await prisma.pokemon.findMany({ select: { id: true } });
+  const existingIds = new Set(existing.map(p => p.id));
+  const toFetch = Array.from({ length: 809 }, (_, i) => i + 1).filter(id => !existingIds.has(id));
+
+  console.log(`DB: ${existingIds.size} already seeded, ${toFetch.length} to fetch.`);
+  if (toFetch.length === 0) {
+    console.log('All 809 Pokémon already in DB — nothing to do.');
+    return;
+  }
+
   let seeded = 0;
   let failed = 0;
 
-  for (let id = 1; id <= 809; id++) {
+  for (const id of toFetch) {
     try {
       const data = await fetchPokemon(id);
-      const bst = data.stats.reduce((sum: number, s: { base_stat: number }) => sum + s.base_stat, 0);
+      const bst = data.stats.reduce((sum, s) => sum + s.base_stat, 0);
       const { rarity, points } = computeRarityAndPoints(bst);
       const generation = getGenFromId(id);
-      const types = data.types.map((t: { type: { name: string } }) => t.type.name);
+      const types = data.types.map(t => t.type.name);
       const sprite_url = `https://img.pokemondb.net/sprites/home/normal/${data.name}.png`;
 
       await prisma.pokemon.upsert({
@@ -55,16 +88,18 @@ async function main() {
       });
 
       seeded++;
-      if (id % 50 === 0) console.log(`Progress: ${id}/809`);
+      if (seeded % 50 === 0) console.log(`Progress: ${seeded}/${toFetch.length} seeded (id #${id})`);
     } catch (err) {
-      console.error(`Failed on #${id}:`, err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`Failed on #${id}: ${msg}`);
       failed++;
     }
 
     await sleep(300);
   }
 
-  console.log(`Seed complete: ${seeded} upserted, ${failed} failed.`);
+  console.log(`\nDone: ${seeded} upserted, ${failed} failed.`);
+  if (failed > 0) process.exit(1);
 }
 
 main()

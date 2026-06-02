@@ -11,6 +11,10 @@ import leaderboardRouter from './routes/leaderboard';
 import pokedexRouter from './routes/pokedex';
 import adminRouter from './routes/admin';
 import usersRouter from './routes/users';
+import dailyLoginRouter from './routes/daily-login';
+import sellRouter from './routes/sell';
+import marketRouter from './routes/market';
+import eventRouter from './routes/event';
 
 const app = express();
 
@@ -44,6 +48,10 @@ app.use('/leaderboard', leaderboardRouter);
 app.use('/pokedex', pokedexRouter);
 app.use('/admin', adminRouter);
 app.use('/users', usersRouter);
+app.use('/daily-login', dailyLoginRouter);
+app.use('/sell', sellRouter);
+app.use('/market', marketRouter);
+app.use('/event', eventRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.listen(PORT, '127.0.0.1', () => {

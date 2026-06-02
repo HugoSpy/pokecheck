@@ -3,3 +3,7 @@ dist/
 .env
 .env.local
 *.log
+
+# Graphify — on commit le rapport markdown, pas les binaires
+graphify-out/graph.json
+graphify-out/graph.html

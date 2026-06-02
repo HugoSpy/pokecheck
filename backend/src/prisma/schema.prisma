@@ -8,18 +8,27 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  ms_id        String   @unique
-  display_name String
-  is_admin     Boolean  @default(false)
-  total_score  Int      @default(0)
-  trade_count  Int      @default(0)
-  created_at   DateTime @default(now())
+  id                 String    @id @default(uuid())
+  ms_id              String    @unique
+  display_name       String
+  is_admin           Boolean   @default(false)
+  total_score        Int       @default(0)
+  trade_count        Int       @default(0)
+  coins              Int       @default(0)
+  coins_earned_total Int       @default(0)
+  streak_days        Int       @default(0)
+  last_login         DateTime?
+  featured_badges    String[]
+  created_at         DateTime  @default(now())
 
-  pokemons        UserPokemon[]
-  trades_sent     Trade[] @relation("TradeSent")
-  trades_recv     Trade[] @relation("TradeReceived")
-  one_shot_tokens OneshotToken[]
+  pokemons          UserPokemon[]
+  trades_sent       Trade[]         @relation("TradeSent")
+  trades_recv       Trade[]         @relation("TradeReceived")
+  one_shot_tokens   OneshotToken[]
+  badges            UserBadge[]
+  coin_transactions CoinTransaction[]
+  market_listings   MarketListing[] @relation("MarketSeller")
+  market_purchases  MarketListing[] @relation("MarketBuyer")
 }
 
 model Pokemon {
@@ -53,7 +62,9 @@ model Trade {
   from_user_id    String
   to_user_id      String
   from_pokemon_id String
-  to_pokemon_id   String
+  to_pokemon_id   String?
+  coins_offered   Int       @default(0)
+  coins_requested Int       @default(0)
   status          String
   created_at      DateTime  @default(now())
   resolved_at     DateTime?
@@ -71,6 +82,68 @@ model OneshotToken {
   force_shiny Boolean  @default(false)
   expires_at  DateTime
   created_at  DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Badge {
+  id          String @id
+  name        String
+  description String
+  category    String
+  coin_reward Int
+  icon_url    String?
+
+  unlocked_by UserBadge[]
+}
+
+model UserBadge {
+  id          String   @id @default(uuid())
+  user_id     String
+  badge_id    String
+  unlocked_at DateTime @default(now())
+  notified    Boolean  @default(false)
+
+  user  User  @relation(fields: [user_id], references: [id])
+  badge Badge @relation(fields: [badge_id], references: [id])
+
+  @@unique([user_id, badge_id])
+}
+
+model Event {
+  id                String   @id @default(uuid())
+  name              String
+  pokemon_pool      Int[]
+  rarity_multiplier Json
+  price_standard    Int      @default(500)
+  price_premium     Int      @default(1500)
+  starts_at         DateTime
+  ends_at           DateTime
+  published         Boolean  @default(false)
+  created_at        DateTime @default(now())
+}
+
+model MarketListing {
+  id          String    @id @default(uuid())
+  seller_id   String
+  pokemon_id  String
+  price_coins Int
+  status      String
+  created_at  DateTime  @default(now())
+  expires_at  DateTime
+  sold_at     DateTime?
+  buyer_id    String?
+
+  seller User  @relation("MarketSeller", fields: [seller_id], references: [id])
+  buyer  User? @relation("MarketBuyer",  fields: [buyer_id],  references: [id])
+}
+
+model CoinTransaction {
+  id         String   @id @default(uuid())
+  user_id    String
+  amount     Int
+  reason     String
+  created_at DateTime @default(now())
 
   user User @relation(fields: [user_id], references: [id])
 }
