@@ -42,18 +42,14 @@ router.post('/:userPokemonId', authMiddleware, async (req: Request, res: Respons
     return;
   }
 
-  // Check no active market listing references this pokemon
-  const activeListing = await prisma.marketListing.findFirst({
-    where: { pokemon_id: userPokemonId, status: 'active' },
-  });
-  if (activeListing) {
-    res.status(409).json({ error: 'Pokémon is listed on the market' });
-    return;
-  }
-
   const sellPrice = getSellPrice(userPokemon);
 
   await prisma.$transaction(async tx => {
+    // Auto-cancel any active market listing so the user can sell directly
+    await tx.marketListing.updateMany({
+      where: { pokemon_id: userPokemonId, status: 'active' },
+      data: { status: 'cancelled' },
+    });
     await tx.userPokemon.delete({ where: { id: userPokemonId } });
     await addCoins(tx, userId, sellPrice, 'sell');
     await recalculateUserPokedexValue(tx, userId);
