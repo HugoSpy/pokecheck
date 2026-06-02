@@ -81,3 +81,44 @@ export function Search(props: IconProps) {
     </Svg>
   );
 }
+
+export function Grid(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect width="7" height="7" x="3" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="3" rx="1" />
+      <rect width="7" height="7" x="14" y="14" rx="1" />
+      <rect width="7" height="7" x="3" y="14" rx="1" />
+    </Svg>
+  );
+}
+
+export function ShoppingBag(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </Svg>
+  );
+}
+
+export function Calendar(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M8 2v4" />
+      <path d="M16 2v4" />
+      <rect width="18" height="18" x="3" y="4" rx="2" />
+      <path d="M3 10h18" />
+    </Svg>
+  );
+}
+
+export function User(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+      <circle cx="12" cy="7" r="4" />
+    </Svg>
+  );
+}

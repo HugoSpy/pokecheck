@@ -4,7 +4,7 @@ import { getToken, clearToken } from '../api/client';
 import { generateAdminPack } from '../api/adminApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
-import { Coins } from './icons';
+import { Coins, Grid, Swap, ShoppingBag, Calendar, User } from './icons';
 import './Layout.css';
 
 function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
@@ -22,6 +22,16 @@ const NAV_LINKS = [
   { to: '/events',      label: 'Événements' },
   { to: '/leaderboard', label: 'Classement' },
   { to: '/profile',     label: 'Profil'     },
+];
+
+// Mobile bottom nav: 5 daily-use destinations. Classement stays reachable
+// via the top logo (links to /leaderboard).
+const BOTTOM_NAV = [
+  { to: '/pokedex', label: 'Pokédex',  Icon: Grid        },
+  { to: '/trades',  label: 'Échanges', Icon: Swap        },
+  { to: '/market',  label: 'Marché',   Icon: ShoppingBag },
+  { to: '/events',  label: 'Events',   Icon: Calendar    },
+  { to: '/profile', label: 'Profil',   Icon: User        },
 ];
 
 export default function Layout() {
@@ -105,6 +115,19 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+
+      <nav className="bottom-nav" aria-label="Navigation">
+        {BOTTOM_NAV.map(({ to, label, Icon }) => (
+          <NavLink
+            key={to}
+            to={to}
+            className={({ isActive }) => `bottom-nav-item${isActive ? ' active' : ''}`}
+          >
+            <Icon size={22} />
+            <span>{label}</span>
+          </NavLink>
+        ))}
+      </nav>
 
       <BadgeNotification />
 

@@ -285,6 +285,12 @@ h1, h2, h3, h4 {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 480px) {
-  .toast { bottom: 16px; right: 16px; left: 16px; max-width: unset; }
+@media (max-width: 640px) {
+  /* Sit above the mobile bottom nav */
+  .toast {
+    right: 16px;
+    left: 16px;
+    max-width: unset;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
+  }
 }

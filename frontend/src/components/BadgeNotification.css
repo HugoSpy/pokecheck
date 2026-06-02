@@ -73,11 +73,12 @@
 }
 
 /* ── Mobile ── */
-@media (max-width: 480px) {
+@media (max-width: 640px) {
+  /* Sit above the mobile bottom nav */
   .badge-notif {
-    bottom: 16px;
     left: 16px;
     right: 16px;
     width: auto;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 12px);
   }
 }
