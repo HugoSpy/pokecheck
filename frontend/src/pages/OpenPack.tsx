@@ -2,8 +2,17 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
 import { draw, getRandomPokemons } from '../api/pokemonApi';
+import { getAttendanceAvailable, openAttendance, type AttendanceAvailable } from '../api/attendanceApi';
+import { getToken } from '../api/client';
 import type { RollCardData, PokemonInfo } from '../api/types';
 import './OpenPack.css';
+
+function formatCountdown(ms: number): string {
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${String(s).padStart(2, '0')}`;
+}
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
 
@@ -70,42 +79,68 @@ export default function OpenPack() {
   const [forceShiny, setForceShiny] = useState(false);
   const [progress, setProgress] = useState(0);
 
+  // ── Attendance mode (when no one-shot code/token in the URL) ──
+  const isOneShot = !!(code || token);
+  const authed = !!getToken();
+  const [attendance, setAttendance] = useState<AttendanceAvailable | null>(null);
+  const [attLoading, setAttLoading] = useState(!isOneShot && authed);
+  const [now, setNow] = useState(Date.now());
+
   const stripRef = useRef<HTMLDivElement>(null);
 
+  // Countdown tick
+  useEffect(() => {
+    const i = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(i);
+  }, []);
+
+  // Fetch attendance availability (attendance mode only)
+  useEffect(() => {
+    if (isOneShot || !authed) return;
+    getAttendanceAvailable()
+      .then(setAttendance)
+      .catch(() => setAttendance({ available: false }))
+      .finally(() => setAttLoading(false));
+  }, [isOneShot, authed]);
+
+  const attRemainingMs = attendance?.expires_at
+    ? new Date(attendance.expires_at).getTime() - now
+    : 0;
+  const attAvailable = !!attendance?.available && !!attendance.attendance_id && attRemainingMs > 0;
+  const canOpen = isOneShot || attAvailable;
+
   async function handleOpen() {
-    if (!code && !token) { setError('Token manquant.'); return; }
+    if (!canOpen) { setError('Aucun pack disponible.'); return; }
     setPhase('loading');
     setError(null);
 
-    let resolvedForceShiny = forceShiny;
     try {
-      if (code) {
-        const result = await consumeOneShotCode(code);
-        resolvedForceShiny = result.force_shiny ?? false;
-        setForceShiny(resolvedForceShiny);
+      let drawnPokemon: PokemonInfo;
+      let randResult: { pokemons: RollCardData[] };
+
+      if (isOneShot) {
+        let resolvedForceShiny = forceShiny;
+        if (code) {
+          const result = await consumeOneShotCode(code);
+          resolvedForceShiny = result.force_shiny ?? false;
+          setForceShiny(resolvedForceShiny);
+        } else {
+          await consumeOneShotToken(token!);
+        }
+        const [rand, drawResult] = await Promise.all([
+          getRandomPokemons(TOTAL_CARDS),
+          draw('draw', resolvedForceShiny),
+        ]);
+        randResult = rand;
+        drawnPokemon = drawResult.pokemon;
       } else {
-        await consumeOneShotToken(token!);
+        const [rand, openResult] = await Promise.all([
+          getRandomPokemons(TOTAL_CARDS),
+          openAttendance(attendance!.attendance_id!),
+        ]);
+        randResult = rand;
+        drawnPokemon = openResult.pokemon;
       }
-    } catch (err) {
-      const e = err as Error & { status?: number };
-      setError(e.status === 410 ? 'Token déjà utilisé.' : e.message);
-      setPhase('idle');
-      return;
-    }
-
-    try {
-      const [randResult, drawResult] = await Promise.all([
-        getRandomPokemons(TOTAL_CARDS),
-        draw('draw', resolvedForceShiny),
-      ]);
-
-      console.log('randResult raretés:', randResult.pokemons.map(p => p.rarity));
-      console.log('Résumé:', {
-        COMMON: randResult.pokemons.filter(p => p.rarity === 'COMMON').length,
-        RARE: randResult.pokemons.filter(p => p.rarity === 'RARE').length,
-        EPIC: randResult.pokemons.filter(p => p.rarity === 'EPIC').length,
-        LEGENDARY: randResult.pokemons.filter(p => p.rarity === 'LEGENDARY').length,
-      });
 
       const strip = randResult.pokemons.map(card => {
         const shiny = Math.random() < 1 / 4096;
@@ -115,20 +150,9 @@ export default function OpenPack() {
           sprite_url: shiny ? card.sprite_url.replace('/normal/', '/shiny/') : card.sprite_url,
         };
       }) as RollCardData[];
-      strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
+      strip[TARGET_INDEX] = drawnPokemon as RollCardData;
 
-      console.log('Strip final raretés:', strip.map(p => p.rarity));
-      console.log('Strip résumé:', {
-        COMMON: strip.filter(p => p.rarity === 'COMMON').length,
-        RARE: strip.filter(p => p.rarity === 'RARE').length,
-        EPIC: strip.filter(p => p.rarity === 'EPIC').length,
-        LEGENDARY: strip.filter(p => p.rarity === 'LEGENDARY').length,
-      });
-
-      const allSprites = [
-        drawResult.pokemon.sprite_url,
-        ...randResult.pokemons.map(p => p.sprite_url),
-      ];
+      const allSprites = [drawnPokemon.sprite_url, ...randResult.pokemons.map(p => p.sprite_url)];
       setProgress(0);
       await Promise.race([
         preloadImages(allSprites, (loaded, total) => setProgress(loaded / total)),
@@ -136,12 +160,14 @@ export default function OpenPack() {
       ]);
 
       setCards(strip);
-      setPokemon(drawResult.pokemon);
+      setPokemon(drawnPokemon);
       setShowBadge(false);
       setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      setError(e.status === 403 ? "Tu as déjà tiré aujourd'hui !" : (err as Error).message);
+      if (e.status === 410) setError('Token déjà utilisé.');
+      else if (e.status === 403) setError(isOneShot ? "Tu as déjà tiré aujourd'hui !" : (e.message || 'Pack indisponible.'));
+      else setError(e.message);
       setPhase('idle');
     }
   }
@@ -201,7 +227,7 @@ export default function OpenPack() {
       {/* ── Idle ── */}
       {phase === 'idle' && (
         <div className="pack-stage">
-          <div className={`pokeball-wrap${code || token ? ' pulsing' : ''}`} style={!code && !token ? { opacity: 0.3 } : {}}>
+          <div className={`pokeball-wrap${canOpen ? ' pulsing' : ''}`} style={canOpen ? {} : { opacity: 0.3 }}>
             <div className="pokeball">
               <div className="pokeball-top" />
               <div className="pokeball-band" />
@@ -211,11 +237,7 @@ export default function OpenPack() {
             <div className="pokeball-glow" />
           </div>
 
-          {!code && !token ? (
-            <p className="pack-intranet-msg">
-              Ce lien est réservé aux présences validées depuis l'intranet EPITA.
-            </p>
-          ) : (
+          {isOneShot ? (
             <>
               {error && (
                 <div className="pack-error">
@@ -228,6 +250,32 @@ export default function OpenPack() {
                 Ouvrir mon pack
               </button>
             </>
+          ) : !authed ? (
+            <p className="pack-intranet-msg">
+              Connecte-toi pour ouvrir ton pack lors d'un check présence.
+            </p>
+          ) : attLoading ? (
+            <div className="loading-label">Vérification…</div>
+          ) : attAvailable ? (
+            <>
+              <div className="pack-countdown">
+                Pack disponible — expire dans <strong>{formatCountdown(attRemainingMs)}</strong>
+              </div>
+              {error && (
+                <div className="pack-error">
+                  <div className="pack-error-icon">⚠</div>
+                  <div className="pack-error-msg">{error}</div>
+                </div>
+              )}
+              <button className="open-btn" onClick={handleOpen}>
+                <span className="open-btn-shine" />
+                Ouvrir mon pack
+              </button>
+            </>
+          ) : (
+            <p className="pack-intranet-msg">
+              Aucun pack disponible. Attends le prochain check présence.
+            </p>
           )}
         </div>
       )}

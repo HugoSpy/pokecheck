@@ -15,6 +15,7 @@ import dailyLoginRouter from './routes/daily-login';
 import sellRouter from './routes/sell';
 import marketRouter from './routes/market';
 import eventRouter from './routes/event';
+import attendanceRouter from './routes/attendance';
 
 const app = express();
 
@@ -52,6 +53,7 @@ app.use('/daily-login', dailyLoginRouter);
 app.use('/sell', sellRouter);
 app.use('/market', marketRouter);
 app.use('/event', eventRouter);
+app.use('/attendance', attendanceRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 app.listen(PORT, '127.0.0.1', () => {

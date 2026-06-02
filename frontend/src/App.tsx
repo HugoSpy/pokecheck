@@ -13,6 +13,7 @@ import DevTradeAnim from './pages/DevTradeAnim';
 import Market from './pages/Market';
 import Events from './pages/Events';
 import Profile from './pages/Profile';
+import AdminAttendance from './pages/AdminAttendance';
 import Layout from './components/Layout';
 
 function parseJwt(token: string): { exp?: number; isAdmin?: boolean } | null {
@@ -53,6 +54,10 @@ function AppRoutes() {
         <Route path="/market"      element={<Market />} />
         <Route path="/events"      element={<Events />} />
         <Route path="/profile"     element={<Profile />} />
+        <Route
+          path="/admin/attendance"
+          element={isAdmin ? <AdminAttendance /> : <Navigate to="/leaderboard" replace />}
+        />
       </Route>
       <Route
         path="/dev/trade-anim"

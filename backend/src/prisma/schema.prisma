@@ -149,3 +149,27 @@ model CoinTransaction {
 
   user User @relation(fields: [user_id], references: [id])
 }
+
+model AttendanceCheck {
+  id           String    @id @default(uuid())
+  created_by   String    // user_id de l'admin
+  created_at   DateTime  @default(now())
+  expires_at   DateTime  // created_at + 15 minutes
+  cancelled_at DateTime? // si annulé par l'admin
+  cancelled_by String?
+
+  openings AttendanceOpening[]
+}
+
+model AttendanceOpening {
+  id              String   @id @default(uuid())
+  attendance_id   String
+  user_id         String
+  user_pokemon_id String?  // UserPokemon créé lors de l'ouverture, NULL si rollback
+  opened_at       DateTime @default(now())
+  rolled_back     Boolean  @default(false)
+
+  attendance AttendanceCheck @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
+
+  @@unique([attendance_id, user_id]) // 1 ouverture max par check par user
+}

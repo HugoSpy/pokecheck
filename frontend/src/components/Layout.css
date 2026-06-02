@@ -277,4 +277,65 @@
     border-radius: 0 0 2px 2px;
     box-shadow: 0 0 8px var(--accent-glow);
   }
+
+  .bottom-nav-icon-wrap { position: relative; display: inline-flex; }
+  .bottom-nav-dot { top: -3px; right: -7px; }
+}
+
+/* ── Attendance notification dot ── */
+.nav-link { position: relative; }
+
+.nav-dot {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 6px rgba(248, 113, 113, 0.8);
+  animation: navDotPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes navDotPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.25); opacity: 0.75; }
+}
+
+/* ── New-check toast (top, center) ── */
+.att-toast {
+  position: fixed;
+  top: calc(var(--nav-h) + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 300;
+  max-width: calc(100vw - 32px);
+  padding: 12px 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px var(--accent-glow);
+  color: var(--text-primary);
+  font-family: var(--font-condensed);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-align: center;
+  cursor: pointer;
+  animation: attToastFade 300ms ease;
+}
+
+@keyframes attToastFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .att-toast {
+    top: calc(var(--nav-h) + 8px);
+    left: 12px;
+    right: 12px;
+    transform: none;
+    max-width: unset;
+  }
 }

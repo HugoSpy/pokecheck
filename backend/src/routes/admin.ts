@@ -1,10 +1,37 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { recalculateUserPokedexValue } from '../services/pokedexValue';
 
 const router = Router();
 const prisma = new PrismaClient();
+
+const ATTENDANCE_TTL_MS = 15 * 60 * 1000;
+
+function requireAdmin(req: Request, res: Response): boolean {
+  if (req.user!.isAdmin !== true) {
+    res.status(403).json({ error: 'Admin only' });
+    return false;
+  }
+  return true;
+}
+
+/** Decrement coins for a rollback, allowing the balance to go negative. */
+async function removeCoinsAllowNegative(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  amount: number,
+  reason: string
+): Promise<void> {
+  await tx.user.update({
+    where: { id: userId },
+    data: { coins: { decrement: amount } },
+  });
+  await tx.coinTransaction.create({
+    data: { user_id: userId, amount: -amount, reason },
+  });
+}
 
 const SHORT_CODE_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 function generateShortCode(length = 10): string {
@@ -45,6 +72,159 @@ router.post('/generate-pack', authMiddleware, async (req: Request, res: Response
   });
 
   res.json({ code: shortCode });
+});
+
+// ── Attendance check system (temporary, admin-driven) ────────────────────────
+
+// POST /admin/attendance/start
+router.post('/attendance/start', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  if (!requireAdmin(req, res)) return;
+
+  const force = (req.body as { force?: boolean }).force === true;
+  const now = new Date();
+
+  if (!force) {
+    const active = await prisma.attendanceCheck.findFirst({
+      where: { cancelled_at: null, expires_at: { gt: now } },
+    });
+    if (active) {
+      res.status(409).json({ error: 'Un check présence est déjà actif', active_id: active.id });
+      return;
+    }
+  }
+
+  const check = await prisma.attendanceCheck.create({
+    data: {
+      created_by: req.user!.userId,
+      expires_at: new Date(now.getTime() + ATTENDANCE_TTL_MS),
+    },
+  });
+
+  res.json({ id: check.id, expires_at: check.expires_at });
+});
+
+// GET /admin/attendance/active — checks from the last 24h (active, expired, cancelled)
+router.get('/attendance/active', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  if (!requireAdmin(req, res)) return;
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  const [totalUsers, checks] = await Promise.all([
+    prisma.user.count(),
+    prisma.attendanceCheck.findMany({
+      where: { created_at: { gte: since } },
+      orderBy: { created_at: 'desc' },
+      include: { _count: { select: { openings: true } } },
+    }),
+  ]);
+
+  res.json({
+    checks: checks.map(c => ({
+      id: c.id,
+      created_at: c.created_at,
+      expires_at: c.expires_at,
+      cancelled_at: c.cancelled_at,
+      openings_count: c._count.openings,
+      total_users: totalUsers,
+    })),
+  });
+});
+
+// POST /admin/attendance/:id/cancel — cancel + full rollback
+router.post('/attendance/:id/cancel', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  if (!requireAdmin(req, res)) return;
+
+  const id = String(req.params.id);
+  const adminId = req.user!.userId;
+
+  const check = await prisma.attendanceCheck.findUnique({ where: { id } });
+  if (!check) {
+    res.status(404).json({ error: 'Check présence introuvable' });
+    return;
+  }
+  if (check.cancelled_at) {
+    res.status(409).json({ error: 'Ce check présence est déjà annulé' });
+    return;
+  }
+
+  const result = await prisma.$transaction(async tx => {
+    await tx.attendanceCheck.update({
+      where: { id },
+      data: { cancelled_at: new Date(), cancelled_by: adminId },
+    });
+
+    const openings = await tx.attendanceOpening.findMany({
+      where: { attendance_id: id, rolled_back: false, user_pokemon_id: { not: null } },
+    });
+
+    const impactedUsers = new Set<string>();
+    // Per-user cache of un-consumed sell transactions since the check started,
+    // to claw back coins for Pokémons that were sold (UserPokemon deleted).
+    const sellTxCache = new Map<string, { id: string; amount: number }[]>();
+    const consumedSellTxIds = new Set<string>();
+    let coinsRemoved = 0;
+    let rolledBackCount = 0;
+
+    for (const opening of openings) {
+      const upId = opening.user_pokemon_id!;
+      const userPokemon = await tx.userPokemon.findUnique({ where: { id: upId } });
+
+      if (userPokemon) {
+        // Still exists (held, listed, in a pending trade, or owned by someone
+        // after a trade/market buy). Unwind references, then delete.
+        await tx.trade.updateMany({
+          where: {
+            status: 'pending',
+            OR: [{ from_pokemon_id: upId }, { to_pokemon_id: upId }],
+          },
+          data: { status: 'cancelled', resolved_at: new Date() },
+        });
+        await tx.marketListing.updateMany({
+          where: { pokemon_id: upId, status: 'active' },
+          data: { status: 'cancelled' },
+        });
+        impactedUsers.add(userPokemon.user_id);
+        await tx.userPokemon.delete({ where: { id: upId } });
+      } else {
+        // Gone → it was sold. Claw back the matching sell transaction (best
+        // effort: no FK links a sale to a Pokémon). Balance may go negative.
+        let txs = sellTxCache.get(opening.user_id);
+        if (!txs) {
+          const sells = await tx.coinTransaction.findMany({
+            where: {
+              user_id: opening.user_id,
+              reason: 'sell',
+              created_at: { gte: check.created_at },
+            },
+            orderBy: { created_at: 'asc' },
+          });
+          txs = sells.map(s => ({ id: s.id, amount: s.amount }));
+          sellTxCache.set(opening.user_id, txs);
+        }
+        const match = txs.find(t => !consumedSellTxIds.has(t.id));
+        if (match) {
+          consumedSellTxIds.add(match.id);
+          await removeCoinsAllowNegative(tx, opening.user_id, match.amount, 'attendance_rollback');
+          coinsRemoved += match.amount;
+          impactedUsers.add(opening.user_id);
+        }
+        // else: coins untraceable (already spent / no record) → accept loss.
+      }
+
+      await tx.attendanceOpening.update({
+        where: { id: opening.id },
+        data: { rolled_back: true, user_pokemon_id: null },
+      });
+      rolledBackCount++;
+    }
+
+    for (const uid of impactedUsers) {
+      await recalculateUserPokedexValue(tx, uid);
+    }
+
+    return { rolled_back_count: rolledBackCount, coins_removed: coinsRemoved };
+  }, { timeout: 30000, maxWait: 10000 });
+
+  res.json(result);
 });
 
 export default router;

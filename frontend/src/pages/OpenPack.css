@@ -552,6 +552,21 @@
   .open-btn { padding: 14px 36px; font-size: 14px; }
 }
 
+/* ── Attendance countdown ── */
+.pack-countdown {
+  font-family: var(--font-condensed);
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+  text-align: center;
+}
+.pack-countdown strong {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-weight: 700;
+}
+
 /* ── Intranet-only message ── */
 .pack-intranet-msg {
   font-family: var(--font-condensed);

@@ -122,3 +122,14 @@ export function User(props: IconProps) {
     </Svg>
   );
 }
+
+export function Pokeball(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h6" />
+      <path d="M15 12h6" />
+      <circle cx="12" cy="12" r="3" />
+    </Svg>
+  );
+}
