@@ -16,6 +16,13 @@ function getSlugFromSpriteUrl(spriteUrl: string): string {
   return spriteUrl.split('/').pop()?.replace('.png', '') ?? '';
 }
 
+function getBaseSlug(slug: string): string {
+  // Strip form suffixes like -solo, -male, -altered, -standard, etc.
+  // Preserves legitimate hyphened names (mr-mime, mime-jr, jangmo-o, nidoran-f…)
+  const FORM_SUFFIXES = /-(solo|male|female|incarnate|standard|ordinary|disguised|average|small|large|super|plant|normal|aria|shield|midday|altered|red-striped|red-meteor|baile|therian|black|white|origin|sky|land|heat|wash|fan|frost|east|west|dusk|dawn|midnight|single-strike|rapid-strike|crowned|hero)$/i;
+  return slug.replace(FORM_SUFFIXES, '');
+}
+
 interface Props {
   pokemon: UserPokemonInstance;
   onClose: () => void;
@@ -27,10 +34,14 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
   const isLegendary = pokemon.rarity === 'LEGENDARY';
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
 
-  const slug   = getSlugFromSpriteUrl(pokemon.sprite_url);
-  const gifUrl = isShiny
+  const slug     = getSlugFromSpriteUrl(pokemon.sprite_url);
+  const baseSlug = getBaseSlug(slug);
+  const gifUrl   = isShiny
     ? `https://projectpokemon.org/images/shiny-sprite/${slug}.gif`
     : `https://projectpokemon.org/images/normal-sprite/${slug}.gif`;
+  const baseGifUrl = isShiny
+    ? `https://projectpokemon.org/images/shiny-sprite/${baseSlug}.gif`
+    : `https://projectpokemon.org/images/normal-sprite/${baseSlug}.gif`;
 
   const [imgSrc, setImgSrc] = useState(gifUrl);
   const [confirmSell, setConfirmSell] = useState(false);
@@ -67,7 +78,13 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
           {isShiny && <div className="pdm-shiny-shimmer" />}
           <img
             src={imgSrc}
-            onError={() => setImgSrc(pokemon.sprite_url)}
+            onError={() => {
+              if (imgSrc === gifUrl && baseGifUrl !== gifUrl) {
+                setImgSrc(baseGifUrl);
+              } else {
+                setImgSrc(pokemon.sprite_url);
+              }
+            }}
             alt={pokemon.name}
             className="pdm-sprite"
             style={{
