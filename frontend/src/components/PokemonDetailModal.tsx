@@ -72,7 +72,7 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
         style={panelStyle}
         onClick={e => e.stopPropagation()}
       >
-        <button className="pdm-close" onClick={onClose}>✕</button>
+        <button className="pdm-close" onClick={onClose} aria-label="Fermer">✕</button>
 
         <div className="pdm-sprite-wrap">
           {isShiny && <div className="pdm-shiny-shimmer" />}

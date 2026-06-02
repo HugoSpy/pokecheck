@@ -227,16 +227,30 @@ export default function Trades() {
             placeholder="Rechercher un élève par nom…"
             value={nameQuery}
             autoComplete="off"
+            role="combobox"
+            aria-expanded={showSuggestions && suggestions.length > 0}
+            aria-controls="user-search-listbox"
+            aria-autocomplete="list"
             onChange={e => handleNameChange(e.target.value)}
             onFocus={() => nameQuery.trim().length >= 2 && setShowSuggestions(true)}
             onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+            onKeyDown={e => {
+              if (e.key === 'Enter' && suggestions.length > 0) {
+                e.preventDefault();
+                handleSelectUser(suggestions[0]);
+              } else if (e.key === 'Escape') {
+                setShowSuggestions(false);
+              }
+            }}
           />
           {showSuggestions && suggestions.length > 0 && (
-            <ul className="user-search-suggestions">
+            <ul className="user-search-suggestions" id="user-search-listbox" role="listbox">
               {suggestions.map(u => (
                 <li
                   key={u.id}
                   className="user-search-suggestion-item"
+                  role="option"
+                  aria-selected={false}
                   onMouseDown={() => handleSelectUser(u)}
                 >
                   {u.display_name}

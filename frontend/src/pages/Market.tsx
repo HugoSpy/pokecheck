@@ -337,9 +337,20 @@ export default function Market() {
                   <div
                     key={p.instanceId}
                     className={`market-sell-card${isSelected ? ' selected' : ''}`}
+                    role="button"
+                    tabIndex={0}
+                    aria-pressed={isSelected}
+                    aria-label={`Sélectionner ${p.name} à vendre`}
                     onClick={() => {
                       setSelectedPokemon(isSelected ? null : p);
                       setPrice(String(marketPrice));
+                    }}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedPokemon(isSelected ? null : p);
+                        setPrice(String(marketPrice));
+                      }
                     }}
                   >
                     <img

@@ -43,6 +43,18 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
     )}
     <div
       onClick={() => selectable ? onSelect?.(pokemon) : setShowDetail(true)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          selectable ? onSelect?.(pokemon) : setShowDetail(true);
+        }
+      }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={selectable ? selected : undefined}
+      aria-label={selectable
+        ? `Sélectionner ${pokemon.name}`
+        : `Voir les détails de ${pokemon.name}`}
       className={isShiny ? 'pokemon-card-shiny' : undefined}
       style={{
         position: 'relative',

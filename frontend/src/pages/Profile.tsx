@@ -304,7 +304,17 @@ export default function Profile() {
               <div
                 key={badge.id}
                 className={`badge-card selectable${selected ? ' selected' : ''}`}
+                role="button"
+                tabIndex={0}
+                aria-pressed={selected}
+                aria-label={`${selected ? 'Retirer' : 'Mettre en vitrine'} : ${badge.name}`}
                 onClick={() => toggleFeatured(badge.id)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleFeatured(badge.id);
+                  }
+                }}
                 title={badge.description}
               >
                 <div className="badge-card-icon">

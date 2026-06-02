@@ -63,7 +63,16 @@ export default function Leaderboard() {
                 <tr
                   key={entry.id}
                   className={`lb-row ${i < 3 ? `lb-row-top${i + 1}` : ''}`}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Voir le profil de ${entry.display_name}`}
                   onClick={() => navigate(`/u/${entry.id}`)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      navigate(`/u/${entry.id}`);
+                    }
+                  }}
                 >
                   <td className="lb-rank">
                     {i < 3 ? <span className="medal">{MEDAL[i]}</span> : <span className="rank-num">{i + 1}</span>}

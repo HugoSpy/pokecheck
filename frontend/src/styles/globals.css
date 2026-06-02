@@ -9,8 +9,9 @@
   --border-bright: rgba(255, 255, 255, 0.12);
 
   --text-primary: #e6e8f2;
-  --text-secondary: #6e7590;
-  --text-muted: #3d4058;
+  --text-secondary: #9aa3be;  /* WCAG AA: ~6:1 on --bg-card (was #6e7590 ~4.2:1) */
+  --text-muted: #6f7791;      /* WCAG AA: ~4.5:1 on --bg-card (was #3d4058 ~1.9:1) */
+  --text-faint: #4a4f68;      /* decorative only — never load-bearing text */
 
   --accent: #00d4ff;
   --accent-dim: rgba(0, 212, 255, 0.15);
@@ -65,6 +66,17 @@ body::before {
 }
 
 #root { position: relative; z-index: 1; }
+
+/* ── Focus (keyboard a11y) ── */
+/* Visible ring for keyboard users only; mouse/touch clicks stay clean.
+   outline-offset keeps the ring on the dark backdrop so it stays visible
+   even on accent-filled buttons. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+:focus:not(:focus-visible) { outline: none; }
 
 /* ── Typography ── */
 h1, h2, h3, h4 {
