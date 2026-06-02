@@ -7,10 +7,10 @@ const router = Router();
 const prisma = new PrismaClient();
 
 function pickRarity(): string {
-  const roll = Math.random() * 100;
-  if (roll < 78.9) return 'COMMON';
-  if (roll < 98.9) return 'RARE';
-  if (roll < 99.9) return 'EPIC';
+  const roll = Math.random();
+  if (roll < 0.795) return 'COMMON';
+  if (roll < 0.945) return 'RARE';
+  if (roll < 0.995) return 'EPIC';
   return 'LEGENDARY';
 }
 
