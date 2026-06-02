@@ -9,6 +9,7 @@ interface Props {
   selected?: boolean;
   selectable?: boolean;
   onSelect?: (pokemon: UserPokemonInstance) => void;
+  onSell?: (instanceId: string) => Promise<void>;
 }
 
 const RARITY_COLOR: Record<string, string> = {
@@ -20,7 +21,7 @@ const RARITY_COLOR: Record<string, string> = {
 
 const SHINY_GOLD = '#d4af37';
 
-export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect }: Props) {
+export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect, onSell }: Props) {
   const [imgError,    setImgError]    = useState(false);
   const [showDetail,  setShowDetail]  = useState(false);
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
@@ -38,7 +39,7 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
   return (
     <>
     {showDetail && (
-      <PokemonDetailModal pokemon={pokemon} onClose={() => setShowDetail(false)} />
+      <PokemonDetailModal pokemon={pokemon} onClose={() => setShowDetail(false)} onSell={onSell} />
     )}
     <div
       onClick={() => selectable ? onSelect?.(pokemon) : setShowDetail(true)}

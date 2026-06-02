@@ -70,6 +70,33 @@ export default function UserPokedex() {
             <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
           </div>
 
+          {user.featured_badges && user.featured_badges.length > 0 && (
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              {user.featured_badges.map(badge => (
+                <div
+                  key={badge.id}
+                  title={badge.description}
+                  style={{
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid rgba(245,166,35,0.3)',
+                    borderRadius: 'var(--radius)',
+                    padding: '5px 10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    fontFamily: 'var(--font-condensed)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: '#f5a623',
+                    letterSpacing: '0.04em',
+                  }}
+                >
+                  🏆 {badge.name}
+                </div>
+              ))}
+            </div>
+          )}
+
           <button
             className="btn btn-primary"
             onClick={() => navigate('/trades', { state: { targetUserId: id, targetUserName: user.display_name } })}

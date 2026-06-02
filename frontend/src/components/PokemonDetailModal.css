@@ -205,3 +205,31 @@
     height: 180px;
   }
 }
+
+/* ── Sell ── */
+.pdm-sell {
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.pdm-sell-btn {
+  width: 100%;
+  padding: 9px 16px;
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.pdm-sell-btn:hover { background: rgba(239, 68, 68, 0.16); border-color: rgba(239,68,68,0.4); }
+
+.pdm-sell-confirm { display: flex; flex-direction: column; gap: 10px; }
+.pdm-sell-confirm-msg { font-family: var(--font-condensed); font-size: 13px; color: var(--text-secondary); text-align: center; }
+.pdm-sell-confirm-btns { display: flex; gap: 8px; justify-content: center; }

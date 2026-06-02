@@ -24,6 +24,7 @@ export interface UserInfo {
   display_name: string;
   total_score: number;
   trade_count: number;
+  featured_badges?: Badge[];
 }
 
 export interface RollCardData {
@@ -129,4 +130,36 @@ export interface SellResult {
   coins_earned: number;
   sell_price: number;
   new_badges: string[];
+}
+
+export interface MyProfile {
+  id: string;
+  display_name: string;
+  coins: number;
+  streak_days: number;
+  last_login: string | null;
+  total_score: number;
+  trade_count: number;
+  featured_badges: string[];
+  is_admin: boolean;
+}
+
+export interface AllBadgeEntry extends Badge {
+  unlocked: boolean;
+  unlocked_at: string | null;
+}
+
+export interface PublicUserInfo {
+  id: string;
+  display_name: string;
+  total_score: number;
+  trade_count: number;
+  featured_badges: Badge[];
+}
+
+const DROP_RATE: Record<string, number> = {
+  COMMON: 0.60, RARE: 0.25, EPIC: 0.12, LEGENDARY: 0.03,
+};
+export function getSellPrice(instance: { points: number; rarity: string }): number {
+  return Math.round(instance.points / (DROP_RATE[instance.rarity] ?? 0.60) / 20);
 }

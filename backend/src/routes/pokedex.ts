@@ -58,13 +58,21 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, display_name: true, total_score: true, trade_count: true },
+    select: { id: true, display_name: true, total_score: true, trade_count: true, featured_badges: true },
   });
 
   if (!user) {
     res.status(404).json({ error: 'User not found' });
     return;
   }
+
+  const featuredBadgeDetails = user.featured_badges.length > 0
+    ? await prisma.badge.findMany({ where: { id: { in: user.featured_badges } } })
+    : [];
+  const badgeMap = new Map(featuredBadgeDetails.map(b => [b.id, b]));
+  const featured_badge_objects = user.featured_badges
+    .map(id => badgeMap.get(id))
+    .filter((b): b is NonNullable<typeof b> => b !== undefined);
 
   const userPokemons = await prisma.userPokemon.findMany({
     where: { user_id: userId },
@@ -73,7 +81,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   });
 
   res.json({
-    user,
+    user: { ...user, featured_badges: featured_badge_objects },
     pokemons: userPokemons.map(up => ({
       instanceId: up.id,
       obtainedAt: up.obtained_at,

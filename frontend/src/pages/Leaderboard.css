@@ -1,6 +1,32 @@
 .lb-page { display: flex; flex-direction: column; gap: 24px; }
 
-.lb-header { display: flex; flex-direction: column; gap: 4px; }
+.lb-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+
+.lb-tabs { display: flex; gap: 6px; align-self: flex-end; }
+
+.lb-tab {
+  padding: 7px 18px;
+  font-family: var(--font-condensed);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 150ms;
+}
+.lb-tab:hover { color: var(--text-primary); border-color: var(--border-bright); }
+.lb-tab.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+
+.lb-coins {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 600;
+  color: #f5a623;
+}
 
 .lb-title {
   font-size: clamp(24px, 4vw, 36px);

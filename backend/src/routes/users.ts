@@ -101,4 +101,43 @@ router.patch('/featured-badges', authMiddleware, async (req: Request, res: Respo
   res.json({ success: true });
 });
 
+// GET /users/me — profil complet de l'utilisateur connecté
+router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      display_name: true,
+      coins: true,
+      streak_days: true,
+      last_login: true,
+      total_score: true,
+      trade_count: true,
+      featured_badges: true,
+      is_admin: true,
+    },
+  });
+  if (!user) { res.status(404).json({ error: 'User not found' }); return; }
+  res.json(user);
+});
+
+// GET /users/all-badges — tous les badges avec statut débloqué pour l'user connecté
+router.get('/all-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const [allBadges, userBadges] = await Promise.all([
+    prisma.badge.findMany({ orderBy: [{ category: 'asc' }, { id: 'asc' }] }),
+    prisma.userBadge.findMany({
+      where: { user_id: userId },
+      select: { badge_id: true, unlocked_at: true },
+    }),
+  ]);
+  const unlockedMap = new Map(userBadges.map(ub => [ub.badge_id, ub.unlocked_at]));
+  res.json(allBadges.map(badge => ({
+    ...badge,
+    unlocked: unlockedMap.has(badge.id),
+    unlocked_at: unlockedMap.get(badge.id) ?? null,
+  })));
+});
+
 export default router;

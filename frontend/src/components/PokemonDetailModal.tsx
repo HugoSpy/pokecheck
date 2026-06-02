@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { UserPokemonInstance } from '../api/types';
+import { getSellPrice } from '../api/types';
 import RarityBadge from './RarityBadge';
 import './PokemonDetailModal.css';
 
@@ -18,9 +19,10 @@ function getSlugFromSpriteUrl(spriteUrl: string): string {
 interface Props {
   pokemon: UserPokemonInstance;
   onClose: () => void;
+  onSell?: (instanceId: string) => Promise<void>;
 }
 
-export default function PokemonDetailModal({ pokemon, onClose }: Props) {
+export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) {
   const isShiny    = pokemon.is_shiny ?? false;
   const isLegendary = pokemon.rarity === 'LEGENDARY';
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
@@ -31,6 +33,9 @@ export default function PokemonDetailModal({ pokemon, onClose }: Props) {
     : `https://projectpokemon.org/images/normal-sprite/${slug}.gif`;
 
   const [imgSrc, setImgSrc] = useState(gifUrl);
+  const [confirmSell, setConfirmSell] = useState(false);
+  const [selling, setSelling] = useState(false);
+  const sellPrice = getSellPrice(pokemon);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
@@ -105,6 +110,38 @@ export default function PokemonDetailModal({ pokemon, onClose }: Props) {
             </span>
           </div>
         </div>
+
+        {onSell && (
+          <div className="pdm-sell">
+            {!confirmSell ? (
+              <button
+                className="pdm-sell-btn"
+                onClick={() => setConfirmSell(true)}
+              >
+                Vendre — {sellPrice} coins
+              </button>
+            ) : (
+              <div className="pdm-sell-confirm">
+                <span className="pdm-sell-confirm-msg">Vendre pour {sellPrice} coins ?</span>
+                <div className="pdm-sell-confirm-btns">
+                  <button className="btn btn-ghost" style={{ padding: '6px 14px', fontSize: 12 }} onClick={() => setConfirmSell(false)}>Annuler</button>
+                  <button
+                    className="btn btn-danger"
+                    style={{ padding: '6px 14px', fontSize: 12 }}
+                    disabled={selling}
+                    onClick={async () => {
+                      setSelling(true);
+                      try { await onSell(pokemon.instanceId); onClose(); }
+                      catch { setSelling(false); setConfirmSell(false); }
+                    }}
+                  >
+                    {selling ? '…' : 'Confirmer'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

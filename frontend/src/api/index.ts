@@ -1,4 +1,5 @@
 export { getToken, setToken, clearToken, apiFetch } from './client';
+export { getSellPrice } from './types';
 export type {
   Rarity,
   PokemonInfo,
@@ -16,6 +17,9 @@ export type {
   DrawResult,
   DailyLoginResult,
   SellResult,
+  MyProfile,
+  AllBadgeEntry,
+  PublicUserInfo,
 } from './types';
 export { consumeOneShotToken, consumeOneShotCode } from './authApi';
 export { generateAdminPack } from './adminApi';
@@ -25,6 +29,8 @@ export { getMarketListings, createListing, buyListing, cancelListing } from './m
 export { getActiveEvents, drawEventPack } from './eventApi';
 export { getLeaderboard } from './leaderboardApi';
 export {
+  getMyProfile,
+  getAllBadges,
   searchUsers,
   claimDailyLogin,
   sellPokemon,

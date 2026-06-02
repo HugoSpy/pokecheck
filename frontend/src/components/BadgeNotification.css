@@ -1,0 +1,83 @@
+/* ── Badge Notification ── */
+.badge-notif {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 998;
+  width: 280px;
+}
+
+.badge-notif-card {
+  background: var(--bg-card);
+  border: 1px solid rgba(245, 166, 35, 0.3);
+  border-radius: var(--radius-lg);
+  padding: 16px 20px;
+  box-shadow: var(--shadow-elevated);
+  transform: translateY(100px);
+  opacity: 0;
+  transition:
+    transform 400ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 300ms ease;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.badge-notif-card.visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.badge-notif-header {
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #f5a623;
+  margin-bottom: 8px;
+}
+
+.badge-notif-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.badge-notif-icon img {
+  display: block;
+}
+
+.badge-notif-name {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.badge-notif-desc {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.badge-notif-coins {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+/* ── Mobile ── */
+@media (max-width: 480px) {
+  .badge-notif {
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+}

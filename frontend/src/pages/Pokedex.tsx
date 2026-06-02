@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import { getMyPokedex } from '../api/pokemonApi';
+import { sellPokemon } from '../api/userApi';
+import { useUserCtx } from '../context/UserContext';
 import type { UserInfo, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import './Pokedex.css';
@@ -33,6 +35,13 @@ export default function Pokedex() {
   const [pokemons, setPokemons] = useState<UserPokemonInstance[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { coins, setCoins } = useUserCtx();
+
+  const handleSell = useCallback(async (instanceId: string) => {
+    const result = await sellPokemon(instanceId);
+    setPokemons(prev => prev.filter(p => p.instanceId !== instanceId));
+    setCoins(coins + result.coins_earned);
+  }, [coins, setCoins]);
 
   const [filterGen, setFilterGen] = useState<number | null>(null);
   const [filterRarity, setFilterRarity] = useState<string | null>(null);
@@ -93,6 +102,7 @@ export default function Pokedex() {
         <div className="pokedex-stats">
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
           <StatChip label="Score" value={user.total_score.toLocaleString()} color="#10b981" />
+          <StatChip label="Coins 💰" value={coins.toLocaleString()} color="#f5a623" />
           <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
           {shinyCount > 0 && <StatChip label="Shiny ✨" value={shinyCount} color="#d4af37" />}
           <StatChip label="Échanges" value={user.trade_count} color="var(--rarity-epic)" />
@@ -192,7 +202,7 @@ export default function Pokedex() {
       ) : (
         <div className="pokedex-grid">
           {filtered.map(p => (
-            <PokemonCard key={p.instanceId} pokemon={p} />
+            <PokemonCard key={p.instanceId} pokemon={p} onSell={handleSell} />
           ))}
         </div>
       )}

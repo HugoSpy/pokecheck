@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getToken, clearToken } from '../api/client';
 import { generateAdminPack } from '../api/adminApi';
+import BadgeNotification from './BadgeNotification';
 import './Layout.css';
 
 function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
@@ -15,7 +16,10 @@ function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } |
 const NAV_LINKS = [
   { to: '/pokedex',     label: 'Pokédex'    },
   { to: '/trades',      label: 'Échanges'   },
+  { to: '/market',      label: 'Marché'     },
+  { to: '/events',      label: 'Événements' },
   { to: '/leaderboard', label: 'Classement' },
+  { to: '/profile',     label: 'Profil'     },
 ];
 
 export default function Layout() {
@@ -97,6 +101,8 @@ export default function Layout() {
       <main className="main-content">
         <Outlet />
       </main>
+
+      <BadgeNotification />
 
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>

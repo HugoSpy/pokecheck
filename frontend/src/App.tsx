@@ -1,13 +1,18 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { setToken, getToken } from './api/client';
+import { UserProvider } from './context/UserContext';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
+import EventPackOpen from './pages/EventPackOpen';
 import Pokedex from './pages/Pokedex';
 import Trades from './pages/Trades';
 import Leaderboard from './pages/Leaderboard';
 import UserPokedex from './pages/UserPokedex';
 import DevTradeAnim from './pages/DevTradeAnim';
+import Market from './pages/Market';
+import Events from './pages/Events';
+import Profile from './pages/Profile';
 import Layout from './components/Layout';
 
 function parseJwt(token: string): { exp?: number; isAdmin?: boolean } | null {
@@ -32,18 +37,22 @@ function AppRoutes() {
   const token = getToken();
   const isAdmin = authed && token !== null && (parseJwt(token)?.isAdmin === true);
 
-  if (!authed && location.pathname !== '/open' && location.pathname !== '/dev/trade-anim') {
+  if (!authed && location.pathname !== '/open' && location.pathname !== '/dev/trade-anim' && location.pathname !== '/events/pack') {
     return <Login />;
   }
 
   return (
     <Routes>
       <Route path="/open" element={<OpenPack />} />
+      <Route path="/events/pack" element={<EventPackOpen />} />
       <Route element={<Layout />}>
         <Route path="/pokedex"     element={<Pokedex />} />
         <Route path="/trades"      element={<Trades />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/u/:id"       element={<UserPokedex />} />
+        <Route path="/market"      element={<Market />} />
+        <Route path="/events"      element={<Events />} />
+        <Route path="/profile"     element={<Profile />} />
       </Route>
       <Route
         path="/dev/trade-anim"
@@ -73,7 +82,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <UserProvider>
+        <AppRoutes />
+      </UserProvider>
     </BrowserRouter>
   );
 }

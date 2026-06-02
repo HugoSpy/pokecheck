@@ -1,5 +1,13 @@
 import { apiFetch } from './client';
-import type { UserBadge, DailyLoginResult, SellResult } from './types';
+import type { UserBadge, DailyLoginResult, SellResult, MyProfile, AllBadgeEntry } from './types';
+
+export async function getMyProfile(): Promise<MyProfile> {
+  return apiFetch<MyProfile>('/users/me');
+}
+
+export async function getAllBadges(): Promise<AllBadgeEntry[]> {
+  return apiFetch<AllBadgeEntry[]>('/users/all-badges');
+}
 
 export async function searchUsers(q: string): Promise<{ users: { id: string; display_name: string }[] }> {
   return apiFetch<{ users: { id: string; display_name: string }[] }>(`/users/search?q=${encodeURIComponent(q)}`);
