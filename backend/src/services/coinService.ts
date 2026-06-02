@@ -6,7 +6,7 @@ const DROP_RATE: Record<string, number> = {
   COMMON: 0.60,
   RARE: 0.25,
   EPIC: 0.12,
-  LEGENDARY: 0.03,
+  LEGENDARY: 0.012, // 0.2% drop rate (was 0.5%), price scales ×2.5
 };
 const NORM = 20;
 

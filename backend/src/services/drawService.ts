@@ -6,10 +6,10 @@ type Tx = PrismaClient | Prisma.TransactionClient;
 /** Draw rarity distribution — single source of truth for /draw and /attendance/open. */
 export function pickRarity(): string {
   const roll = Math.random();
-  if (roll < 0.795) return 'COMMON';
-  if (roll < 0.945) return 'RARE';
-  if (roll < 0.995) return 'EPIC';
-  return 'LEGENDARY';
+  if (roll < 0.798) return 'COMMON';   // 79.8%
+  if (roll < 0.948) return 'RARE';     // 15%
+  if (roll < 0.998) return 'EPIC';     // 5%
+  return 'LEGENDARY';                  // 0.2%
 }
 
 export interface DrawnPokemon {

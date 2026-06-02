@@ -160,7 +160,7 @@ export interface PublicUserInfo {
 }
 
 const DROP_RATE: Record<string, number> = {
-  COMMON: 0.60, RARE: 0.25, EPIC: 0.12, LEGENDARY: 0.03,
+  COMMON: 0.60, RARE: 0.25, EPIC: 0.12, LEGENDARY: 0.012,
 };
 export function getSellPrice(instance: { points: number; rarity: string }): number {
   return Math.round(instance.points / (DROP_RATE[instance.rarity] ?? 0.60) / 20);
