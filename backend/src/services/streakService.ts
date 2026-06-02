@@ -11,16 +11,11 @@ export interface DailyLoginResult {
 }
 
 function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
+  return a.toISOString().slice(0, 10) === b.toISOString().slice(0, 10);
 }
 
 function isYesterday(date: Date, reference: Date): boolean {
-  const yesterday = new Date(reference);
-  yesterday.setDate(yesterday.getDate() - 1);
+  const yesterday = new Date(reference.getTime() - 24 * 60 * 60 * 1000);
   return isSameDay(date, yesterday);
 }
 

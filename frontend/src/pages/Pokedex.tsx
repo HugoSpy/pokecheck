@@ -33,6 +33,7 @@ const TYPE_COLORS: Record<string, string> = {
 export default function Pokedex() {
   const [user, setUser] = useState<UserInfo | null>(null);
   const [pokemons, setPokemons] = useState<UserPokemonInstance[]>([]);
+  const [totalPokemon, setTotalPokemon] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { coins, setCoins } = useUserCtx();
@@ -43,6 +44,7 @@ export default function Pokedex() {
     setCoins(coins + result.coins_earned);
   }, [coins, setCoins]);
 
+  const [filterDuplicates, setFilterDuplicates] = useState(false);
   const [filterGen, setFilterGen] = useState<number | null>(null);
   const [filterRarity, setFilterRarity] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
@@ -51,7 +53,7 @@ export default function Pokedex() {
 
   useEffect(() => {
     getMyPokedex()
-      .then(data => { setUser(data.user); setPokemons(data.pokemons); })
+      .then(data => { setUser(data.user); setPokemons(data.pokemons); setTotalPokemon(data.totalPokemon); })
       .catch(e => setError((e as Error).message))
       .finally(() => setLoading(false));
   }, []);
@@ -62,8 +64,21 @@ export default function Pokedex() {
     return Array.from(types).sort();
   }, [pokemons]);
 
+  const pokemonIdCounts = useMemo(() => {
+    const counts = new Map<number, number>();
+    pokemons.forEach(p => counts.set(p.id, (counts.get(p.id) ?? 0) + 1));
+    return counts;
+  }, [pokemons]);
+
+  const duplicateSpeciesCount = useMemo(() =>
+    [...pokemonIdCounts.values()].filter(n => n >= 2).length,
+  [pokemonIdCounts]);
+
+  const distinctOwned = useMemo(() => pokemonIdCounts.size, [pokemonIdCounts]);
+
   const filtered = useMemo(() =>
     pokemons.filter(p => {
+      if (filterDuplicates && (pokemonIdCounts.get(p.id) ?? 1) < 2) return false;
       if (filterGen !== null && p.generation !== filterGen) return false;
       if (filterRarity !== null && p.rarity !== filterRarity) return false;
       if (filterType !== null && !p.types.includes(filterType)) return false;
@@ -71,7 +86,7 @@ export default function Pokedex() {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     }),
-  [pokemons, filterGen, filterRarity, filterType, filterShiny, search]);
+  [pokemons, filterDuplicates, pokemonIdCounts, filterGen, filterRarity, filterType, filterShiny, search]);
 
   const legendaryCount = pokemons.filter(p => p.rarity === 'LEGENDARY').length;
   const shinyCount = pokemons.filter(p => p.is_shiny).length;
@@ -108,6 +123,27 @@ export default function Pokedex() {
           <StatChip label="Échanges" value={user.trade_count} color="var(--rarity-epic)" />
         </div>
       </div>
+
+      {/* Progression */}
+      {totalPokemon > 0 && (
+        <div className="pokedex-progress-block">
+          <div className="pokedex-progress-header">
+            <span className="pokedex-progress-label">Progression</span>
+            <span className="pokedex-progress-count">
+              <strong>{distinctOwned}</strong> / {totalPokemon}
+            </span>
+          </div>
+          <div className="pokedex-progress-bar">
+            <div
+              className="pokedex-progress-fill"
+              style={{ width: `${Math.min(100, (distinctOwned / totalPokemon) * 100)}%` }}
+            />
+          </div>
+          <div className="pokedex-progress-pct">
+            {((distinctOwned / totalPokemon) * 100).toFixed(1)} %
+          </div>
+        </div>
+      )}
 
       {/* Filters */}
       <div className="pokedex-filters">
@@ -155,7 +191,7 @@ export default function Pokedex() {
           </div>
         </div>
 
-        {/* Shiny */}
+        {/* Shiny + Doublons */}
         <div className="filter-row">
           <div className="filter-label">Divers</div>
           <div className="filter-group">
@@ -163,6 +199,12 @@ export default function Pokedex() {
               className={`filter-chip shiny-chip${filterShiny ? ' active' : ''}`}
               onClick={() => setFilterShiny(!filterShiny)}
             >✨ Shiny</button>
+            <button
+              className={`filter-chip${filterDuplicates ? ' active' : ''}`}
+              onClick={() => setFilterDuplicates(!filterDuplicates)}
+            >
+              Doublons ({duplicateSpeciesCount})
+            </button>
           </div>
         </div>
 

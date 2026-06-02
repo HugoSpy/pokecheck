@@ -12,8 +12,8 @@ export async function getRandomPokemons(count: number): Promise<{ pokemons: Roll
   return apiFetch<{ pokemons: RollCardData[] }>(`/pokedex/random-weighted?count=${count}`);
 }
 
-export async function getMyPokedex(): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[] }> {
-  return apiFetch<{ user: UserInfo; pokemons: UserPokemonInstance[] }>('/pokedex/me');
+export async function getMyPokedex(): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[]; totalPokemon: number }> {
+  return apiFetch<{ user: UserInfo; pokemons: UserPokemonInstance[]; totalPokemon: number }>('/pokedex/me');
 }
 
 export async function getPublicPokedex(userId: string): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[] }> {

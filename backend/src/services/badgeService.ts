@@ -14,6 +14,7 @@ const STARTERS: Record<string, number[]> = {
 };
 
 const STREAK_BADGES: Array<{ id: string; threshold: number }> = [
+  { id: 'streak_1',   threshold: 1   },
   { id: 'streak_7',   threshold: 7   },
   { id: 'streak_14',  threshold: 14  },
   { id: 'streak_30',  threshold: 30  },

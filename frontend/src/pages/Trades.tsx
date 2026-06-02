@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { getTradeOffers, proposeTrade, acceptTrade, declineTrade } from '../api/tradeApi';
 import { getMyPokedex, getPublicPokedex } from '../api/pokemonApi';
 import { searchUsers } from '../api/userApi';
+import { useUserCtx } from '../context/UserContext';
 import type { TradeOffer, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import TradeAnimation3D from '../components/TradeAnimation3D';
@@ -37,6 +38,8 @@ export default function Trades() {
   const [suggestions, setSuggestions] = useState<{ id: string; display_name: string }[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const { refreshProfile } = useUserCtx();
 
   const [animation, setAnimation] = useState<{
     given:      { sprite_url: string; name: string };
@@ -102,6 +105,7 @@ export default function Trades() {
     try {
       const res = await acceptTrade(offer.id);
       setOffers(prev => prev.filter(o => o.id !== offer.id));
+      refreshProfile();
 
       const given    = offer.toPokemon?.pokemon;
       const received = offer.fromPokemon?.pokemon;
@@ -357,13 +361,13 @@ function OfferCard({ offer, onAccept, onDecline }: {
       <div className="offer-exchange">
         <div className="offer-pokemon">
           {give && <img src={give.sprite_url} alt={give.name} />}
-          <span>{give?.name ?? '?'}</span>
+          <span>{give?.name ?? '?'}{give?.is_shiny ? ' ✨' : ''}</span>
           <span className="offer-poke-pts">{give?.points ?? 0} pts</span>
         </div>
         <span className="offer-arrow">⇄</span>
         <div className="offer-pokemon">
           {recv && <img src={recv.sprite_url} alt={recv.name} />}
-          <span>{recv?.name ?? '?'}</span>
+          <span>{recv?.name ?? '?'}{recv?.is_shiny ? ' ✨' : ''}</span>
           <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
         </div>
       </div>

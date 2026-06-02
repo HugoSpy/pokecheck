@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { getToken, clearToken } from '../api/client';
 import { generateAdminPack } from '../api/adminApi';
+import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import './Layout.css';
 
@@ -27,6 +28,7 @@ export default function Layout() {
   const token = getToken();
   const user = token ? parseJwt(token) : null;
   const isAdmin = user?.isAdmin === true;
+  const { coins } = useUserCtx();
 
   const [showModal, setShowModal] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);
@@ -79,6 +81,7 @@ export default function Layout() {
           )}
           {user ? (
             <>
+              <span className="nav-coins">💰 {coins.toLocaleString()}</span>
               <span className="nav-username">
                 {user.display_name}
                 {isAdmin && <span className="nav-admin-badge">ADMIN</span>}

@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
 
-  const [userPokemons, user] = await Promise.all([
+  const [userPokemons, user, totalPokemon] = await Promise.all([
     prisma.userPokemon.findMany({
       where: { user_id: userId },
       include: { pokemon: true },
@@ -18,10 +18,12 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       where: { id: userId },
       select: { id: true, display_name: true, total_score: true, trade_count: true },
     }),
+    prisma.pokemon.count(),
   ]);
 
   res.json({
     user,
+    totalPokemon,
     pokemons: userPokemons.map(up => ({
       instanceId: up.id,
       obtainedAt: up.obtained_at,
@@ -61,6 +63,8 @@ router.get('/random-weighted', async (req: Request, res: Response): Promise<void
     const pool = pools[rarity];
     return pool[Math.floor(Math.random() * pool.length)];
   });
+
+  console.log('Strip:', pokemons.map(p => `${p.name}(${p.rarity})`).join(', '));
 
   res.json({ pokemons });
 });

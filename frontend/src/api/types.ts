@@ -49,8 +49,8 @@ export interface LeaderboardEntry {
 export interface TradeOffer {
   id: string;
   from_user: { id: string; display_name: string };
-  fromPokemon: { pokemon: PokemonInfo; id: string; tradeable_at: string | null } | null;
-  toPokemon: { pokemon: PokemonInfo; id: string } | null;
+  fromPokemon: { pokemon: PokemonInfo; id: string; tradeable_at: string | null; is_shiny: boolean } | null;
+  toPokemon: { pokemon: PokemonInfo; id: string; is_shiny: boolean } | null;
   status: string;
   created_at: string;
 }

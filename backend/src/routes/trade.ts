@@ -23,19 +23,37 @@ router.get('/offers', async (req: Request, res: Response): Promise<void> => {
 
   const enriched = await Promise.all(
     offers.map(async trade => {
-      const fromPokemon = trade.from_pokemon_id
+      const fromRaw = trade.from_pokemon_id
         ? await prisma.userPokemon.findUnique({
             where: { id: trade.from_pokemon_id },
             include: { pokemon: true },
           })
         : null;
-      const toPokemon = trade.to_pokemon_id
+      const toRaw = trade.to_pokemon_id
         ? await prisma.userPokemon.findUnique({
             where: { id: trade.to_pokemon_id },
             include: { pokemon: true },
           })
         : null;
-      return { ...trade, fromPokemon, toPokemon };
+
+      const shinyEnrich = (up: typeof fromRaw) =>
+        up
+          ? {
+              id: up.id,
+              tradeable_at: up.tradeable_at,
+              is_shiny: up.is_shiny,
+              pokemon: {
+                ...up.pokemon,
+                is_shiny: up.is_shiny,
+                sprite_url: up.is_shiny
+                  ? up.pokemon.sprite_url.replace('/normal/', '/shiny/')
+                  : up.pokemon.sprite_url,
+                points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
+              },
+            }
+          : null;
+
+      return { ...trade, fromPokemon: shinyEnrich(fromRaw), toPokemon: shinyEnrich(toRaw) };
     })
   );
 
@@ -71,6 +89,14 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
 
   if (myPokemon.tradeable_at && myPokemon.tradeable_at > new Date()) {
     res.status(400).json({ error: 'Pokémon not tradeable yet', tradeable_at: myPokemon.tradeable_at });
+    return;
+  }
+
+  const myActiveListing = await prisma.marketListing.findFirst({
+    where: { pokemon_id: from_pokemon_id, status: 'active' },
+  });
+  if (myActiveListing) {
+    res.status(409).json({ error: 'Pokémon is listed on the market' });
     return;
   }
 

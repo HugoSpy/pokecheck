@@ -73,6 +73,13 @@ export default function Profile() {
         setProfile(prof);
         setBadges(allBadges);
         setFeaturedDraft(prof.featured_badges ?? []);
+        if (prof.last_login) {
+          const today = new Date().toISOString().slice(0, 10);
+          const loginDay = new Date(prof.last_login).toISOString().slice(0, 10);
+          if (loginDay === today) {
+            setClaimResult({ coins_earned: 0, streak_days: prof.streak_days, already_claimed: true });
+          }
+        }
       } catch (e) {
         if (!cancelled) setError(e instanceof Error ? e.message : 'Erreur de chargement');
       } finally {

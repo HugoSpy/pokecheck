@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
+import { checkBadges } from '../services/badgeService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -70,6 +71,8 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
     await recalculateUserPokedexValue(tx, userId);
   });
 
+  const newBadges = await checkBadges(userId);
+
   res.json({
     pokemon: {
       id: pokemon.id,
@@ -80,6 +83,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       types: pokemon.types,
       is_shiny: isShiny,
     },
+    new_badges: newBadges,
   });
 });
 
