@@ -5,22 +5,12 @@ import { useUserCtx } from '../context/UserContext';
 import type { UserInfo, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import { Search } from '../components/icons';
+import { TYPE_FR, RARITY_FR } from '../utils/pokemon';
 import './Pokedex.css';
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
 const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const;
 
-const TYPE_FR: Record<string, string> = {
-  normal: 'Normal', fire: 'Feu', water: 'Eau', electric: 'Électrik',
-  grass: 'Plante', ice: 'Glace', fighting: 'Combat', poison: 'Poison',
-  ground: 'Sol', flying: 'Vol', psychic: 'Psy', bug: 'Insecte',
-  rock: 'Roche', ghost: 'Spectre', dragon: 'Dragon', dark: 'Ténèbres',
-  steel: 'Acier', fairy: 'Fée',
-};
-
-const RARITY_FR: Record<string, string> = {
-  COMMON: 'Commun', RARE: 'Rare', EPIC: 'Épique', LEGENDARY: 'Légendaire',
-};
 
 const TYPE_COLORS: Record<string, string> = {
   normal: '#9CA3AF', fire: '#F97316', water: '#3B82F6',

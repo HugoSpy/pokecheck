@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import type { UserPokemonInstance } from '../api/types';
 import { getSellPrice } from '../api/types';
 import RarityBadge from './RarityBadge';
+import { TYPE_FR } from '../utils/pokemon';
 import './PokemonDetailModal.css';
 
 const RARITY_COLOR: Record<string, string> = {
@@ -110,7 +111,7 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
         {pokemon.types?.length > 0 && (
           <div className="pdm-types">
             {pokemon.types.map(t => (
-              <span key={t} className="pdm-type-chip">{t}</span>
+              <span key={t} className="pdm-type-chip">{TYPE_FR[t] ?? t}</span>
             ))}
           </div>
         )}
