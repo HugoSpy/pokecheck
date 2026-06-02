@@ -4,6 +4,7 @@ import { sellPokemon } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { UserInfo, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
+import { Search } from '../components/icons';
 import './Pokedex.css';
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
@@ -117,7 +118,7 @@ export default function Pokedex() {
         <div className="pokedex-stats">
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
           <StatChip label="Score" value={user.total_score.toLocaleString()} color="var(--success)" />
-          <StatChip label="Coins 💰" value={coins.toLocaleString()} color="var(--gold)" />
+          <StatChip label="Coins" value={coins.toLocaleString()} color="var(--gold)" />
           <StatChip label="Légendaires" value={legendaryCount} color="var(--rarity-legendary)" />
           {shinyCount > 0 && <StatChip label="Shiny ✨" value={shinyCount} color="#d4af37" />}
           <StatChip label="Échanges" value={user.trade_count} color="var(--rarity-epic)" />
@@ -238,7 +239,7 @@ export default function Pokedex() {
       {/* Grid */}
       {filtered.length === 0 ? (
         <div className="pokedex-empty">
-          <div style={{ fontSize: 40, marginBottom: 12 }}>🔍</div>
+          <div style={{ marginBottom: 12 }}><Search size={40} /></div>
           Aucun Pokémon ne correspond à ces filtres.
         </div>
       ) : (

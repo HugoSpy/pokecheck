@@ -4,6 +4,7 @@ import { getToken, clearToken } from '../api/client';
 import { generateAdminPack } from '../api/adminApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
+import { Coins } from './icons';
 import './Layout.css';
 
 function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
@@ -81,7 +82,7 @@ export default function Layout() {
           )}
           {user ? (
             <>
-              <span className="nav-coins">💰 {coins.toLocaleString()}</span>
+              <span className="nav-coins"><Coins size={14} /> {coins.toLocaleString()}</span>
               <span className="nav-username">
                 {user.display_name}
                 {isAdmin && <span className="nav-admin-badge">ADMIN</span>}

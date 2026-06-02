@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { getUnnotifiedBadges, markBadgesNotified } from '../api/userApi';
 import type { UserBadge } from '../api/types';
+import { Coins } from './icons';
 import './BadgeNotification.css';
 
 export default function BadgeNotification() {
@@ -66,7 +67,7 @@ export default function BadgeNotification() {
         </div>
         <div className="badge-notif-name">{current.badge.name}</div>
         <div className="badge-notif-desc">{current.badge.description}</div>
-        <div className="badge-notif-coins">💰 {current.badge.coin_reward} coins à récupérer</div>
+        <div className="badge-notif-coins"><Coins size={14} /> {current.badge.coin_reward} coins à récupérer</div>
       </div>
     </div>
   );

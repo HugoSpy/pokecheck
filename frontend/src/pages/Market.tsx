@@ -6,6 +6,8 @@ import { useUserCtx } from '../context/UserContext';
 import type { MarketListing, UserPokemonInstance } from '../api/types';
 import { getSellPrice } from '../api/types';
 import RarityBadge from '../components/RarityBadge';
+import Toast from '../components/Toast';
+import { Coins, Clock } from '../components/icons';
 import './Market.css';
 
 function parseJwt(token: string): { userId?: string } | null {
@@ -183,7 +185,7 @@ export default function Market() {
       {tab === 'buy' && (
         <div className="market-section">
           <div className="market-balance">
-            💰 <span className="market-balance-num">{coins.toLocaleString()}</span> coins
+            <Coins size={16} /> <span className="market-balance-num">{coins.toLocaleString()}</span> coins
           </div>
 
           {activeListings.length === 0 ? (
@@ -216,13 +218,13 @@ export default function Market() {
                     {/* Price + seller */}
                     <div className="market-listing-meta">
                       <span className="market-listing-price">
-                        💰 {listing.price_coins.toLocaleString()} coins
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
                       </span>
                       <span className="market-listing-seller">
                         {listing.seller.display_name}
                       </span>
                       <span className="market-listing-time">
-                        ⏱ {timeRemaining(listing.expires_at)}
+                        <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
                     </div>
 
@@ -283,10 +285,10 @@ export default function Market() {
 
                     <div className="market-listing-meta">
                       <span className="market-listing-price">
-                        💰 {listing.price_coins.toLocaleString()} coins
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
                       </span>
                       <span className="market-listing-time">
-                        ⏱ {timeRemaining(listing.expires_at)}
+                        <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
                       <span
                         className={`market-listing-status market-listing-status--${listing.status}`}
@@ -426,9 +428,7 @@ export default function Market() {
 
       {/* Toast */}
       {toast && (
-        <div className={`market-toast ${toast.type}`} onClick={() => setToast(null)}>
-          {toast.msg}
-        </div>
+        <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />
       )}
     </div>
   );

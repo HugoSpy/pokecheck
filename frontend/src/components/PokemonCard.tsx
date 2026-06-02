@@ -2,6 +2,7 @@ import { useState } from 'react';
 import RarityBadge from './RarityBadge';
 import PokemonDetailModal from './PokemonDetailModal';
 import type { UserPokemonInstance } from '../api/types';
+import { Lock } from './icons';
 import './PokemonCard.css';
 
 interface Props {
@@ -119,8 +120,8 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
       {isLocked && (
         <div style={{
           position: 'absolute', top: 8, left: isShiny ? 26 : 8,
-          fontSize: 11, color: 'var(--text-muted)',
-        }}>🔒</div>
+          color: 'var(--text-muted)', display: 'flex',
+        }}><Lock size={11} /></div>
       )}
 
       {/* Sprite */}

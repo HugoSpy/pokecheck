@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { getMyProfile, getAllBadges, claimDailyLogin, updateFeaturedBadges, claimBadge } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry } from '../api/types';
+import Toast from '../components/Toast';
+import { Coins, Lock } from '../components/icons';
 import './Profile.css';
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -187,7 +189,7 @@ export default function Profile() {
       {/* ── Section 1: Solde & Streak ── */}
       <section className="profile-section">
         <h2 className="profile-section-title">
-          <span>💰</span> Solde &amp; Streak
+          <Coins size={18} /> Solde &amp; Streak
         </h2>
 
         <div className="coins-display">{profile.coins.toLocaleString('fr-FR')} <span className="coins-unit">coins</span></div>
@@ -232,7 +234,7 @@ export default function Profile() {
                     className={`badge-card${badge.unlocked ? '' : ' locked'}${badge.unlocked && !badge.claimed ? ' badge-card--unclaimed' : ''}`}
                     title={badge.description}
                   >
-                    {!badge.unlocked && <span className="badge-lock-overlay">🔒</span>}
+                    {!badge.unlocked && <span className="badge-lock-overlay"><Lock size={11} /></span>}
                     <div className="badge-card-icon">
                       {badge.icon_url ? (
                         <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
@@ -252,7 +254,7 @@ export default function Profile() {
                       >
                         {claimingBadge === badge.id
                           ? <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                          : `Récupérer 💰 ${badge.coin_reward}`}
+                          : <>Récupérer <Coins size={12} /> {badge.coin_reward}</>}
                       </button>
                     )}
                   </div>
@@ -346,9 +348,7 @@ export default function Profile() {
 
       {/* ── Toast ── */}
       {toast && (
-        <div className={`profile-toast profile-toast--${toast.type}`}>
-          {toast.msg}
-        </div>
+        <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />
       )}
     </div>
   );

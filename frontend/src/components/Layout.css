@@ -88,6 +88,9 @@
 }
 
 .nav-coins {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   font-family: var(--font-mono);
   font-size: var(--text-base);
   font-weight: 600;

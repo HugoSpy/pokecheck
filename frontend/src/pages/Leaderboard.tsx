@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getLeaderboard } from '../api/leaderboardApi';
 import type { LeaderboardEntry } from '../api/types';
+import { Coins } from '../components/icons';
 import './Leaderboard.css';
 
 const MEDAL = ['🥇', '🥈', '🥉'];
@@ -79,7 +80,9 @@ export default function Leaderboard() {
                   </td>
                   <td className="lb-name">{entry.display_name}</td>
                   <td className={sort === 'coins' ? 'lb-coins' : 'lb-score'}>
-                    {sort === 'coins' ? `${entry.coins.toLocaleString()} 💰` : entry.total_score.toLocaleString()}
+                    {sort === 'coins'
+                      ? <><Coins size={13} /> {entry.coins.toLocaleString()}</>
+                      : entry.total_score.toLocaleString()}
                   </td>
                   <td className="lb-count">{entry.pokemon_count}</td>
                   <td className="lb-legendary">

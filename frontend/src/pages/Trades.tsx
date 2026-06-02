@@ -7,6 +7,7 @@ import { useUserCtx } from '../context/UserContext';
 import type { TradeOffer, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import TradeAnimation3D from '../components/TradeAnimation3D';
+import { Swap } from '../components/icons';
 import './Trades.css';
 
 interface LocationState {
@@ -334,7 +335,7 @@ export default function Trades() {
               )}
             </div>
 
-            <div className="proposal-arrow">⇄</div>
+            <div className="proposal-arrow"><Swap size={20} /></div>
 
             <div className="proposal-side">
               {selectedTheirs ? (
@@ -378,7 +379,7 @@ function OfferCard({ offer, onAccept, onDecline }: {
           <span>{give?.name ?? '?'}{give?.is_shiny ? ' ✨' : ''}</span>
           <span className="offer-poke-pts">{give?.points ?? 0} pts</span>
         </div>
-        <span className="offer-arrow">⇄</span>
+        <span className="offer-arrow"><Swap size={16} /></span>
         <div className="offer-pokemon">
           {recv && <img src={recv.sprite_url} alt={recv.name} />}
           <span>{recv?.name ?? '?'}{recv?.is_shiny ? ' ✨' : ''}</span>
