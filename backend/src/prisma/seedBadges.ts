@@ -5,6 +5,7 @@ const prisma = new PrismaClient();
 
 const BADGES = [
   // Streak
+  { id: 'streak_1',   name: 'Première connexion',        description: 'Connecte-toi pour la première fois',                   category: 'streak',     coin_reward: 50    },
   { id: 'streak_7',   name: 'Premier pas',              description: 'Connecte-toi 7 jours de suite',                        category: 'streak',     coin_reward: 200   },
   { id: 'streak_14',  name: 'Habitué',                   description: 'Connecte-toi 14 jours de suite',                       category: 'streak',     coin_reward: 350   },
   { id: 'streak_30',  name: 'Régulier',                  description: 'Connecte-toi 30 jours de suite',                       category: 'streak',     coin_reward: 700   },
