@@ -9,7 +9,7 @@ export async function draw(source?: 'draw' | 'bonus', force_shiny?: boolean): Pr
 }
 
 export async function getRandomPokemons(count: number): Promise<{ pokemons: RollCardData[] }> {
-  return apiFetch<{ pokemons: RollCardData[] }>(`/pokedex/random?count=${count}`);
+  return apiFetch<{ pokemons: RollCardData[] }>(`/pokedex/random-weighted?count=${count}`);
 }
 
 export async function getMyPokedex(): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[] }> {

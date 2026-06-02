@@ -35,6 +35,36 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
   });
 });
 
+router.get('/random-weighted', async (req: Request, res: Response): Promise<void> => {
+  const count = Math.min(Math.max(parseInt(String(req.query.count ?? '30'), 10) || 30, 1), 60);
+
+  function pickRarity(): string {
+    const roll = Math.random();
+    if (roll < 0.795) return 'COMMON';
+    if (roll < 0.945) return 'RARE';
+    if (roll < 0.995) return 'EPIC';
+    return 'LEGENDARY';
+  }
+
+  // Précharger un pool par rareté pour éviter N requêtes DB
+  const [commons, rares, epics, legendaries] = await Promise.all([
+    prisma.pokemon.findMany({ where: { rarity: 'COMMON' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
+    prisma.pokemon.findMany({ where: { rarity: 'RARE' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
+    prisma.pokemon.findMany({ where: { rarity: 'EPIC' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
+    prisma.pokemon.findMany({ where: { rarity: 'LEGENDARY' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
+  ]);
+
+  const pools: Record<string, typeof commons> = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
+
+  const pokemons = Array.from({ length: count }, () => {
+    const rarity = pickRarity();
+    const pool = pools[rarity];
+    return pool[Math.floor(Math.random() * pool.length)];
+  });
+
+  res.json({ pokemons });
+});
+
 router.get('/random', async (req: Request, res: Response): Promise<void> => {
   const count = Math.min(Math.max(parseInt(String(req.query.count ?? '30'), 10) || 30, 1), 60);
 
