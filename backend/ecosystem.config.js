@@ -12,5 +12,12 @@ module.exports = {
       autorestart: false,
       watch: false,
     },
+    {
+      name: 'market-expiry',
+      script: 'dist/jobs/marketExpiry.js',
+      cron_restart: '0 * * * *',
+      autorestart: false,
+      watch: false,
+    },
   ],
 };
