@@ -9,26 +9,27 @@ const prisma = new PrismaClient();
 
 router.post('/', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
-  const source = (req.body as { source?: string }).source ?? 'draw';
+  // source is always 'draw' for this endpoint — never accepted from the client.
+  // Accepting it from the body would let anyone bypass the daily draw limit by
+  // sending { source: "bonus" } (only 'draw' triggers the count check below).
+  const source = 'draw';
 
-  if (source === 'draw') {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const drawCount = await prisma.userPokemon.count({
-      where: {
-        user_id: userId,
-        source: 'draw',
-        obtained_at: { gte: today, lt: tomorrow },
-      },
-    });
+  const drawCount = await prisma.userPokemon.count({
+    where: {
+      user_id: userId,
+      source: 'draw',
+      obtained_at: { gte: today, lt: tomorrow },
+    },
+  });
 
-    if (drawCount >= 100) {
-      res.status(403).json({ error: 'Already drawn today' });
-      return;
-    }
+  if (drawCount >= 100) {
+    res.status(403).json({ error: 'Already drawn today' });
+    return;
   }
 
   const isAdmin = req.user!.isAdmin === true;

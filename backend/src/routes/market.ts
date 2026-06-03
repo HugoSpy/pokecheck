@@ -126,7 +126,25 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
 
   const tradeableAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
+  // Race-condition guard: the outer findUnique + coin check above run outside the
+  // transaction. Two concurrent buyers can both pass those checks simultaneously.
+  // The updateMany below acts as an atomic compare-and-swap at the DB level:
+  // PostgreSQL re-evaluates the WHERE after acquiring the row lock, so the second
+  // concurrent request will find status='sold' (committed by the first) and get
+  // count=0, triggering the 409 before any coins are moved.
+  let raceDetected = false;
+
   await prisma.$transaction(async tx => {
+    const { count } = await tx.marketListing.updateMany({
+      where: { id: listingId, status: 'active' },
+      data: { status: 'sold', sold_at: new Date(), buyer_id: buyerId },
+    });
+
+    if (count === 0) {
+      raceDetected = true;
+      return;
+    }
+
     await spendCoins(tx, buyerId, listing.price_coins, 'market');
     await addCoins(tx, listing.seller_id, listing.price_coins, 'market');
 
@@ -135,14 +153,14 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
       data: { user_id: buyerId, tradeable_at: tradeableAt },
     });
 
-    await tx.marketListing.update({
-      where: { id: listingId },
-      data: { status: 'sold', sold_at: new Date(), buyer_id: buyerId },
-    });
-
     await recalculateUserPokedexValue(tx, listing.seller_id);
     await recalculateUserPokedexValue(tx, buyerId);
   });
+
+  if (raceDetected) {
+    res.status(409).json({ error: 'Listing no longer available' });
+    return;
+  }
 
   const newBadges = await checkBadges(buyerId);
 

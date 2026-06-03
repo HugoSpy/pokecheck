@@ -3,6 +3,7 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
+import rateLimit from 'express-rate-limit';
 
 import authRouter from './routes/auth';
 import drawRouter from './routes/draw';
@@ -41,6 +42,35 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Rate limiting on monetary and auth-sensitive endpoints.
+// Keyed by IP (Express default). If the deployment is behind a trusted reverse
+// proxy that sets X-Forwarded-For, add `app.set('trust proxy', 1)` so the real
+// client IP is used instead of the proxy's IP.
+// Note: if many students share a single NAT/VPN, increase `max` accordingly.
+//
+// Each route gets its OWN rateLimit() instance — express-rate-limit uses a
+// per-instance in-memory store, so a shared instance would merge all routes into
+// a single counter per IP (5 /draw + 5 /sell = limit hit on /daily-login).
+const rl = (max: number) => rateLimit({
+  windowMs: 60_000,  // 1-minute sliding window
+  max,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please slow down.' },
+});
+
+// These app.use() calls are registered BEFORE the routers so the limiter runs
+// first. Express matches path prefixes, so /daily-login covers POST /daily-login,
+// /market/buy covers POST /market/buy/:id, etc.
+app.use('/daily-login',   rl(10));
+app.use('/draw',          rl(10));
+app.use('/sell',          rl(10));
+app.use('/market/buy',    rl(10));
+app.use('/trade/accept',  rl(10));
+// /auth/one-shot is a login endpoint — more generous to avoid blocking a whole
+// class behind the same school NAT during a simultaneous login session.
+app.use('/auth/one-shot', rl(30));
 
 app.use('/auth', authRouter);
 app.use('/draw', drawRouter);

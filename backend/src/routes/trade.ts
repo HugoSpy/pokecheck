@@ -81,6 +81,14 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  // Prevent self-trades: a user trading with themselves increments trade_count for
+  // both sides of the same row (two UPDATE calls on the same user inside a single
+  // transaction), resulting in +2 per self-trade and easy badge farming.
+  if (to_user_id === userId) {
+    res.status(400).json({ error: 'Cannot trade with yourself' });
+    return;
+  }
+
   const myPokemon = await prisma.userPokemon.findUnique({ where: { id: from_pokemon_id } });
   if (!myPokemon || myPokemon.user_id !== userId) {
     res.status(403).json({ error: 'Pokémon not owned by you' });
@@ -166,7 +174,24 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
   const tradeableAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
   const pokemonExchanged = !!trade.to_pokemon_id;
 
+  // Race-condition guard: the outer findUnique check (status === 'pending') runs
+  // outside the transaction. Two simultaneous accepts can both pass that check.
+  // The updateMany at the start of the transaction is a compare-and-swap: only one
+  // concurrent transaction will match status='pending'; the second will get count=0
+  // after PostgreSQL re-evaluates the WHERE against the first's committed state.
+  let raceDetected = false;
+
   const { fromUser, toUser } = await prisma.$transaction(async tx => {
+    const { count } = await tx.trade.updateMany({
+      where: { id, status: 'pending' },
+      data: { status: 'accepted', resolved_at: new Date() },
+    });
+
+    if (count === 0) {
+      raceDetected = true;
+      return { fromUser: null, toUser: null };
+    }
+
     // Transfer Pokémon
     await tx.userPokemon.update({
       where: { id: trade.from_pokemon_id },
@@ -190,11 +215,6 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
       await addCoins(tx, trade.from_user_id, trade.coins_requested, 'trade');
     }
 
-    await tx.trade.update({
-      where: { id },
-      data: { status: 'accepted', resolved_at: new Date() },
-    });
-
     // Increment trade_count only when at least one pokemon is exchanged
     let fromUserResult = null;
     let toUserResult = null;
@@ -215,6 +235,11 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
 
     return { fromUser: fromUserResult, toUser: toUserResult };
   });
+
+  if (raceDetected) {
+    res.status(409).json({ error: 'Trade already resolved' });
+    return;
+  }
 
   const [fromBadges, toBadges] = await Promise.all([
     checkBadges(trade.from_user_id),
