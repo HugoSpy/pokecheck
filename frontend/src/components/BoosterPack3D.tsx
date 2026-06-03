@@ -88,7 +88,7 @@ export default function BoosterPack3D() {
             material.metalness = 0.9;
             material.map = texture;
           } else {
-            material.color.set(0x111111);
+            material.color.set(0x2a2a2a);
             material.map = null;
           }
           material.needsUpdate = true;
