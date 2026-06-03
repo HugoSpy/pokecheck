@@ -94,9 +94,11 @@ export default function BoosterPack3D() {
           material.needsUpdate = true;
         });
 
-        const hasMat001 = (Array.isArray(child.material) ? child.material : [child.material])
+        const hasMat003 = (Array.isArray(child.material) ? child.material : [child.material])
           .some(m => m.name === 'Material.003');
-        if (!hasMat001) return;
+        if (!hasMat003) return;
+
+        child.scale.set(1.15, 1.1, 1.0);
 
         const uv = child.geometry.attributes.uv;
         if (!uv) return;
