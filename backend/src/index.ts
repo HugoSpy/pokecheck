@@ -97,6 +97,7 @@ app.use('/draw',          rl(10));
 app.use('/sell',          rl(10));
 app.use('/market/buy',    rl(10));
 app.use('/trade/accept',  rl(10));
+app.use('/event/draw',    rl(10));
 // /auth/one-shot is a login endpoint — more generous to avoid blocking a whole
 // class behind the same school NAT during a simultaneous login session.
 app.use('/auth/one-shot', rl(30));
