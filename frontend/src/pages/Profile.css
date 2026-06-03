@@ -294,3 +294,27 @@
     font-size: 28px;
   }
 }
+
+/* ── Username ── */
+.profile-username-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.profile-username-input {
+  width: min(100%, 320px);
+  min-height: 40px;
+  padding: 9px 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+}
+
+.profile-username-input:focus {
+  border-color: var(--accent);
+}

@@ -3,6 +3,7 @@ import type { PokemonInfo } from './types';
 
 export interface AttendanceAvailable {
   available: boolean;
+  reason?: 'available' | 'already_opened' | 'no_active_check' | 'expired' | 'unknown';
   attendance_id?: string;
   expires_at?: string;
 }
@@ -18,7 +19,7 @@ export interface AttendanceCheckSummary {
 
 // ── User ──
 export async function getAttendanceAvailable(): Promise<AttendanceAvailable> {
-  return apiFetch<AttendanceAvailable>('/attendance/available');
+  return apiFetch<AttendanceAvailable>('/attendance/available', { cache: 'no-store' });
 }
 
 export async function openAttendance(attendanceId: string): Promise<{ pokemon: PokemonInfo }> {

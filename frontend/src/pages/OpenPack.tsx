@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
 import { draw, getRandomPokemons } from '../api/pokemonApi';
@@ -95,14 +95,51 @@ export default function OpenPack() {
     return () => clearInterval(i);
   }, []);
 
-  // Fetch attendance availability (attendance mode only)
+  const fetchAttendance = useCallback(async (showLoading = false) => {
+    if (isOneShot || authLoading || !authed) return;
+    if (showLoading) setAttLoading(true);
+
+    try {
+      setAttendance(await getAttendanceAvailable());
+    } catch {
+      setAttendance({ available: false, reason: 'unknown' });
+    } finally {
+      setAttLoading(false);
+    }
+  }, [isOneShot, authLoading, authed]);
+
+  // Fetch attendance availability immediately in attendance mode.
+  useEffect(() => {
+    void fetchAttendance(true);
+  }, [fetchAttendance]);
+
+  // Refresh stale availability when the tab/window becomes active again.
   useEffect(() => {
     if (isOneShot || authLoading || !authed) return;
-    getAttendanceAvailable()
-      .then(setAttendance)
-      .catch(() => setAttendance({ available: false }))
-      .finally(() => setAttLoading(false));
-  }, [isOneShot, authLoading, authed]);
+
+    const refetch = () => {
+      if (document.visibilityState === 'visible') void fetchAttendance();
+    };
+
+    window.addEventListener('focus', refetch);
+    document.addEventListener('visibilitychange', refetch);
+
+    return () => {
+      window.removeEventListener('focus', refetch);
+      document.removeEventListener('visibilitychange', refetch);
+    };
+  }, [isOneShot, authLoading, authed, fetchAttendance]);
+
+  // Poll only on /open attendance mode while the user is waiting to open.
+  useEffect(() => {
+    if (isOneShot || authLoading || !authed || phase !== 'idle') return;
+
+    const interval = window.setInterval(() => {
+      void fetchAttendance();
+    }, 5000);
+
+    return () => window.clearInterval(interval);
+  }, [isOneShot, authLoading, authed, phase, fetchAttendance]);
 
   const attRemainingMs = attendance?.expires_at
     ? new Date(attendance.expires_at).getTime() - now

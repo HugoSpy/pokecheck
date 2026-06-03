@@ -14,6 +14,7 @@ import Events from './pages/Events';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
 import Layout from './components/Layout';
+import PatchNotesButton from './components/PatchNotesButton';
 
 function AppRoutes() {
   const location = useLocation();
@@ -74,6 +75,7 @@ export default function App() {
     <BrowserRouter>
       <UserProvider>
         <AppRoutes />
+        <PatchNotesButton />
       </UserProvider>
     </BrowserRouter>
   );

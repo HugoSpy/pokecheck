@@ -1,0 +1,128 @@
+.patchnotes-button {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 40;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--border-bright);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: background 150ms, border-color 150ms, transform 100ms;
+}
+
+.patchnotes-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.patchnotes-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(0, 0, 0, 0.62);
+}
+
+.patchnotes-modal {
+  width: min(100%, 460px);
+  max-height: min(520px, calc(100dvh - 40px));
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.patchnotes-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.patchnotes-header h2 {
+  font-size: var(--text-2xl);
+  color: var(--text-primary);
+}
+
+.patchnotes-close {
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.patchnotes-close:hover {
+  color: var(--text-primary);
+}
+
+.patchnotes-list {
+  max-height: 390px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.patchnotes-entry-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.patchnotes-version {
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.patchnotes-date {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.patchnotes-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.patchnotes-items li {
+  display: flex;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+  line-height: 1.45;
+}
+
+.patchnotes-bullet {
+  color: var(--accent);
+}
+
+@media (max-width: 720px) {
+  .patchnotes-button {
+    bottom: calc(var(--nav-h) + 16px);
+  }
+}

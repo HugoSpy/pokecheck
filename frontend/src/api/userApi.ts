@@ -36,6 +36,13 @@ export async function markBadgesNotified(badgeIds: string[]): Promise<void> {
   });
 }
 
+export async function updateUsername(displayName: string): Promise<{ display_name: string }> {
+  return apiFetch<{ display_name: string }>('/users/username', {
+    method: 'PATCH',
+    body: JSON.stringify({ display_name: displayName }),
+  });
+}
+
 export async function updateFeaturedBadges(badgeIds: string[]): Promise<void> {
   await apiFetch<void>('/users/featured-badges', {
     method: 'PATCH',

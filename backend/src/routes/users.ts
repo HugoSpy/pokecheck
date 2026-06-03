@@ -71,6 +71,30 @@ router.post('/badges/notified', authMiddleware, async (req: Request, res: Respon
   res.json({ success: true });
 });
 
+// PATCH /users/username — mettre à jour son nom d'utilisateur
+router.patch('/username', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const displayName = String((req.body as { display_name?: unknown }).display_name ?? '').trim();
+
+  if (displayName.length < 2) {
+    res.status(400).json({ error: 'Nom trop court' });
+    return;
+  }
+
+  if (displayName.length > 32) {
+    res.status(400).json({ error: 'Nom trop long' });
+    return;
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data: { display_name: displayName },
+    select: { display_name: true },
+  });
+
+  res.json({ display_name: updated.display_name });
+});
+
 // PATCH /users/featured-badges — mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
 router.patch('/featured-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
