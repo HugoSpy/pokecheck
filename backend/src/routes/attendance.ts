@@ -121,9 +121,8 @@ router.post('/open', async (req: Request, res: Response): Promise<void> => {
     throw e;
   }
 
-  // Fire-and-forget streak claim (same as the one-shot flow); non-fatal
-  claimDailyLogin(userId).catch(() => {});
-  await checkBadges(userId);
+  const streakResult = await claimDailyLogin(userId).catch(() => null);
+  if (!streakResult?.already_claimed) await checkBadges(userId);
 
   res.json({ pokemon: drawn.pokemon });
 });

@@ -5,6 +5,13 @@ export const isDevEnv =
 
 export const patchNotes = [
   {
+    version: 'v1.1',
+    date: '03/06/2026 19:20',
+    items: [
+      'Événement : ajout du pack Édition Sinnoh',
+    ],
+  },
+  {
     version: 'v1.0',
     date: '03/06/2026 16:40',
     items: [

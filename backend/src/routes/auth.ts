@@ -5,6 +5,7 @@ import passport from 'passport';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
 import { PrismaClient } from '@prisma/client';
 import { claimDailyLogin } from '../services/streakService';
+import { checkBadges } from '../services/badgeService';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -294,8 +295,9 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     );
     setSessionCookie(res, sessionToken);
     res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
-    // Fire-and-forget streak claim — errors are non-fatal
-    claimDailyLogin(user.id).catch(() => {});
+    claimDailyLogin(user.id)
+      .then(result => { if (!result.already_claimed) return checkBadges(user.id); })
+      .catch(() => {});
     return;
   }
   if (!token) { res.status(400).json({ error: 'Token or code is required' }); return; }
@@ -321,7 +323,9 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
   );
   setSessionCookie(res, sessionToken);
   res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
-  claimDailyLogin(user.id).catch(() => {});
+  claimDailyLogin(user.id)
+    .then(result => { if (!result.already_claimed) return checkBadges(user.id); })
+    .catch(() => {});
 });
 
 export default router;
