@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getMyProfile, getAllBadges, claimDailyLogin, updateFeaturedBadges, claimBadge } from '../api/userApi';
+import { getMyProfile, getAllBadges, claimDailyLogin, updateUsername, updateFeaturedBadges, claimBadge } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry } from '../api/types';
 import Toast from '../components/Toast';
@@ -43,7 +43,7 @@ function categoryFallbackEmoji(category: string): string {
 }
 
 export default function Profile() {
-  const { setCoins } = useUserCtx();
+  const { setCoins, refreshProfile } = useUserCtx();
 
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [badges, setBadges] = useState<AllBadgeEntry[]>([]);
@@ -55,6 +55,8 @@ export default function Profile() {
     streak_days: number;
     already_claimed: boolean;
   } | null>(null);
+  const [username, setUsername] = useState('');
+  const [usernameSaving, setUsernameSaving] = useState(false);
   const [featuredDraft, setFeaturedDraft] = useState<string[]>([]);
   const [featuredSaving, setFeaturedSaving] = useState(false);
   const [claimingBadge, setClaimingBadge] = useState<string | null>(null);
@@ -74,6 +76,7 @@ export default function Profile() {
         const [prof, allBadges] = await Promise.all([getMyProfile(), getAllBadges()]);
         if (cancelled) return;
         setProfile(prof);
+        setUsername(prof.display_name);
         setBadges(allBadges);
         setFeaturedDraft(prof.featured_badges ?? []);
         if (prof.last_login) {
@@ -136,6 +139,29 @@ export default function Profile() {
     }
   }
 
+  async function handleSaveUsername() {
+    if (!profile || usernameSaving) return;
+
+    const nextUsername = username.trim();
+    if (nextUsername.length < 2) {
+      showToast('Nom trop court', 'error');
+      return;
+    }
+
+    setUsernameSaving(true);
+    try {
+      const result = await updateUsername(nextUsername);
+      setUsername(result.display_name);
+      setProfile(prev => prev ? { ...prev, display_name: result.display_name } : null);
+      await refreshProfile();
+      showToast('Nom sauvegardé !', 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erreur de sauvegarde', 'error');
+    } finally {
+      setUsernameSaving(false);
+    }
+  }
+
   async function handleSaveFeatured() {
     setFeaturedSaving(true);
     try {
@@ -185,6 +211,29 @@ export default function Profile() {
   return (
     <div className="profile-page">
       <h1 className="profile-title">Mon Profil</h1>
+
+      <section className="profile-section">
+        <h2 className="profile-section-title">
+          <span>👤</span> Nom d'utilisateur
+        </h2>
+        <div className="profile-username-row">
+          <input
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            maxLength={32}
+            className="profile-username-input"
+            aria-label="Nom d'utilisateur"
+          />
+          <button
+            className="btn btn-primary"
+            onClick={handleSaveUsername}
+            disabled={usernameSaving || username.trim() === profile.display_name}
+          >
+            {usernameSaving ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
+            Sauvegarder
+          </button>
+        </div>
+      </section>
 
       {/* ── Section 1: Solde & Streak ── */}
       <section className="profile-section">

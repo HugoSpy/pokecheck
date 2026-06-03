@@ -16,6 +16,8 @@ router.get('/available', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const now = new Date();
 
+  res.set('Cache-Control', 'no-store');
+
   const activeChecks = await prisma.attendanceCheck.findMany({
     where: { cancelled_at: null, expires_at: { gt: now } },
     orderBy: { created_at: 'desc' },
@@ -26,12 +28,43 @@ router.get('/available', async (req: Request, res: Response): Promise<void> => {
       where: { attendance_id_user_id: { attendance_id: check.id, user_id: userId } },
     });
     if (!opening) {
-      res.json({ available: true, attendance_id: check.id, expires_at: check.expires_at });
+      res.json({
+        available: true,
+        reason: 'available',
+        attendance_id: check.id,
+        expires_at: check.expires_at,
+      });
       return;
     }
   }
 
-  res.json({ available: false });
+  if (activeChecks.length > 0) {
+    const latest = activeChecks[0];
+    res.json({
+      available: false,
+      reason: 'already_opened',
+      attendance_id: latest.id,
+      expires_at: latest.expires_at,
+    });
+    return;
+  }
+
+  const latestCheck = await prisma.attendanceCheck.findFirst({
+    where: { cancelled_at: null },
+    orderBy: { created_at: 'desc' },
+  });
+
+  if (latestCheck && latestCheck.expires_at <= now) {
+    res.json({
+      available: false,
+      reason: 'expired',
+      attendance_id: latestCheck.id,
+      expires_at: latestCheck.expires_at,
+    });
+    return;
+  }
+
+  res.json({ available: false, reason: 'no_active_check' });
 });
 
 // ── POST /attendance/open ─────────────────────────────────────────────────────
