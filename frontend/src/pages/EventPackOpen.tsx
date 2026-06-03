@@ -10,7 +10,6 @@ type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
 const CARD_WIDTH = 155;
 const CARD_GAP = 12;
 const CARD_STRIDE = CARD_WIDTH + CARD_GAP;
-const TOTAL_CARDS = 30;
 const TARGET_INDEX = 22;
 const ROLL_DURATION = 4000;
 
