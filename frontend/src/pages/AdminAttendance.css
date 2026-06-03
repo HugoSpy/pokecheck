@@ -58,6 +58,52 @@
   font-size: var(--text-lg);
 }
 
+.att-empty--compact {
+  padding: 24px 20px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.att-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.att-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.att-section-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.att-old-section {
+  border-top: 1px solid var(--border);
+  padding-top: 18px;
+}
+
+.att-old-summary {
+  cursor: pointer;
+  user-select: none;
+}
+
+.att-old-summary::marker {
+  color: var(--accent);
+}
+
+.att-old-list {
+  margin-top: 12px;
+}
+
 .att-list {
   display: flex;
   flex-direction: column;

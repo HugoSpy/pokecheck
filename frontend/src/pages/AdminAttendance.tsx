@@ -22,10 +22,64 @@ function fmtCountdown(ms: number): string {
 
 type CheckStatus = 'active' | 'expired' | 'cancelled';
 
+const RECENT_CHECK_MS = 60 * 60 * 1000;
+
 function statusOf(c: AttendanceCheckSummary, now: number): CheckStatus {
   if (c.cancelled_at) return 'cancelled';
   if (new Date(c.expires_at).getTime() > now) return 'active';
   return 'expired';
+}
+
+function AttendanceCheckCard({
+  check,
+  now,
+  onCancel,
+}: {
+  check: AttendanceCheckSummary;
+  now: number;
+  onCancel: (id: string) => void;
+}) {
+  const status = statusOf(check, now);
+  const remaining = new Date(check.expires_at).getTime() - now;
+  const pct = check.total_users > 0
+    ? Math.min(100, Math.round((check.openings_count / check.total_users) * 100))
+    : 0;
+
+  return (
+    <div className={`att-card att-card--${status}`}>
+      <div className="att-card-top">
+        <span className="att-card-time">Lancé à {fmtTime(check.created_at)}</span>
+        {status === 'active' && (
+          <span className="att-card-countdown">⏱ {fmtCountdown(remaining)}</span>
+        )}
+        {status === 'expired' && <span className="att-card-status att-card-status--expired">Expiré</span>}
+        {status === 'cancelled' && <span className="att-card-status att-card-status--cancelled">Annulé</span>}
+      </div>
+
+      <div className="att-card-progress">
+        <div className="att-card-progress-head">
+          <span><strong>{check.openings_count}</strong> / {check.total_users} élèves ont ouvert</span>
+          <span className="att-card-pct">{pct} %</span>
+        </div>
+        <div className="att-progress-bar">
+          <div className="att-progress-fill" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      <div className="att-card-actions">
+        {status === 'cancelled' ? (
+          <span className="att-cancelled-badge">ANNULÉ</span>
+        ) : (
+          <button
+            className="btn btn-danger"
+            onClick={() => onCancel(check.id)}
+          >
+            Annuler & rollback
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminAttendance() {
@@ -107,6 +161,9 @@ export default function AdminAttendance() {
     }
   }
 
+  const recentChecks = checks.filter(c => now - new Date(c.created_at).getTime() < RECENT_CHECK_MS);
+  const oldChecks = checks.filter(c => now - new Date(c.created_at).getTime() >= RECENT_CHECK_MS);
+
   return (
     <div className="att-page">
       <div className="att-header">
@@ -129,49 +186,42 @@ export default function AdminAttendance() {
       ) : checks.length === 0 ? (
         <div className="att-empty">Aucun check présence ces dernières 24 h.</div>
       ) : (
-        <div className="att-list">
-          {checks.map(c => {
-            const status = statusOf(c, now);
-            const remaining = new Date(c.expires_at).getTime() - now;
-            const pct = c.total_users > 0
-              ? Math.min(100, Math.round((c.openings_count / c.total_users) * 100))
-              : 0;
-            return (
-              <div key={c.id} className={`att-card att-card--${status}`}>
-                <div className="att-card-top">
-                  <span className="att-card-time">Lancé à {fmtTime(c.created_at)}</span>
-                  {status === 'active' && (
-                    <span className="att-card-countdown">⏱ {fmtCountdown(remaining)}</span>
-                  )}
-                  {status === 'expired' && <span className="att-card-status att-card-status--expired">Expiré</span>}
-                  {status === 'cancelled' && <span className="att-card-status att-card-status--cancelled">Annulé</span>}
-                </div>
-
-                <div className="att-card-progress">
-                  <div className="att-card-progress-head">
-                    <span><strong>{c.openings_count}</strong> / {c.total_users} élèves ont ouvert</span>
-                    <span className="att-card-pct">{pct} %</span>
-                  </div>
-                  <div className="att-progress-bar">
-                    <div className="att-progress-fill" style={{ width: `${pct}%` }} />
-                  </div>
-                </div>
-
-                <div className="att-card-actions">
-                  {status === 'cancelled' ? (
-                    <span className="att-cancelled-badge">ANNULÉ</span>
-                  ) : (
-                    <button
-                      className="btn btn-danger"
-                      onClick={() => setCancelTarget(c.id)}
-                    >
-                      Annuler & rollback
-                    </button>
-                  )}
-                </div>
+        <div className="att-sections">
+          <section className="att-section">
+            <h2 className="att-section-title">Actifs</h2>
+            {recentChecks.length === 0 ? (
+              <div className="att-empty att-empty--compact">Aucun check de moins d'1 heure.</div>
+            ) : (
+              <div className="att-list">
+                {recentChecks.map(check => (
+                  <AttendanceCheckCard
+                    key={check.id}
+                    check={check}
+                    now={now}
+                    onCancel={setCancelTarget}
+                  />
+                ))}
               </div>
-            );
-          })}
+            )}
+          </section>
+
+          {oldChecks.length > 0 && (
+            <details className="att-section att-old-section">
+              <summary className="att-section-title att-old-summary">
+                Anciens checks ({oldChecks.length})
+              </summary>
+              <div className="att-list att-old-list">
+                {oldChecks.map(check => (
+                  <AttendanceCheckCard
+                    key={check.id}
+                    check={check}
+                    now={now}
+                    onCancel={setCancelTarget}
+                  />
+                ))}
+              </div>
+            </details>
+          )}
         </div>
       )}
 
