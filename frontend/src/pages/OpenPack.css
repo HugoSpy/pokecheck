@@ -1,3 +1,22 @@
+/* ── Home button — below the logo, left-aligned ── */
+.pack-home-btn {
+  position: fixed;
+  top: 48px;
+  left: 24px;
+  z-index: 30;
+  color: rgba(255, 255, 255, 0.35);
+  text-decoration: none;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  padding: 4px 0;
+  transition: color 0.18s;
+}
+.pack-home-btn:hover {
+  color: rgba(255, 255, 255, 0.75);
+}
+
 /* ── Base ── */
 .pack-page {
   position: relative;

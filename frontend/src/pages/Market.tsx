@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getMarketListings, createListing, buyListing, cancelListing } from '../api/marketApi';
 import { getMyPokedex } from '../api/pokemonApi';
-import { getToken } from '../api/client';
 import { useUserCtx } from '../context/UserContext';
 import type { MarketListing, UserPokemonInstance } from '../api/types';
 import { getSellPrice } from '../api/types';
@@ -9,11 +8,6 @@ import RarityBadge from '../components/RarityBadge';
 import Toast from '../components/Toast';
 import { Coins, Clock } from '../components/icons';
 import './Market.css';
-
-function parseJwt(token: string): { userId?: string } | null {
-  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); }
-  catch { return null; }
-}
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -29,7 +23,7 @@ function timeRemaining(expiresAt: string): string {
 type Tab = 'buy' | 'sell' | 'mine';
 
 export default function Market() {
-  const { coins, setCoins } = useUserCtx();
+  const { coins, setCoins, profile } = useUserCtx();
 
   const [listings, setListings] = useState<MarketListing[]>([]);
   const [myPokemons, setMyPokemons] = useState<UserPokemonInstance[]>([]);
@@ -43,8 +37,7 @@ export default function Market() {
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemonInstance | null>(null);
   const [price, setPrice] = useState('');
 
-  const token = getToken();
-  const userId = token ? parseJwt(token)?.userId : null;
+  const userId = profile?.id ?? null;
 
   function showToast(msg: string, type: 'success' | 'error') {
     setToast({ msg, type });

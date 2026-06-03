@@ -151,26 +151,30 @@ router.post('/badges/:badgeId/claim', authMiddleware, async (req: Request, res: 
   const userId = req.user!.userId;
   const badgeId = String(req.params.badgeId);
 
-  const userBadge = await prisma.userBadge.findUnique({
-    where: { user_id_badge_id: { user_id: userId, badge_id: badgeId } },
-    include: { badge: true },
-  });
-
-  if (!userBadge) {
-    res.status(404).json({ error: 'Badge not unlocked' });
-    return;
-  }
-  if (userBadge.claimed) {
-    res.status(409).json({ error: 'Already claimed' });
-    return;
-  }
-
-  await prisma.$transaction(async tx => {
-    await tx.userBadge.update({
-      where: { user_id_badge_id: { user_id: userId, badge_id: badgeId } },
-      data: { claimed: true, claimed_at: new Date() },
+  const coinsEarned = await prisma.$transaction(async tx => {
+    const { count } = await tx.userBadge.updateMany({
+      where: {
+        user_id: userId,
+        badge_id: badgeId,
+        claimed: false,
+      },
+      data: {
+        claimed: true,
+        claimed_at: new Date(),
+      },
     });
-    await addCoins(tx, userId, userBadge.badge.coin_reward, 'badge');
+
+    if (count === 0) {
+      throw Object.assign(new Error('Badge not found or already claimed'), { status: 409 });
+    }
+
+    const badge = await tx.badge.findUnique({ where: { id: badgeId } });
+    if (!badge) {
+      throw Object.assign(new Error('Badge not found'), { status: 404 });
+    }
+
+    await addCoins(tx, userId, badge.coin_reward, 'badge');
+    return badge.coin_reward;
   });
 
   const updated = await prisma.user.findUnique({
@@ -178,7 +182,7 @@ router.post('/badges/:badgeId/claim', authMiddleware, async (req: Request, res: 
     select: { coins: true },
   });
 
-  res.json({ coins_earned: userBadge.badge.coin_reward, total_coins: updated?.coins ?? 0 });
+  res.json({ coins_earned: coinsEarned, total_coins: updated?.coins ?? 0 });
 });
 
 export default router;

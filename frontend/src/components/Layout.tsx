@@ -1,20 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { getToken, clearToken } from '../api/client';
+import { logout } from '../api/client';
 import { generateAdminPack } from '../api/adminApi';
 import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
 import './Layout.css';
-
-function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
-  try {
-    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
-  } catch {
-    return null;
-  }
-}
 
 const NAV_LINKS = [
   { to: '/open',        label: 'Ouvrir'     },
@@ -38,10 +30,8 @@ const BOTTOM_NAV = [
 
 export default function Layout() {
   const navigate = useNavigate();
-  const token = getToken();
-  const user = token ? parseJwt(token) : null;
-  const isAdmin = user?.isAdmin === true;
-  const { coins } = useUserCtx();
+  const { profile: user, coins, authenticated, clearProfile } = useUserCtx();
+  const isAdmin = user?.is_admin === true;
 
   const [showModal, setShowModal] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);
@@ -54,7 +44,7 @@ export default function Layout() {
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!authenticated) return;
     let cancelled = false;
     async function poll() {
       try {
@@ -76,10 +66,11 @@ export default function Layout() {
       clearInterval(i);
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     };
-  }, [token]);
+  }, [authenticated]);
 
-  function handleLogout() {
-    clearToken();
+  async function handleLogout() {
+    await logout().catch(() => {});
+    clearProfile();
     window.location.reload();
   }
 

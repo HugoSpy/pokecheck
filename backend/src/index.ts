@@ -21,6 +21,11 @@ import attendanceRouter from './routes/attendance';
 
 const app = express();
 
+// Trust the first proxy hop (Cloudflare Tunnel) so req.ip reflects the real
+// student IP instead of the tunnel's loopback address. Without this, all
+// requests share one rate-limit bucket (the tunnel IP) rather than one per client.
+app.set('trust proxy', 1);
+
 // M4 — Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
 // Applied before everything else so no response escapes without the headers.
 // crossOriginResourcePolicy is set to 'cross-origin' because the frontend
@@ -92,6 +97,7 @@ app.use('/draw',          rl(10));
 app.use('/sell',          rl(10));
 app.use('/market/buy',    rl(10));
 app.use('/trade/accept',  rl(10));
+app.use('/event/draw',    rl(10));
 // /auth/one-shot is a login endpoint — more generous to avoid blocking a whole
 // class behind the same school NAT during a simultaneous login session.
 app.use('/auth/one-shot', rl(30));

@@ -1,4 +1,4 @@
-export { getToken, setToken, clearToken, apiFetch } from './client';
+export { apiFetch, logout } from './client';
 export { getSellPrice } from './types';
 export type {
   Rarity,

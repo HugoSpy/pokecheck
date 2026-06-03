@@ -1,10 +1,10 @@
 import { apiFetch } from './client';
 import type { PokemonInfo, UserInfo, UserPokemonInstance, RollCardData } from './types';
 
-export async function draw(source?: 'draw' | 'bonus', force_shiny?: boolean): Promise<{ pokemon: PokemonInfo }> {
+export async function draw(force_shiny?: boolean): Promise<{ pokemon: PokemonInfo }> {
   return apiFetch<{ pokemon: PokemonInfo }>('/draw', {
     method: 'POST',
-    body: JSON.stringify({ source: source ?? 'draw', ...(force_shiny ? { force_shiny: true } : {}) }),
+    body: JSON.stringify({ ...(force_shiny ? { force_shiny: true } : {}) }),
   });
 }
 
