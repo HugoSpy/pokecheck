@@ -7,6 +7,7 @@ const CANVAS_HEIGHT = 450;
 
 type BoosterPack3DProps = {
   textureUrl?: string;
+  textureFlipY?: boolean;
   textureMaterialName?: string | null;
   textureMeshName?: string;
   transparentMeshName?: string;
@@ -29,6 +30,7 @@ function disposeObject(object: THREE.Object3D): void {
 
 export default function BoosterPack3D({
   textureUrl = '/booster-gen-4.png',
+  textureFlipY = true,
   textureMaterialName = 'Material.003',
   textureMeshName,
   transparentMeshName,
@@ -74,11 +76,11 @@ export default function BoosterPack3D({
 
     const textureLoader = new THREE.TextureLoader();
     const texture = textureLoader.load(textureUrl, (loadedTexture) => {
-      loadedTexture.flipY = true;
+      loadedTexture.flipY = textureFlipY;
       loadedTexture.colorSpace = THREE.SRGBColorSpace;
       loadedTexture.needsUpdate = true;
     });
-    texture.flipY = true;
+    texture.flipY = textureFlipY;
 
     const gltfLoader = new GLTFLoader();
     gltfLoader.load('/booster_pack_tcg_pack.glb', (gltf) => {
@@ -101,6 +103,7 @@ export default function BoosterPack3D({
           if (shouldHideMesh) {
             material.transparent = true;
             material.opacity = 0;
+            material.depthWrite = false;
             material.map = null;
           } else if (shouldTextureMesh || (textureMaterialName != null && material.name === textureMaterialName)) {
             material.color.set(0xffffff);
@@ -195,7 +198,7 @@ export default function BoosterPack3D({
       texture.dispose();
       renderer.dispose();
     };
-  }, [textureMaterialName, textureMeshName, textureUrl, transparentMeshName]);
+  }, [textureFlipY, textureMaterialName, textureMeshName, textureUrl, transparentMeshName]);
 
   return (
     <canvas

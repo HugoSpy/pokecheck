@@ -135,9 +135,12 @@
 }
 
 .multiplier-pill.pill-shiny {
+  padding: 10px 18px;
   color: #facc15;
   background: rgba(250, 204, 21, 0.1);
   border: 1px solid rgba(250, 204, 21, 0.28);
+  font-size: 16px;
+  line-height: 1;
 }
 
 /* ── Actions ── */

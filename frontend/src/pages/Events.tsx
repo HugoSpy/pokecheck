@@ -56,6 +56,7 @@ const RARITY_PILL_CLASS: Record<string, string> = {
 const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack3D>> = {
   'Shiny Surge': {
     textureUrl: '/shiny_surge_pack.png',
+    textureFlipY: false,
     textureMaterialName: null,
     textureMeshName: 'Mesh_001',
     transparentMeshName: 'Mesh',
