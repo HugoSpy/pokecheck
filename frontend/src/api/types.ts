@@ -117,6 +117,10 @@ export interface DrawResult {
   new_badges: string[];
 }
 
+export interface EventDrawResult extends DrawResult {
+  strip: RollCardData[];
+}
+
 export interface DailyLoginResult {
   coins_earned: number;
   streak_days: number;

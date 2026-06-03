@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { drawEventPack } from '../api/eventApi';
-import { getRandomPokemons } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
 import './OpenPack.css'; // reuse exact same animation CSS
@@ -78,42 +77,16 @@ export default function EventPackOpen() {
     setPhase('loading');
     setError(null);
     try {
-      const [randResult, drawResult] = await Promise.all([
-        getRandomPokemons(TOTAL_CARDS),
-        drawEventPack(eventId),
-      ]);
+      const drawResult = await drawEventPack(eventId);
       setCoins(drawResult.coins_remaining);
 
-      console.log('randResult raretés:', randResult.pokemons.map(p => p.rarity));
-      console.log('Résumé:', {
-        COMMON: randResult.pokemons.filter(p => p.rarity === 'COMMON').length,
-        RARE: randResult.pokemons.filter(p => p.rarity === 'RARE').length,
-        EPIC: randResult.pokemons.filter(p => p.rarity === 'EPIC').length,
-        LEGENDARY: randResult.pokemons.filter(p => p.rarity === 'LEGENDARY').length,
-      });
-
-      const strip = randResult.pokemons.map(card => {
-        const shiny = Math.random() < 1 / 4096;
-        return {
-          ...card,
-          is_shiny: shiny,
-          sprite_url: shiny ? card.sprite_url.replace('/normal/', '/shiny/') : card.sprite_url,
-        };
-      }) as RollCardData[];
-      strip[TARGET_INDEX] = drawResult.pokemon as RollCardData;
-
-      console.log('Strip final raretés:', strip.map(p => p.rarity));
-      console.log('Strip résumé:', {
-        COMMON: strip.filter(p => p.rarity === 'COMMON').length,
-        RARE: strip.filter(p => p.rarity === 'RARE').length,
-        EPIC: strip.filter(p => p.rarity === 'EPIC').length,
-        LEGENDARY: strip.filter(p => p.rarity === 'LEGENDARY').length,
-      });
-
-      const allSprites = [
-        drawResult.pokemon.sprite_url,
-        ...randResult.pokemons.map(p => p.sprite_url),
+      const strip: RollCardData[] = [
+        ...drawResult.strip.slice(0, TARGET_INDEX),
+        drawResult.pokemon as RollCardData,
+        ...drawResult.strip.slice(TARGET_INDEX),
       ];
+
+      const allSprites = strip.map(p => p.sprite_url);
       setProgress(0);
       await Promise.race([
         preloadImages(allSprites, (loaded, total) => setProgress(loaded / total)),

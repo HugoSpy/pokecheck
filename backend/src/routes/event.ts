@@ -8,6 +8,8 @@ import { checkBadges } from '../services/badgeService';
 const router = Router();
 const prisma = new PrismaClient();
 
+const STRIP_SIZE = 29;
+
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   const now = new Date();
   const events = await prisma.event.findMany({
@@ -19,58 +21,6 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     orderBy: { starts_at: 'asc' },
   });
   res.json(events);
-});
-
-// Random strip from the event's pokemon_pool — used by the frontend animation
-router.get('/:id/strip', async (req: Request, res: Response): Promise<void> => {
-  const rawCount = Array.isArray(req.query.count) ? '30' : String(req.query.count ?? '30');
-  const count = Math.min(Math.max(parseInt(rawCount, 10) || 30, 1), 60);
-  const now = new Date();
-  const event = await prisma.event.findUnique({ where: { id: String(req.params.id) } });
-
-  if (!event || !event.published || event.starts_at > now || event.ends_at < now) {
-    res.status(404).json({ error: 'Event not found or not active' });
-    return;
-  }
-
-  if (event.pokemon_pool.length === 0) {
-    res.status(500).json({ error: 'Event pool is empty' });
-    return;
-  }
-
-  const multipliers = event.rarity_multiplier as Record<string, number>;
-  const baseRates: Record<string, number> = { COMMON: 79.5, RARE: 15, EPIC: 5, LEGENDARY: 0.5 };
-  const weightedRates: Record<string, number> = {};
-  for (const [rarity, base] of Object.entries(baseRates)) {
-    weightedRates[rarity] = base * (multipliers[rarity] ?? 1.0);
-  }
-  const totalWeight = Object.values(weightedRates).reduce((s, w) => s + w, 0);
-
-  function pickRarity(): string {
-    let roll = Math.random() * totalWeight;
-    for (const [rarity, weight] of Object.entries(weightedRates)) {
-      roll -= weight;
-      if (roll < 0) return rarity;
-    }
-    return 'COMMON';
-  }
-
-  const [commons, rares, epics, legendaries] = await Promise.all([
-    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'COMMON' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
-    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'RARE' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
-    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'EPIC' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
-    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'LEGENDARY' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true } }),
-  ]);
-
-  const pools: Record<string, typeof commons> = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
-
-  const pokemons = Array.from({ length: count }, () => {
-    const rarity = pickRarity();
-    const pool = pools[rarity].length > 0 ? pools[rarity] : [...commons, ...rares, ...epics, ...legendaries];
-    return pool[Math.floor(Math.random() * pool.length)];
-  });
-
-  res.json({ pokemons });
 });
 
 router.post('/draw', authMiddleware, async (req: Request, res: Response): Promise<void> => {
@@ -90,16 +40,12 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
-  const cost = event.price;
-
   if (event.pokemon_pool.length === 0) {
     res.status(500).json({ error: 'Event pool is empty' });
     return;
   }
 
   const multipliers = event.rarity_multiplier as Record<string, number>;
-
-  // Weighted rarity draw using multipliers
   const baseRates: Record<string, number> = {
     COMMON: 79.5,
     RARE: 15,
@@ -113,46 +59,44 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
   }
 
   const totalWeight = Object.values(weightedRates).reduce((s, w) => s + w, 0);
-  const roll = Math.random() * totalWeight;
-  let cumulative = 0;
-  let pickedRarity = 'COMMON';
-  for (const [rarity, weight] of Object.entries(weightedRates)) {
-    cumulative += weight;
-    if (roll < cumulative) {
-      pickedRarity = rarity;
-      break;
+
+  function pickRarity(): string {
+    let roll = Math.random() * totalWeight;
+    for (const [rarity, weight] of Object.entries(weightedRates)) {
+      roll -= weight;
+      if (roll < 0) return rarity;
     }
+    return 'COMMON';
   }
 
-  // Pick pokemon from pool matching rarity
-  const poolPokemons = await prisma.pokemon.findMany({
-    where: {
-      id: { in: event.pokemon_pool },
-      rarity: pickedRarity,
-    },
-  });
+  // Fetch pool by rarity (used for winner + strip)
+  const [commons, rares, epics, legendaries] = await Promise.all([
+    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'COMMON' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true, types: true } }),
+    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'RARE' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true, types: true } }),
+    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'EPIC' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true, types: true } }),
+    prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool }, rarity: 'LEGENDARY' }, select: { id: true, name: true, sprite_url: true, rarity: true, points: true, types: true } }),
+  ]);
+  const pools: Record<string, typeof commons> = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
+  const allPool = [...commons, ...rares, ...epics, ...legendaries];
 
-  // Fallback to any pokemon in pool if no match for rarity
-  const candidates =
-    poolPokemons.length > 0
-      ? poolPokemons
-      : await prisma.pokemon.findMany({ where: { id: { in: event.pokemon_pool } } });
-
-  if (candidates.length === 0) {
+  if (allPool.length === 0) {
     res.status(500).json({ error: 'No Pokémon available in pool' });
     return;
   }
 
+  // Draw winner
+  const pickedRarity = pickRarity();
+  const candidates = pools[pickedRarity].length > 0 ? pools[pickedRarity] : allPool;
   const pokemon = candidates[Math.floor(Math.random() * candidates.length)];
 
   const isShiny = Math.random() < 1 / 4096;
-  const spriteUrl = isShiny
+  const winnerSpriteUrl = isShiny
     ? pokemon.sprite_url.replace('/normal/', '/shiny/')
     : pokemon.sprite_url;
   const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
 
   await prisma.$transaction(async tx => {
-    await spendCoins(tx, userId, cost, 'event_pack');
+    await spendCoins(tx, userId, event.price, 'event_pack');
     await tx.userPokemon.create({
       data: {
         user_id: userId,
@@ -172,16 +116,33 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     select: { coins: true },
   });
 
+  // Generate decoration strip from same pool
+  const strip = Array.from({ length: STRIP_SIZE }, () => {
+    const rarity = pickRarity();
+    const pool = pools[rarity].length > 0 ? pools[rarity] : allPool;
+    const p = pool[Math.floor(Math.random() * pool.length)];
+    const shiny = Math.random() < 1 / 4096;
+    return {
+      id: p.id,
+      name: p.name,
+      sprite_url: shiny ? p.sprite_url.replace('/normal/', '/shiny/') : p.sprite_url,
+      rarity: p.rarity,
+      points: p.points,
+      is_shiny: shiny,
+    };
+  });
+
   res.json({
     pokemon: {
       id: pokemon.id,
       name: pokemon.name,
-      sprite_url: spriteUrl,
+      sprite_url: winnerSpriteUrl,
       rarity: pokemon.rarity,
       points: finalPoints,
       types: pokemon.types,
       is_shiny: isShiny,
     },
+    strip,
     coins_remaining: updatedUser?.coins ?? 0,
     new_badges: newBadges,
   });
