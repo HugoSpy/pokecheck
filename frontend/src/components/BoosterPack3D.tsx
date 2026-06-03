@@ -119,25 +119,6 @@ export default function BoosterPack3D({
         const hasTextureMaterial = (Array.isArray(child.material) ? child.material : [child.material])
           .some(m => textureMaterialName != null && m.name === textureMaterialName);
         if (!shouldTextureMesh && !hasTextureMaterial) return;
-
-        child.scale.set(1.15, 1.1, 1.0);
-
-        const uv = child.geometry.attributes.uv;
-        if (!uv) return;
-        let minU = Infinity, maxU = -Infinity, minV = Infinity, maxV = -Infinity;
-        for (let i = 0; i < uv.count; i++) {
-          minU = Math.min(minU, uv.getX(i));
-          maxU = Math.max(maxU, uv.getX(i));
-          minV = Math.min(minV, uv.getY(i));
-          maxV = Math.max(maxV, uv.getY(i));
-        }
-        for (let i = 0; i < uv.count; i++) {
-          uv.setXY(i,
-            (uv.getX(i) - minU) / (maxU - minU),
-            (uv.getY(i) - minV) / (maxV - minV),
-          );
-        }
-        uv.needsUpdate = true;
       });
 
       root.updateMatrixWorld(true);
