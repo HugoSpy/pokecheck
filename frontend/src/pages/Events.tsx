@@ -58,8 +58,8 @@ const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack3D>> = 
     textureUrl: '/shiny_surge_pack.png',
     textureFlipY: false,
     textureMaterialName: null,
-    textureMeshName: 'Mesh_001',
-    transparentMeshName: 'Mesh',
+    textureMeshName: 'Object_1',
+    transparentMeshName: 'Object_0',
   },
 };
 
