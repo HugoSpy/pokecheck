@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
 import { draw, getRandomPokemons } from '../api/pokemonApi';
 import { getAttendanceAvailable, openAttendance, type AttendanceAvailable } from '../api/attendanceApi';
-import { getToken } from '../api/client';
+import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
 import './OpenPack.css';
 
@@ -66,6 +66,7 @@ async function preloadImages(urls: string[], onProgress?: (loaded: number, total
 
 export default function OpenPack() {
   const [params] = useSearchParams();
+  const { authenticated, loading: authLoading, refreshProfile } = useUserCtx();
   const navigate = useNavigate();
   const code = params.get('code');
   const token = params.get('token');
@@ -81,9 +82,9 @@ export default function OpenPack() {
 
   // ── Attendance mode (when no one-shot code/token in the URL) ──
   const isOneShot = !!(code || token);
-  const authed = !!getToken();
+  const authed = authenticated;
   const [attendance, setAttendance] = useState<AttendanceAvailable | null>(null);
-  const [attLoading, setAttLoading] = useState(!isOneShot && authed);
+  const [attLoading, setAttLoading] = useState(!isOneShot && (authLoading || authed));
   const [now, setNow] = useState(Date.now());
 
   const stripRef = useRef<HTMLDivElement>(null);
@@ -96,12 +97,12 @@ export default function OpenPack() {
 
   // Fetch attendance availability (attendance mode only)
   useEffect(() => {
-    if (isOneShot || !authed) return;
+    if (isOneShot || authLoading || !authed) return;
     getAttendanceAvailable()
       .then(setAttendance)
       .catch(() => setAttendance({ available: false }))
       .finally(() => setAttLoading(false));
-  }, [isOneShot, authed]);
+  }, [isOneShot, authLoading, authed]);
 
   const attRemainingMs = attendance?.expires_at
     ? new Date(attendance.expires_at).getTime() - now
@@ -127,9 +128,10 @@ export default function OpenPack() {
         } else {
           await consumeOneShotToken(token!);
         }
+        await refreshProfile();
         const [rand, drawResult] = await Promise.all([
           getRandomPokemons(TOTAL_CARDS),
-          draw('draw', resolvedForceShiny),
+          draw(resolvedForceShiny),
         ]);
         randResult = rand;
         drawnPokemon = drawResult.pokemon;
@@ -254,12 +256,12 @@ export default function OpenPack() {
                 Ouvrir mon pack
               </button>
             </>
+          ) : authLoading || attLoading ? (
+            <div className="loading-label">Vérification…</div>
           ) : !authed ? (
             <p className="pack-intranet-msg">
               Connecte-toi pour ouvrir ton pack lors d'un check présence.
             </p>
-          ) : attLoading ? (
-            <div className="loading-label">Vérification…</div>
           ) : attAvailable ? (
             <>
               <div className="pack-countdown">

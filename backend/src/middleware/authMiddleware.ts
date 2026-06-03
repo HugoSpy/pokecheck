@@ -17,12 +17,15 @@ declare global {
 
 export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const header = req.headers.authorization;
-  if (!header?.startsWith('Bearer ')) {
-    res.status(401).json({ error: 'Missing or invalid Authorization header' });
+  const cookieToken = typeof req.cookies?.session === 'string' ? req.cookies.session : undefined;
+  const bearerToken = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
+  const token = cookieToken ?? bearerToken;
+
+  if (!token) {
+    res.status(401).json({ error: 'Missing or invalid session' });
     return;
   }
 
-  const token = header.slice(7);
   try {
     const payload = jwt.verify(token, process.env.JWT_SECRET!) as AuthPayload;
     req.user = payload;

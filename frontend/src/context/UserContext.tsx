@@ -5,20 +5,32 @@ import type { MyProfile } from '../api/types';
 interface UserCtx {
   profile: MyProfile | null;
   coins: number;
+  loading: boolean;
+  authenticated: boolean;
   setCoins: (c: number) => void;
   refreshProfile: () => Promise<void>;
+  clearProfile: () => void;
 }
 
 const UserContext = createContext<UserCtx>({
   profile: null,
   coins: 0,
+  loading: true,
+  authenticated: false,
   setCoins: () => {},
   refreshProfile: async () => {},
+  clearProfile: () => {},
 });
 
 export function UserProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [coins, setCoins] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const clearProfile = useCallback(() => {
+    setProfile(null);
+    setCoins(0);
+  }, []);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -26,9 +38,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
       setProfile(p);
       setCoins(p.coins);
     } catch {
-      // not authenticated or network error
+      clearProfile();
+    } finally {
+      setLoading(false);
     }
-  }, []);
+  }, [clearProfile]);
 
   useEffect(() => {
     refreshProfile();
@@ -49,7 +63,15 @@ export function UserProvider({ children }: { children: ReactNode }) {
   }, [refreshProfile]);
 
   return (
-    <UserContext.Provider value={{ profile, coins, setCoins, refreshProfile }}>
+    <UserContext.Provider value={{
+      profile,
+      coins,
+      loading,
+      authenticated: profile !== null,
+      setCoins,
+      refreshProfile,
+      clearProfile,
+    }}>
       {children}
     </UserContext.Provider>
   );

@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { setToken, getToken } from './api/client';
-import { UserProvider } from './context/UserContext';
+import { UserProvider, useUserCtx } from './context/UserContext';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
 import EventPackOpen from './pages/EventPackOpen';
@@ -16,32 +15,16 @@ import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
 import Layout from './components/Layout';
 
-// Same UTF-8 fix as Layout.tsx — atob() returns binary bytes, not decoded text.
-function parseJwt(token: string): { exp?: number; isAdmin?: boolean } | null {
-  try {
-    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
-    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
-    return JSON.parse(new TextDecoder().decode(bytes));
-  } catch {
-    return null;
-  }
-}
-
-function isTokenValid(token: string | null): boolean {
-  if (!token) return false;
-  const payload = parseJwt(token);
-  if (!payload?.exp) return false;
-  return Date.now() / 1000 < payload.exp;
-}
-
 function AppRoutes() {
   const location = useLocation();
-  const authed = isTokenValid(getToken());
+  const { profile, loading, authenticated } = useUserCtx();
+  const isPublicPackRoute = location.pathname === '/open' || location.pathname === '/events/pack';
+  const isDevTradeAnim = location.pathname === '/dev/trade-anim';
+  const isAdmin = profile?.is_admin === true;
 
-  const token = getToken();
-  const isAdmin = authed && token !== null && (parseJwt(token)?.isAdmin === true);
+  if (loading && !isPublicPackRoute) return null;
 
-  if (!authed && location.pathname !== '/open' && location.pathname !== '/dev/trade-anim' && location.pathname !== '/events/pack') {
+  if (!authenticated && !isPublicPackRoute && !isDevTradeAnim) {
     return <Login />;
   }
 
@@ -76,9 +59,8 @@ export default function App() {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sessionToken = params.get('session');
-    if (sessionToken) {
-      setToken(sessionToken);
+    if (params.has('session')) {
+      // Legacy cleanup for old OAuth redirects. New sessions are HttpOnly cookies.
       params.delete('session');
       const clean = [window.location.pathname, params.toString() ? '?' + params.toString() : ''].join('');
       window.history.replaceState({}, '', clean);

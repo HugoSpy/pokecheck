@@ -22,7 +22,7 @@ export async function sellPokemon(userPokemonId: string): Promise<SellResult> {
 }
 
 export async function getMyBadges(): Promise<UserBadge[]> {
-  return apiFetch<UserBadge[]>('/users/badges');
+  return apiFetch<UserBadge[]>('/users/badges/me');
 }
 
 export async function getUnnotifiedBadges(): Promise<UserBadge[]> {

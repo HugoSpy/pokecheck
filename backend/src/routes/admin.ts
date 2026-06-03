@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { adminMiddleware } from '../middleware/adminMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 
 const router = Router();
@@ -9,13 +9,7 @@ const prisma = new PrismaClient();
 
 const ATTENDANCE_TTL_MS = 15 * 60 * 1000;
 
-function requireAdmin(req: Request, res: Response): boolean {
-  if (req.user!.isAdmin !== true) {
-    res.status(403).json({ error: 'Admin only' });
-    return false;
-  }
-  return true;
-}
+router.use(adminMiddleware);
 
 /** Decrement coins for a rollback, allowing the balance to go negative. */
 async function removeCoinsAllowNegative(
@@ -43,12 +37,7 @@ function generateShortCode(length = 10): string {
   return code;
 }
 
-router.post('/generate-pack', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  if (req.user!.isAdmin !== true) {
-    res.status(403).json({ error: 'Admin only' });
-    return;
-  }
-
+router.post('/generate-pack', async (req: Request, res: Response): Promise<void> => {
   const { force_shiny = false } = req.body as { force_shiny?: boolean };
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
@@ -77,9 +66,7 @@ router.post('/generate-pack', authMiddleware, async (req: Request, res: Response
 // ── Attendance check system (temporary, admin-driven) ────────────────────────
 
 // POST /admin/attendance/start
-router.post('/attendance/start', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  if (!requireAdmin(req, res)) return;
-
+router.post('/attendance/start', async (req: Request, res: Response): Promise<void> => {
   const force = (req.body as { force?: boolean }).force === true;
   const now = new Date();
 
@@ -104,9 +91,7 @@ router.post('/attendance/start', authMiddleware, async (req: Request, res: Respo
 });
 
 // GET /admin/attendance/active — checks from the last 24h (active, expired, cancelled)
-router.get('/attendance/active', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  if (!requireAdmin(req, res)) return;
-
+router.get('/attendance/active', async (_req: Request, res: Response): Promise<void> => {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [totalUsers, checks] = await Promise.all([
     prisma.user.count(),
@@ -130,9 +115,7 @@ router.get('/attendance/active', authMiddleware, async (req: Request, res: Respo
 });
 
 // POST /admin/attendance/:id/cancel — cancel + full rollback
-router.post('/attendance/:id/cancel', authMiddleware, async (req: Request, res: Response): Promise<void> => {
-  if (!requireAdmin(req, res)) return;
-
+router.post('/attendance/:id/cancel', async (req: Request, res: Response): Promise<void> => {
   const id = String(req.params.id);
   const adminId = req.user!.userId;
 

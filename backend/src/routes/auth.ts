@@ -44,7 +44,7 @@ function issueState(res: Response): string {
   res.cookie(STATE_COOKIE, state, {
     httpOnly: true,
     secure: true,
-    sameSite: 'lax',
+    sameSite: SESSION_COOKIE_SAMESITE,
     maxAge: STATE_TTL_MS,
     path: '/auth',
   });
@@ -66,14 +66,82 @@ function verifyState(req: Request): void {
 }
 
 function clearState(res: Response) {
-  res.clearCookie(STATE_COOKIE, { httpOnly: true, secure: true, sameSite: 'lax', path: '/auth' });
+  res.clearCookie(STATE_COOKIE, { httpOnly: true, secure: true, sameSite: SESSION_COOKIE_SAMESITE, path: '/auth' });
 }
 
 // ── Passport Microsoft strategy ─────────────────────────────────────────────
 interface MsProfile {
   id: string;
   displayName?: string;
+  mail?: string;
+  userPrincipalName?: string;
   emails?: { value: string }[];
+  _json?: {
+    mail?: string;
+    userPrincipalName?: string;
+    email?: string;
+    preferred_username?: string;
+  };
+}
+
+const DEFAULT_ALLOWED_EMAIL_DOMAINS = ['epita.fr', 'epita.net', 'student.epita.fr', 'edu.epita.fr'];
+const allowedEmailDomains = (process.env.ALLOWED_EMAIL_DOMAINS ?? DEFAULT_ALLOWED_EMAIL_DOMAINS.join(','))
+  .split(',')
+  .map(s => s.trim().toLowerCase().replace(/^@/, ''))
+  .filter(Boolean);
+
+function getProfileEmail(profile: MsProfile): string {
+  return (
+    profile.mail ??
+    profile.userPrincipalName ??
+    profile._json?.mail ??
+    profile._json?.userPrincipalName ??
+    profile._json?.email ??
+    profile._json?.preferred_username ??
+    profile.emails?.[0]?.value ??
+    ''
+  ).toLowerCase();
+}
+
+function isAllowedEmail(email: string): boolean {
+  const domain = email.split('@')[1];
+  return !!domain && allowedEmailDomains.includes(domain);
+}
+
+const SESSION_COOKIE = 'session';
+const SESSION_COOKIE_MAX_AGE_MS = parseInt(process.env.SESSION_COOKIE_MAX_AGE_MS ?? String(60 * 60 * 1000), 10);
+const SESSION_COOKIE_SAMESITE = (process.env.SESSION_COOKIE_SAMESITE ?? 'lax') as 'lax' | 'strict' | 'none';
+
+function shouldUseSecureCookie(): boolean {
+  const redirect = process.env.FRONTEND_REDIRECT_URL ?? '';
+  return !redirect.startsWith('http://localhost:') && !redirect.startsWith('http://127.0.0.1:');
+}
+
+function cookieDomain(): string | undefined {
+  if (process.env.SESSION_COOKIE_DOMAIN) return process.env.SESSION_COOKIE_DOMAIN;
+  const redirect = process.env.FRONTEND_REDIRECT_URL ?? '';
+  return redirect.includes('pokecheck.fr') ? '.pokecheck.fr' : undefined;
+}
+
+function setSessionCookie(res: Response, token: string): void {
+  res.cookie(SESSION_COOKIE, token, {
+    httpOnly: true,
+    secure: shouldUseSecureCookie(),
+    sameSite: SESSION_COOKIE_SAMESITE,
+    maxAge: SESSION_COOKIE_MAX_AGE_MS,
+    domain: cookieDomain(),
+    path: '/',
+  });
+}
+
+function clearSessionCookie(res: Response): void {
+  res.clearCookie(SESSION_COOKIE, {
+    httpOnly: true,
+    secure: shouldUseSecureCookie(),
+    sameSite: SESSION_COOKIE_SAMESITE,
+    domain: cookieDomain(),
+    path: '/',
+  });
 }
 
 if (process.env.MICROSOFT_CLIENT_ID) {
@@ -88,7 +156,11 @@ if (process.env.MICROSOFT_CLIENT_ID) {
     },
     async (_at: string, _rt: string, profile: MsProfile, done: (e: unknown, u?: unknown) => void) => {
       try {
-        const email = profile.emails?.[0]?.value?.toLowerCase() ?? '';
+        const email = getProfileEmail(profile);
+        if (!isAllowedEmail(email)) {
+          done(Object.assign(new Error('Compte Microsoft non autorisé. Utilise ton compte EPITA.'), { status: 403 }));
+          return;
+        }
         const user = await prisma.user.upsert({
           where: { ms_id: profile.id },
           update: { display_name: profile.displayName ?? email },
@@ -132,6 +204,10 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
 
   passport.authenticate('microsoft', { session: false },
     (err: unknown, user: unknown) => {
+      if (err && (err as { status?: number }).status === 403) {
+        res.status(403).json({ error: (err as Error).message });
+        return;
+      }
       if (err || !user) {
         const msg = err instanceof Error ? encodeURIComponent(err.message) : 'auth_failed';
         res.redirect(`${process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
@@ -144,9 +220,15 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
         display_name: u.display_name,
         is_admin: u.is_admin,
       });
-      res.redirect(`${process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app'}?session=${sessionToken}`);
+      setSessionCookie(res, sessionToken);
+      res.redirect(process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app');
     }
   )(req, res, next);
+});
+
+router.post('/logout', (_req: Request, res: Response): void => {
+  clearSessionCookie(res);
+  res.json({ success: true });
 });
 
 // ── Existing one-shot routes preserved below ─────────────────────────────────
@@ -207,7 +289,8 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
       user,
       (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
     );
-    res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
+    setSessionCookie(res, sessionToken);
+    res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
     // Fire-and-forget streak claim — errors are non-fatal
     claimDailyLogin(user.id).catch(() => {});
     return;
@@ -232,7 +315,8 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     user,
     (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
   );
-  res.json({ sessionToken, user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
+  setSessionCookie(res, sessionToken);
+  res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
   claimDailyLogin(user.id).catch(() => {});
 });
 
