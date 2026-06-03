@@ -40,7 +40,12 @@ export async function claimDailyLogin(userId: string): Promise<DailyLoginResult>
   const newStreak =
     user.last_login && isYesterday(user.last_login, now) ? user.streak_days + 1 : 1;
 
-  const coinsEarned = 100 + (newStreak - 1) * 10;
+  // Coin economy: base 20 + 5 per additional day, capped at 150 (reached day 27).
+  // The old formula (100 base) handed out too many coins too fast — a 7-day streak
+  // already yielded 160 coins/day, making the 500-coin event pack trivially free.
+  // With the new formula a standard event pack takes ~3–4 days of streak to afford,
+  // keeping it as a meaningful goal without gating casual players entirely.
+  const coinsEarned = Math.min(20 + (newStreak - 1) * 5, 150);
 
   // today at midnight UTC — must match the isSameDay comparison above which also
   // uses toISOString() (UTC), so the boundary is consistent.
