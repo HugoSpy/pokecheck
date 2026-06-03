@@ -6,6 +6,10 @@ export interface AuthPayload {
   ms_id: string;
   display_name: string;
   isAdmin?: boolean;
+  drawGrant?: {
+    type: 'one-shot';
+    tokenId: string;
+  };
 }
 
 // Extend Express.User so passport and our JWT middleware share the same type

@@ -17,7 +17,8 @@ const SESSION_DURATION = (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptio
 
 function signSessionToken(
   user: { id: string; ms_id: string; display_name: string; is_admin: boolean },
-  expiresIn: jwt.SignOptions['expiresIn'] = SESSION_DURATION
+  expiresIn: jwt.SignOptions['expiresIn'] = SESSION_DURATION,
+  opts: { drawGrant?: { type: 'one-shot'; tokenId: string } } = {}
 ): string {
   return jwt.sign(
     {
@@ -25,6 +26,7 @@ function signSessionToken(
       ms_id: user.ms_id,
       display_name: user.display_name,
       isAdmin: user.is_admin === true,
+      ...(opts.drawGrant ? { drawGrant: opts.drawGrant } : {}),
     },
     process.env.JWT_SECRET!,
     { expiresIn }
@@ -287,7 +289,8 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     if (!user) { res.status(404).json({ error: 'User not found' }); return; }
     const sessionToken = signSessionToken(
       user,
-      (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
+      (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'],
+      { drawGrant: { type: 'one-shot', tokenId: record.id } }
     );
     setSessionCookie(res, sessionToken);
     res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny });
@@ -313,7 +316,8 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
   });
   const sessionToken = signSessionToken(
     user,
-    (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn']
+    (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'],
+    { drawGrant: { type: 'one-shot', tokenId: record.id } }
   );
   setSessionCookie(res, sessionToken);
   res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
