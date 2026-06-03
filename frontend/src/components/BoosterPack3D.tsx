@@ -1,6 +1,5 @@
 import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 450;
@@ -31,9 +30,6 @@ function disposeObject(object: THREE.Object3D): void {
 export default function BoosterPack3D({
   textureUrl = '/booster-gen-4.png',
   textureFlipY = true,
-  textureMaterialName = 'Material.003',
-  textureMeshName,
-  transparentMeshName,
 }: BoosterPack3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -43,7 +39,6 @@ export default function BoosterPack3D({
     const currentCanvas = canvas;
 
     let frameId = 0;
-    let disposed = false;
 
     const mouse = { x: 0, y: 0, active: false };
     const tilt = { x: 0, y: 0 };
@@ -82,59 +77,17 @@ export default function BoosterPack3D({
     });
     texture.flipY = textureFlipY;
 
-    const gltfLoader = new GLTFLoader();
-    gltfLoader.load('/booster_pack_tcg_pack.glb', (gltf) => {
-      if (disposed) {
-        disposeObject(gltf.scene);
-        return;
-      }
-
-      const root = gltf.scene;
-
-      root.traverse((child) => {
-        if (!(child instanceof THREE.Mesh)) return;
-
-        const shouldTextureMesh = textureMeshName ? child.name === textureMeshName : false;
-        const shouldHideMesh = transparentMeshName ? child.name === transparentMeshName : false;
-        const materials = Array.isArray(child.material) ? child.material : [child.material];
-        materials.forEach((material) => {
-          if (!(material instanceof THREE.MeshStandardMaterial)) return;
-
-          if (shouldHideMesh) {
-            material.transparent = true;
-            material.opacity = 0;
-            material.depthWrite = false;
-            material.map = null;
-          } else if (shouldTextureMesh || (textureMaterialName != null && material.name === textureMaterialName)) {
-            material.color.set(0xffffff);
-            material.metalness = 0.9;
-            material.map = texture;
-          } else {
-            material.color.set(0x2a2a2a);
-            material.map = null;
-          }
-          material.needsUpdate = true;
-        });
-
-        const hasTextureMaterial = (Array.isArray(child.material) ? child.material : [child.material])
-          .some(m => textureMaterialName != null && m.name === textureMaterialName);
-        if (!shouldTextureMesh && !hasTextureMaterial) return;
-      });
-
-      root.updateMatrixWorld(true);
-      const box = new THREE.Box3().setFromObject(root);
-      const size = box.getSize(new THREE.Vector3());
-      const center = box.getCenter(new THREE.Vector3());
-      const maxDim = Math.max(size.x, size.y, size.z);
-
-      if (maxDim > 0) {
-        root.scale.setScalar(3.2 / maxDim);
-      }
-
-      root.position.sub(center);
-      root.rotation.set(0, 0, 0);
-      packGroup.add(root);
+    const geometry = new THREE.PlaneGeometry(1.8, 2.8);
+    const material = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      map: texture,
+      metalness: 0.15,
+      roughness: 0.45,
+      side: THREE.DoubleSide,
     });
+    const plane = new THREE.Mesh(geometry, material);
+    plane.rotation.y = 0.05;
+    packGroup.add(plane);
 
     function handleMouseMove(event: MouseEvent): void {
       const rect = currentCanvas.getBoundingClientRect();
@@ -171,7 +124,6 @@ export default function BoosterPack3D({
     frameId = requestAnimationFrame(animate);
 
     return () => {
-      disposed = true;
       cancelAnimationFrame(frameId);
       currentCanvas.removeEventListener('mousemove', handleMouseMove);
       currentCanvas.removeEventListener('mouseleave', handleMouseLeave);
@@ -179,7 +131,7 @@ export default function BoosterPack3D({
       texture.dispose();
       renderer.dispose();
     };
-  }, [textureFlipY, textureMaterialName, textureMeshName, textureUrl, transparentMeshName]);
+  }, [textureFlipY, textureUrl]);
 
   return (
     <canvas
