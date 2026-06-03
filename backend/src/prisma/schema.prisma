@@ -117,8 +117,7 @@ model Event {
   name              String
   pokemon_pool      Int[]
   rarity_multiplier Json
-  price_standard    Int      @default(500)
-  price_premium     Int      @default(1500)
+  price             Int      @default(500)
   starts_at         DateTime
   ends_at           DateTime
   published         Boolean  @default(false)

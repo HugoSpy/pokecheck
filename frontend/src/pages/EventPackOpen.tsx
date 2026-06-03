@@ -60,7 +60,6 @@ export default function EventPackOpen() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const eventId = params.get('event_id') ?? '';
-  const packType = (params.get('pack_type') ?? 'standard') as 'standard' | 'premium';
 
   const { setCoins } = useUserCtx();
 
@@ -81,7 +80,7 @@ export default function EventPackOpen() {
     try {
       const [randResult, drawResult] = await Promise.all([
         getRandomPokemons(TOTAL_CARDS),
-        drawEventPack(eventId, packType),
+        drawEventPack(eventId),
       ]);
       setCoins(drawResult.coins_remaining);
 

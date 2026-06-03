@@ -83,8 +83,7 @@ export interface GameEvent {
   name: string;
   pokemon_pool: number[];
   rarity_multiplier: Record<string, number>;
-  price_standard: number;
-  price_premium: number;
+  price: number;
   starts_at: string;
   ends_at: string;
   published: boolean;

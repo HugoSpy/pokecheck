@@ -64,15 +64,14 @@ function EventCard({ event }: { event: GameEvent }) {
   const countdown = useCountdown(event.ends_at);
   const expired = countdown === 'Terminé';
 
-  const canAffordStandard = coins >= event.price_standard;
-  const canAffordPremium = coins >= event.price_premium;
+  const canAfford = coins >= event.price;
 
   const activePills = Object.entries(event.rarity_multiplier).filter(
     ([, mult]) => mult > 1.0,
   );
 
-  function handleBuy(packType: 'standard' | 'premium') {
-    navigate(`/events/pack?event_id=${event.id}&pack_type=${packType}`);
+  function handleBuy() {
+    navigate(`/events/pack?event_id=${event.id}`);
   }
 
   return (
@@ -104,21 +103,12 @@ function EventCard({ event }: { event: GameEvent }) {
 
         <div className="event-actions">
           <button
-            className={`btn ${canAffordStandard ? 'btn-ghost' : 'btn-ghost'}`}
-            disabled={!canAffordStandard || expired}
-            title={!canAffordStandard ? 'Coins insuffisants' : undefined}
-            onClick={() => handleBuy('standard')}
+            className={`btn ${canAfford ? 'btn-primary' : 'btn-ghost'}`}
+            disabled={!canAfford || expired}
+            title={!canAfford ? 'Coins insuffisants' : undefined}
+            onClick={handleBuy}
           >
-            Pack Standard — {event.price_standard} coins
-          </button>
-
-          <button
-            className={`btn ${canAffordPremium ? 'btn-primary' : 'btn-ghost'}`}
-            disabled={!canAffordPremium || expired}
-            title={!canAffordPremium ? 'Coins insuffisants' : undefined}
-            onClick={() => handleBuy('premium')}
-          >
-            Pack Premium — {event.price_premium} coins
+            Ouvrir un pack — {event.price} coins
           </button>
         </div>
       </div>

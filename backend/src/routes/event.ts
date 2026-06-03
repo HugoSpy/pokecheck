@@ -23,13 +23,10 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
 
 router.post('/draw', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
-  const { event_id, pack_type } = req.body as {
-    event_id: string;
-    pack_type: 'standard' | 'premium';
-  };
+  const { event_id } = req.body as { event_id: string };
 
-  if (!event_id || !['standard', 'premium'].includes(pack_type)) {
-    res.status(400).json({ error: 'event_id and pack_type (standard|premium) are required' });
+  if (!event_id) {
+    res.status(400).json({ error: 'event_id is required' });
     return;
   }
 
@@ -41,7 +38,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
-  const cost = pack_type === 'premium' ? event.price_premium : event.price_standard;
+  const cost = event.price;
 
   if (event.pokemon_pool.length === 0) {
     res.status(500).json({ error: 'Event pool is empty' });
