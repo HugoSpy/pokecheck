@@ -16,9 +16,12 @@ import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
 import Layout from './components/Layout';
 
+// Same UTF-8 fix as Layout.tsx — atob() returns binary bytes, not decoded text.
 function parseJwt(token: string): { exp?: number; isAdmin?: boolean } | null {
   try {
-    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }

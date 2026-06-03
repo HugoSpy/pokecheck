@@ -11,8 +11,11 @@ import { Coins, Clock } from '../components/icons';
 import './Market.css';
 
 function parseJwt(token: string): { userId?: string } | null {
-  try { return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))); }
-  catch { return null; }
+  try {
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
+  } catch { return null; }
 }
 
 function timeRemaining(expiresAt: string): string {

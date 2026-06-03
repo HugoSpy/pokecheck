@@ -4,14 +4,15 @@
   bottom: 24px;
   left: 24px;
   z-index: 998;
-  width: 280px;
+  width: 290px;
 }
 
 .badge-notif-card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid rgba(245, 166, 35, 0.3);
   border-radius: var(--radius-lg);
-  padding: 16px 20px;
+  padding: 16px 20px 0;
   box-shadow: var(--shadow-elevated);
   transform: translateY(100px);
   opacity: 0;
@@ -21,6 +22,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  overflow: hidden;
 }
 
 .badge-notif-card.visible {
@@ -28,6 +30,27 @@
   opacity: 1;
 }
 
+/* ── Close button ── */
+.badge-notif-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 5px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+.badge-notif-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* ── Content ── */
 .badge-notif-header {
   font-family: var(--font-condensed);
   font-size: var(--text-xs);
@@ -36,6 +59,7 @@
   text-transform: uppercase;
   color: var(--gold);
   margin-bottom: 8px;
+  padding-right: 20px;
 }
 
 .badge-notif-icon {
@@ -45,9 +69,7 @@
   margin-bottom: 4px;
 }
 
-.badge-notif-icon img {
-  display: block;
-}
+.badge-notif-icon img { display: block; }
 
 .badge-notif-name {
   font-family: var(--font-display);
@@ -61,20 +83,72 @@
   font-family: var(--font-body);
   font-size: var(--text-base);
   color: var(--text-secondary);
-  margin-bottom: 8px;
+  margin-bottom: 10px;
   line-height: 1.4;
 }
 
-.badge-notif-coins {
+/* ── Action buttons ── */
+.badge-notif-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.badge-notif-claim-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 7px 10px;
+  background: var(--accent);
+  color: #000;
+  border: none;
+  border-radius: var(--radius-sm);
   font-family: var(--font-mono);
-  font-size: var(--text-base);
-  font-weight: 600;
-  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.badge-notif-claim-btn:hover:not(:disabled) { opacity: 0.85; }
+.badge-notif-claim-btn:disabled { opacity: 0.5; cursor: default; }
+
+.badge-notif-profile-btn {
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.badge-notif-profile-btn:hover {
+  color: var(--text-primary);
+  border-color: var(--text-muted);
+}
+
+/* ── Progress bar (depletes over animationDuration to signal auto-close) ── */
+@keyframes badge-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+
+.badge-notif-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--accent);
+  transform-origin: left center;
+  animation: badge-progress linear forwards;
 }
 
 /* ── Mobile ── */
 @media (max-width: 640px) {
-  /* Sit above the mobile bottom nav */
   .badge-notif {
     left: 16px;
     right: 16px;

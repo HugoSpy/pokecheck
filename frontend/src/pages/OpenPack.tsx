@@ -1,5 +1,5 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
 import { draw, getRandomPokemons } from '../api/pokemonApi';
 import { getAttendanceAvailable, openAttendance, type AttendanceAvailable } from '../api/attendanceApi';
@@ -211,6 +211,10 @@ export default function OpenPack() {
 
   return (
     <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}>
+      {/* /open is rendered outside <Layout> (fullscreen animation) — provide a
+          minimal escape hatch so the user isn't stranded without browser back */}
+      <Link to="/leaderboard" className="pack-home-btn">← Accueil</Link>
+
       <div className="scanlines" />
 
       {showFlash && pokemon && (

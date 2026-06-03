@@ -8,9 +8,14 @@ import BadgeNotification from './BadgeNotification';
 import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
 import './Layout.css';
 
+// atob() decodes base64 to binary bytes, not UTF-8 text. For names with accents
+// (é, à, ç…) this produces mojibake (Ã© instead of é). TextDecoder correctly
+// reassembles the multi-byte UTF-8 sequences that jsonwebtoken base64url-encodes.
 function parseJwt(token: string): { display_name?: string; isAdmin?: boolean } | null {
   try {
-    return JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+    const b64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    return JSON.parse(new TextDecoder().decode(bytes));
   } catch {
     return null;
   }

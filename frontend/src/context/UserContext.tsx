@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { getMyProfile } from '../api/userApi';
 import type { MyProfile } from '../api/types';
 
@@ -20,7 +20,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [coins, setCoins] = useState(0);
 
-  async function refreshProfile() {
+  const refreshProfile = useCallback(async () => {
     try {
       const p = await getMyProfile();
       setProfile(p);
@@ -28,9 +28,25 @@ export function UserProvider({ children }: { children: ReactNode }) {
     } catch {
       // not authenticated or network error
     }
-  }
+  }, []);
 
-  useEffect(() => { refreshProfile(); }, []);
+  useEffect(() => {
+    refreshProfile();
+
+    // Poll every 30s so the seller's balance updates when someone buys their
+    // listing — the buyer's balance is updated immediately client-side but the
+    // seller has no push mechanism.
+    const interval = setInterval(refreshProfile, 30_000);
+
+    // Also refresh on window focus: the seller is likely on another tab and
+    // switches back to check their balance.
+    window.addEventListener('focus', refreshProfile);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('focus', refreshProfile);
+    };
+  }, [refreshProfile]);
 
   return (
     <UserContext.Provider value={{ profile, coins, setCoins, refreshProfile }}>

@@ -1,3 +1,23 @@
+/* ── Home button (always visible, doesn't interfere with animation) ── */
+.pack-home-btn {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+  color: rgba(255, 255, 255, 0.4);
+  text-decoration: none;
+  font-size: 13px;
+  font-family: var(--font-body);
+  letter-spacing: 0.02em;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s, background 0.2s;
+}
+.pack-home-btn:hover {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.07);
+}
+
 /* ── Base ── */
 .pack-page {
   position: relative;
