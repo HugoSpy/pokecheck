@@ -248,6 +248,13 @@ export default function OpenPack() {
 
   const rarityGlow = pokemon ? (RARITY_GLOW[pokemon.rarity] ?? '#9ca3af') : '#9ca3af';
 
+  function handleAddToPokedex(checkAttendance = false): void {
+    navigate('/pokedex');
+    if (checkAttendance) {
+      window.open('https://intranet.sigl.epita.fr', '_blank', 'noopener,noreferrer');
+    }
+  }
+
   return (
     <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}>
       {/* /open is rendered outside <Layout> (fullscreen animation) — provide a
@@ -415,13 +422,21 @@ export default function OpenPack() {
           )}
 
           {phase === 'done' && (
-            <button
-              className="open-btn open-btn-secondary"
-              style={{ '--btn-color': rarityGlow } as React.CSSProperties}
-              onClick={() => navigate('/pokedex')}
-            >
-              Voir mon Pokédex →
-            </button>
+            <div className="pack-done-actions">
+              <button
+                className="open-btn open-btn-secondary"
+                style={{ '--btn-color': rarityGlow } as React.CSSProperties}
+                onClick={() => handleAddToPokedex()}
+              >
+                Ajouter au Pokédex
+              </button>
+              <button
+                className="open-btn open-btn-admin"
+                onClick={() => handleAddToPokedex(true)}
+              >
+                Ajouter au Pokédex & Checker ma présence
+              </button>
+            </div>
           )}
         </div>
       )}

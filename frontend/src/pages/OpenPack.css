@@ -538,6 +538,27 @@
   box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
 }
 
+.pack-done-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 0 18px;
+}
+
+.open-btn-admin {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.open-btn-admin:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.09);
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+}
+
 /* ── Error ── */
 .pack-error {
   display: flex;
@@ -569,6 +590,14 @@
 @media (max-width: 480px) {
   .pokeball { width: 110px; height: 110px; }
   .open-btn { padding: 14px 36px; font-size: 14px; }
+  .pack-done-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .pack-done-actions .open-btn {
+    width: min(100%, 320px);
+    padding-inline: 18px;
+  }
 }
 
 /* ── Attendance countdown ── */
