@@ -23,14 +23,36 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 24px;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 300px);
+  align-items: center;
   gap: 16px;
   transition: border-color var(--transition);
 }
 
 .event-card:hover {
   border-color: var(--border-bright);
+}
+
+.event-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+
+.event-pack-preview {
+  width: 300px;
+  height: 450px;
+  justify-self: end;
+}
+
+.booster-pack-3d {
+  display: block;
+  width: 300px;
+  height: 450px;
+  cursor: grab;
+  touch-action: none;
 }
 
 .event-name {
@@ -144,6 +166,20 @@
 @media (max-width: 480px) {
   .event-card {
     padding: 16px;
+    grid-template-columns: 1fr;
+  }
+
+  .event-pack-preview {
+    width: min(100%, 300px);
+    height: auto;
+    aspect-ratio: 2 / 3;
+    justify-self: center;
+    order: -1;
+  }
+
+  .booster-pack-3d {
+    width: 100%;
+    height: 100%;
   }
 
   .event-actions {

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveEvents } from '../api/eventApi';
+import BoosterPack3D from '../components/BoosterPack3D';
 import { useUserCtx } from '../context/UserContext';
 import type { GameEvent } from '../api/types';
 import './Events.css';
@@ -76,48 +77,54 @@ function EventCard({ event }: { event: GameEvent }) {
 
   return (
     <div className="event-card">
-      <div className="event-name">{event.name}</div>
+      <div className="event-content">
+        <div className="event-name">{event.name}</div>
 
-      <div className="event-meta">
-        <span className={`event-countdown${expired ? ' expired' : ''}`}>
-          {countdown}
-        </span>
-        <span className="event-dates">
-          Du {formatDateShort(event.starts_at)} au {formatDateShort(event.ends_at)}
-        </span>
+        <div className="event-meta">
+          <span className={`event-countdown${expired ? ' expired' : ''}`}>
+            {countdown}
+          </span>
+          <span className="event-dates">
+            Du {formatDateShort(event.starts_at)} au {formatDateShort(event.ends_at)}
+          </span>
+        </div>
+
+        {activePills.length > 0 && (
+          <div className="event-multipliers">
+            {activePills.map(([rarity, mult]) => (
+              <span
+                key={rarity}
+                className={`multiplier-pill ${RARITY_PILL_CLASS[rarity] ?? 'pill-common'}`}
+              >
+                {RARITY_LABELS[rarity] ?? rarity} ×{mult}
+              </span>
+            ))}
+          </div>
+        )}
+
+        <div className="event-actions">
+          <button
+            className={`btn ${canAffordStandard ? 'btn-ghost' : 'btn-ghost'}`}
+            disabled={!canAffordStandard || expired}
+            title={!canAffordStandard ? 'Coins insuffisants' : undefined}
+            onClick={() => handleBuy('standard')}
+          >
+            Pack Standard — {event.price_standard} coins
+          </button>
+
+          <button
+            className={`btn ${canAffordPremium ? 'btn-primary' : 'btn-ghost'}`}
+            disabled={!canAffordPremium || expired}
+            title={!canAffordPremium ? 'Coins insuffisants' : undefined}
+            onClick={() => handleBuy('premium')}
+          >
+            Pack Premium — {event.price_premium} coins
+          </button>
+        </div>
       </div>
 
-      {activePills.length > 0 && (
-        <div className="event-multipliers">
-          {activePills.map(([rarity, mult]) => (
-            <span
-              key={rarity}
-              className={`multiplier-pill ${RARITY_PILL_CLASS[rarity] ?? 'pill-common'}`}
-            >
-              {RARITY_LABELS[rarity] ?? rarity} ×{mult}
-            </span>
-          ))}
-        </div>
-      )}
-
-      <div className="event-actions">
-        <button
-          className={`btn ${canAffordStandard ? 'btn-ghost' : 'btn-ghost'}`}
-          disabled={!canAffordStandard || expired}
-          title={!canAffordStandard ? 'Coins insuffisants' : undefined}
-          onClick={() => handleBuy('standard')}
-        >
-          Pack Standard — {event.price_standard} coins
-        </button>
-
-        <button
-          className={`btn ${canAffordPremium ? 'btn-primary' : 'btn-ghost'}`}
-          disabled={!canAffordPremium || expired}
-          title={!canAffordPremium ? 'Coins insuffisants' : undefined}
-          onClick={() => handleBuy('premium')}
-        >
-          Pack Premium — {event.price_premium} coins
-        </button>
+      <div className="event-pack-preview">
+        <BoosterPack3D />
       </div>
     </div>
   );
