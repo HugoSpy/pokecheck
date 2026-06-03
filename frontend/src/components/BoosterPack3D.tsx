@@ -47,11 +47,15 @@ export default function BoosterPack3D() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT, false);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+    scene.add(new THREE.AmbientLight(0xffffff, 2.5));
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
     directionalLight.position.set(5, 10, 7);
     scene.add(directionalLight);
+
+    const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
+    fillLight.position.set(-5, -5, -5);
+    scene.add(fillLight);
 
     const packGroup = new THREE.Group();
     scene.add(packGroup);
@@ -78,8 +82,6 @@ export default function BoosterPack3D() {
 
         const materials = Array.isArray(child.material) ? child.material : [child.material];
         materials.forEach((material) => {
-          if (material.name !== 'Material.001') return;
-
           if (material instanceof THREE.MeshStandardMaterial) {
             material.color.set(0xffffff);
             material.metalness = 0.9;
