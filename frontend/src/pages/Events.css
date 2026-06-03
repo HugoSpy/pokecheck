@@ -134,6 +134,12 @@
   border: 1px solid rgba(156, 163, 175, 0.15);
 }
 
+.multiplier-pill.pill-shiny {
+  color: #facc15;
+  background: rgba(250, 204, 21, 0.1);
+  border: 1px solid rgba(250, 204, 21, 0.28);
+}
+
 /* ── Actions ── */
 .event-actions {
   display: flex;

@@ -9,6 +9,12 @@ const router = Router();
 const prisma = new PrismaClient();
 
 const STRIP_SIZE = 29;
+const BASE_SHINY_RATE = 1 / 4096;
+
+function rollShiny(multiplier: number | undefined): boolean {
+  const shinyRate = Math.min(BASE_SHINY_RATE * (multiplier ?? 1.0), 1);
+  return Math.random() < shinyRate;
+}
 
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   const now = new Date();
@@ -89,7 +95,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
   const candidates = pools[pickedRarity].length > 0 ? pools[pickedRarity] : allPool;
   const pokemon = candidates[Math.floor(Math.random() * candidates.length)];
 
-  const isShiny = Math.random() < 1 / 4096;
+  const isShiny = rollShiny(multipliers.SHINY);
   const winnerSpriteUrl = isShiny
     ? pokemon.sprite_url.replace('/normal/', '/shiny/')
     : pokemon.sprite_url;
@@ -121,7 +127,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     const rarity = pickRarity();
     const pool = pools[rarity].length > 0 ? pools[rarity] : allPool;
     const p = pool[Math.floor(Math.random() * pool.length)];
-    const shiny = Math.random() < 1 / 4096;
+    const shiny = rollShiny(multipliers.SHINY);
     return {
       id: p.id,
       name: p.name,

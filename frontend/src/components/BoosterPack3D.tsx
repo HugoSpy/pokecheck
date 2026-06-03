@@ -5,6 +5,13 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 const CANVAS_WIDTH = 300;
 const CANVAS_HEIGHT = 450;
 
+type BoosterPack3DProps = {
+  textureUrl?: string;
+  textureMaterialName?: string | null;
+  textureMeshName?: string;
+  transparentMeshName?: string;
+};
+
 function disposeObject(object: THREE.Object3D): void {
   object.traverse((child) => {
     if (!(child instanceof THREE.Mesh)) return;
@@ -20,7 +27,12 @@ function disposeObject(object: THREE.Object3D): void {
   });
 }
 
-export default function BoosterPack3D() {
+export default function BoosterPack3D({
+  textureUrl = '/booster-gen-4.png',
+  textureMaterialName = 'Material.003',
+  textureMeshName,
+  transparentMeshName,
+}: BoosterPack3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -61,7 +73,7 @@ export default function BoosterPack3D() {
     scene.add(packGroup);
 
     const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load('/booster-gen-4.png', (loadedTexture) => {
+    const texture = textureLoader.load(textureUrl, (loadedTexture) => {
       loadedTexture.flipY = true;
       loadedTexture.colorSpace = THREE.SRGBColorSpace;
       loadedTexture.needsUpdate = true;
@@ -80,10 +92,17 @@ export default function BoosterPack3D() {
       root.traverse((child) => {
         if (!(child instanceof THREE.Mesh)) return;
 
+        const shouldTextureMesh = textureMeshName ? child.name === textureMeshName : false;
+        const shouldHideMesh = transparentMeshName ? child.name === transparentMeshName : false;
         const materials = Array.isArray(child.material) ? child.material : [child.material];
         materials.forEach((material) => {
           if (!(material instanceof THREE.MeshStandardMaterial)) return;
-          if (material.name === 'Material.003') {
+
+          if (shouldHideMesh) {
+            material.transparent = true;
+            material.opacity = 0;
+            material.map = null;
+          } else if (shouldTextureMesh || (textureMaterialName != null && material.name === textureMaterialName)) {
             material.color.set(0xffffff);
             material.metalness = 0.9;
             material.map = texture;
@@ -94,9 +113,9 @@ export default function BoosterPack3D() {
           material.needsUpdate = true;
         });
 
-        const hasMat003 = (Array.isArray(child.material) ? child.material : [child.material])
-          .some(m => m.name === 'Material.003');
-        if (!hasMat003) return;
+        const hasTextureMaterial = (Array.isArray(child.material) ? child.material : [child.material])
+          .some(m => textureMaterialName != null && m.name === textureMaterialName);
+        if (!shouldTextureMesh && !hasTextureMaterial) return;
 
         child.scale.set(1.15, 1.1, 1.0);
 
@@ -176,7 +195,7 @@ export default function BoosterPack3D() {
       texture.dispose();
       renderer.dispose();
     };
-  }, []);
+  }, [textureMaterialName, textureMeshName, textureUrl, transparentMeshName]);
 
   return (
     <canvas

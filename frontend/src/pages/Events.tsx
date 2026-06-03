@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getActiveEvents } from '../api/eventApi';
 import BoosterPack3D from '../components/BoosterPack3D';
@@ -42,6 +42,7 @@ const RARITY_LABELS: Record<string, string> = {
   RARE: 'Rare',
   EPIC: 'Épique',
   LEGENDARY: 'Légendaire',
+  SHINY: 'Shiny',
 };
 
 const RARITY_PILL_CLASS: Record<string, string> = {
@@ -49,6 +50,16 @@ const RARITY_PILL_CLASS: Record<string, string> = {
   RARE: 'pill-rare',
   EPIC: 'pill-epic',
   LEGENDARY: 'pill-legendary',
+  SHINY: 'pill-shiny',
+};
+
+const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack3D>> = {
+  'Shiny Surge': {
+    textureUrl: '/shiny_surge_pack.png',
+    textureMaterialName: null,
+    textureMeshName: 'Mesh_001',
+    transparentMeshName: 'Mesh',
+  },
 };
 
 function formatDateShort(iso: string): string {
@@ -114,7 +125,7 @@ function EventCard({ event }: { event: GameEvent }) {
       </div>
 
       <div className="event-pack-preview">
-        <BoosterPack3D />
+        <BoosterPack3D {...EVENT_PACK_CONFIG[event.name]} />
       </div>
     </div>
   );
