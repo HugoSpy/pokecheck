@@ -40,15 +40,23 @@ const allowedOrigins = new Set<string>(
 // Always permit localhost for local development.
 const localhostPattern = /^http:\/\/localhost:\d+$/;
 
+// Vercel generates a unique URL per preview deployment
+// (e.g. pokecheck-h34xinbo5-hugospyropoulos-2590s-projects.vercel.app).
+// Allowing these on prod would re-open the wildcard attack vector we closed in
+// Sprint 2. Instead, ALLOW_VERCEL_PREVIEWS=true is only set in the staging
+// .env so only the dev backend accepts preview URLs.
+const vercelPreviewPattern = process.env.ALLOW_VERCEL_PREVIEWS === 'true'
+  ? /^https:\/\/pokecheck-[a-z0-9]+-hugospyropoulos-2590s-projects\.vercel\.app$/
+  : null;
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Requests with no Origin header (curl, server-to-server) are allowed;
-    // browser-initiated cross-origin requests must match the allowlist.
-    if (!origin || allowedOrigins.has(origin) || localhostPattern.test(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error(`CORS blocked: ${origin}`));
-    }
+    // Requests with no Origin header (curl, server-to-server) are always allowed.
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.has(origin)) return callback(null, true);
+    if (localhostPattern.test(origin)) return callback(null, true);
+    if (vercelPreviewPattern?.test(origin)) return callback(null, true);
+    callback(new Error(`CORS blocked: ${origin}`));
   },
   credentials: true,
 }));
