@@ -548,15 +548,15 @@
 }
 
 .open-btn-admin {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: none;
+  background: var(--accent);
+  color: #000;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 34px var(--accent-glow);
 }
 
 .open-btn-admin:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.09);
-  box-shadow: 0 0 24px rgba(255, 255, 255, 0.08);
+  background: var(--accent);
+  box-shadow: 0 0 56px var(--accent-glow);
 }
 
 /* ── Error ── */
