@@ -134,7 +134,7 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
     (err: unknown, user: unknown) => {
       if (err || !user) {
         const msg = err instanceof Error ? encodeURIComponent(err.message) : 'auth_failed';
-        res.redirect(`${process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
+        res.redirect(`${process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
         return;
       }
       const u = user as { userId: string; ms_id: string; display_name: string; is_admin: boolean };
@@ -144,7 +144,7 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
         display_name: u.display_name,
         is_admin: u.is_admin,
       });
-      res.redirect(`${process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app'}?session=${sessionToken}`);
+      res.redirect(`${process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app'}?session=${sessionToken}`);
     }
   )(req, res, next);
 });
@@ -189,7 +189,7 @@ router.post('/generate-token', async (req: Request, res: Response): Promise<void
   await prisma.oneshotToken.create({
     data: { user_id: user.id, token_hash: tokenHash, short_code: shortCode, expires_at: expiresAt },
   });
-  const baseUrl = process.env.FRONTEND_URL ?? 'https://pokecheck-tau.vercel.app';
+  const baseUrl = process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app';
   res.json({ code: shortCode, url: `${baseUrl}/open?code=${shortCode}`, expires_in: ttlMinutes * 60 });
 });
 
