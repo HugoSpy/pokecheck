@@ -39,7 +39,7 @@ router.get('/:id/strip', async (req: Request, res: Response): Promise<void> => {
   }
 
   const multipliers = event.rarity_multiplier as Record<string, number>;
-  const baseRates: Record<string, number> = { COMMON: 60, RARE: 25, EPIC: 12, LEGENDARY: 3 };
+  const baseRates: Record<string, number> = { COMMON: 79.5, RARE: 15, EPIC: 5, LEGENDARY: 0.5 };
   const weightedRates: Record<string, number> = {};
   for (const [rarity, base] of Object.entries(baseRates)) {
     weightedRates[rarity] = base * (multipliers[rarity] ?? 1.0);
@@ -101,10 +101,10 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
 
   // Weighted rarity draw using multipliers
   const baseRates: Record<string, number> = {
-    COMMON: 60,
-    RARE: 25,
-    EPIC: 12,
-    LEGENDARY: 3,
+    COMMON: 79.5,
+    RARE: 15,
+    EPIC: 5,
+    LEGENDARY: 0.5,
   };
 
   const weightedRates: Record<string, number> = {};
