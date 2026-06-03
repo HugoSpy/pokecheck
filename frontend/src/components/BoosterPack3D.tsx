@@ -47,26 +47,26 @@ export default function BoosterPack3D() {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT, false);
 
-    scene.add(new THREE.AmbientLight(0xffffff, 2.5));
+    scene.add(new THREE.AmbientLight(0xffffff, 3.0));
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0);
-    directionalLight.position.set(5, 10, 7);
-    scene.add(directionalLight);
+    const frontLight = new THREE.DirectionalLight(0xffffff, 3.0);
+    frontLight.position.set(0, 5, 10);
+    scene.add(frontLight);
 
-    const fillLight = new THREE.DirectionalLight(0xffffff, 1.0);
-    fillLight.position.set(-5, -5, -5);
-    scene.add(fillLight);
+    const sideLight = new THREE.DirectionalLight(0xffffff, 1.5);
+    sideLight.position.set(5, 5, 5);
+    scene.add(sideLight);
 
     const packGroup = new THREE.Group();
     scene.add(packGroup);
 
     const textureLoader = new THREE.TextureLoader();
     const texture = textureLoader.load('/booster-gen-4.png', (loadedTexture) => {
-      loadedTexture.flipY = false;
+      loadedTexture.flipY = true;
       loadedTexture.colorSpace = THREE.SRGBColorSpace;
       loadedTexture.needsUpdate = true;
     });
-    texture.flipY = false;
+    texture.flipY = true;
 
     const gltfLoader = new GLTFLoader();
     gltfLoader.load('/booster_pack_tcg_pack.glb', (gltf) => {
