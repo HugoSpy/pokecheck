@@ -4,6 +4,27 @@
   min-height: 100dvh;
 }
 
+/* ── Dev environment banner ── */
+.dev-banner {
+  position: sticky;
+  top: 0;
+  z-index: 150;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f59e0b;
+  color: #000;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.layout--dev .nav {
+  top: 26px;
+}
+
 .nav {
   position: sticky;
   top: 0;

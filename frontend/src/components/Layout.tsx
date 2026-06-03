@@ -6,6 +6,7 @@ import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
+import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
 
 const NAV_LINKS = [
@@ -89,7 +90,12 @@ export default function Layout() {
   }
 
   return (
-    <div className="layout">
+    <div className={`layout${isDevEnv ? ' layout--dev' : ''}`}>
+      {isDevEnv && (
+        <div className="dev-banner">
+          ⚠️ Environnement de développement — api-dev.pokecheck.fr
+        </div>
+      )}
       <nav className="nav">
         <NavLink to="/leaderboard" className="nav-logo">
           <span className="nav-logo-pk">Poké</span>

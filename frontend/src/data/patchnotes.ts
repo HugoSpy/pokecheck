@@ -1,3 +1,8 @@
+export const isDevEnv =
+  import.meta.env.VITE_ENV !== 'production' &&
+  (import.meta.env.VITE_ENV === 'development' ||
+   String(import.meta.env.VITE_API_URL ?? '').includes('api-dev'));
+
 export const patchNotes = [
   {
     version: 'v1.0',

@@ -121,6 +121,20 @@
   color: var(--accent);
 }
 
+/* ── Dev entry ── */
+.patchnotes-entry--dev {
+  border-left: 2px solid #f59e0b;
+  padding-left: 10px;
+}
+
+.patchnotes-version--dev {
+  color: #f59e0b;
+}
+
+.patchnotes-bullet--dev {
+  color: #f59e0b;
+}
+
 @media (max-width: 720px) {
   .patchnotes-button {
     bottom: calc(var(--nav-h) + 16px);
