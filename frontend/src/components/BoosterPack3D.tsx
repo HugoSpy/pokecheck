@@ -83,7 +83,7 @@ export default function BoosterPack3D() {
         const materials = Array.isArray(child.material) ? child.material : [child.material];
         materials.forEach((material) => {
           if (!(material instanceof THREE.MeshStandardMaterial)) return;
-          if (material.name === 'Material.001') {
+          if (material.name === 'Material.003') {
             material.color.set(0xffffff);
             material.metalness = 0.9;
             material.map = texture;
@@ -95,7 +95,7 @@ export default function BoosterPack3D() {
         });
 
         const hasMat001 = (Array.isArray(child.material) ? child.material : [child.material])
-          .some(m => m.name === 'Material.001');
+          .some(m => m.name === 'Material.003');
         if (!hasMat001) return;
 
         const uv = child.geometry.attributes.uv;
