@@ -53,8 +53,12 @@ router.post('/list', authMiddleware, async (req: Request, res: Response): Promis
     price_coins: number;
   };
 
-  if (!userPokemonId || typeof price_coins !== 'number' || price_coins <= 0) {
-    res.status(400).json({ error: 'userPokemonId and price_coins (> 0) are required' });
+  // M3 — Cap price to prevent griefing: a user could list a pokemon at INT_MAX
+  // to effectively remove it from the market forever (no one can afford it).
+  // 1 000 000 coins is well above any achievable balance in normal play.
+  const MAX_PRICE = 1_000_000;
+  if (!userPokemonId || typeof price_coins !== 'number' || price_coins <= 0 || price_coins > MAX_PRICE) {
+    res.status(400).json({ error: `userPokemonId and price_coins (1–${MAX_PRICE}) are required` });
     return;
   }
 

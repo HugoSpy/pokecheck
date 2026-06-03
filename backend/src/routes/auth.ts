@@ -9,9 +9,15 @@ import { claimDailyLogin } from '../services/streakService';
 const router = Router();
 const prisma = new PrismaClient();
 
+// M2 — JWT duration is now driven by SESSION_DURATION (default 1h) for both
+// Microsoft OAuth and one-shot tokens. The previous 24h hardcoded default meant
+// a compromised admin token stayed valid for a full day; 1h limits the blast
+// radius if a token is stolen or the JWT_SECRET is briefly leaked.
+const SESSION_DURATION = (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'];
+
 function signSessionToken(
   user: { id: string; ms_id: string; display_name: string; is_admin: boolean },
-  expiresIn: jwt.SignOptions['expiresIn'] = '24h'
+  expiresIn: jwt.SignOptions['expiresIn'] = SESSION_DURATION
 ): string {
   return jwt.sign(
     {

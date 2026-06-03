@@ -34,17 +34,20 @@ export async function spendCoins(
   amount: number,
   reason: string
 ): Promise<void> {
-  const user = await prismaOrTx.user.findUnique({
-    where: { id: userId },
-    select: { coins: true },
-  });
-  if (!user || user.coins < amount) {
-    throw Object.assign(new Error('Insufficient coins'), { status: 402 });
-  }
-  await prismaOrTx.user.update({
-    where: { id: userId },
+  // M7 — Atomic compare-and-swap: the previous implementation read coins then
+  // decremented in two separate statements. Under PostgreSQL READ COMMITTED two
+  // concurrent spend calls could both pass the balance check before either
+  // committed, resulting in a negative balance (e.g. event-draw raced with a
+  // market buy). updateMany with `coins: { gte: amount }` in the WHERE clause
+  // makes the read+write a single atomic operation; if count === 0 the user
+  // either doesn't exist or had insufficient funds.
+  const { count } = await prismaOrTx.user.updateMany({
+    where: { id: userId, coins: { gte: amount } },
     data: { coins: { decrement: amount } },
   });
+  if (count === 0) {
+    throw Object.assign(new Error('Insufficient coins'), { status: 402 });
+  }
   await prismaOrTx.coinTransaction.create({
     data: { user_id: userId, amount: -amount, reason },
   });

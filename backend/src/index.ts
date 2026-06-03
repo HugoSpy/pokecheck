@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import passport from 'passport';
 import rateLimit from 'express-rate-limit';
@@ -20,15 +21,30 @@ import attendanceRouter from './routes/attendance';
 
 const app = express();
 
+// M4 — Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
+// Applied before everything else so no response escapes without the headers.
+// crossOriginResourcePolicy is set to 'cross-origin' because the frontend
+// (a separate Vite SPA on a different origin) fetches all API responses.
+app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+
+// M1 — Strict CORS: only explicitly listed origins are allowed.
+// Previously the wildcard /.*\.vercel\.app$/ let any attacker-controlled
+// Vercel deployment make credentialed cross-origin requests on a victim's behalf.
+// FRONTEND_URL may be a comma-separated list for multi-domain setups.
+const allowedOrigins = new Set<string>(
+  (process.env.FRONTEND_URL ?? '')
+    .split(',')
+    .map(s => s.trim())
+    .filter(Boolean)
+);
+// Always permit localhost for local development.
+const localhostPattern = /^http:\/\/localhost:\d+$/;
+
 app.use(cors({
   origin: (origin, callback) => {
-    const allowed = [
-      /https:\/\/.*\.vercel\.app$/,
-      /https:\/\/.*\.pokecheck\.fr$/,
-      /https:\/\/pokecheck\.fr$/,
-      /http:\/\/localhost:\d+$/,
-    ];
-    if (!origin || allowed.some(r => r.test(origin))) {
+    // Requests with no Origin header (curl, server-to-server) are allowed;
+    // browser-initiated cross-origin requests must match the allowlist.
+    if (!origin || allowedOrigins.has(origin) || localhostPattern.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error(`CORS blocked: ${origin}`));

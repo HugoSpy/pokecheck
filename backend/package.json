@@ -34,6 +34,7 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-rate-limit": "^8.5.2",
+    "helmet": "^8.2.0",
     "jsonwebtoken": "^9.0.3",
     "passport": "^0.7.0",
     "passport-microsoft": "^1.0.0",
