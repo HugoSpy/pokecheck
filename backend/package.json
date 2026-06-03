@@ -10,6 +10,7 @@
     "seed": "ts-node --transpile-only src/prisma/seed.ts",
     "seed:events": "ts-node --transpile-only src/prisma/seedEvents.ts",
     "seed:badges": "ts-node --transpile-only src/prisma/seedBadges.ts",
+    "simulate:drops": "ts-node src/scripts/simulateDrops.ts",
     "pokedex:recalculate": "ts-node --transpile-only src/prisma/recalculate-pokedex-values.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev"
