@@ -79,8 +79,8 @@
   position: absolute;
   bottom: calc(100% + 10px);
   right: 0;
-  width: 360px;
-  max-height: 480px;
+  width: 440px;
+  max-height: 560px;
   background: var(--bg-elevated);
   border: 1px solid var(--border-bright);
   border-radius: var(--radius-lg);
@@ -383,7 +383,7 @@
   }
 
   .notif-popover {
-    width: min(360px, calc(100vw - 24px));
+    width: min(440px, calc(100vw - 2rem));
     right: 0;
   }
 }

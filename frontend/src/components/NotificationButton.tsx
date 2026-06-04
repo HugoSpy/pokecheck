@@ -3,7 +3,7 @@ import { useUserCtx } from '../context/UserContext';
 import { useTradeAnim } from '../context/TradeAnimContext';
 import { getNotifications, getUnreadCount, markRead, markAllRead } from '../api/notificationApi';
 import type { NotificationItem } from '../api/notificationApi';
-import { Mail, MailOpen } from './icons';
+import { Mail, MailOpen, User } from './icons';
 import './NotificationButton.css';
 
 function relativeTime(dateStr: string): string {
@@ -21,7 +21,6 @@ const TYPE_ICON: Record<string, string> = {
   TRADE_RECEIVED: '⇄',
   TRADE_ACCEPTED: '✅',
   ATTENDANCE: '🎓',
-  ADMIN_MESSAGE: '📢',
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -226,7 +225,9 @@ function NotifItem({ n, dismissing, isRead, onDismiss, onViewTrade }: NotifItemP
         className="notif-icon"
         style={{ color: TYPE_COLOR[n.type] ?? 'var(--text-muted)' }}
       >
-        {TYPE_ICON[n.type] ?? '📬'}
+        {n.type === 'ADMIN_MESSAGE'
+          ? <User size={17} aria-hidden />
+          : (TYPE_ICON[n.type] ?? '📬')}
       </div>
 
       <div className="notif-content">
