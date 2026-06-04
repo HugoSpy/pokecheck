@@ -326,6 +326,35 @@
   color: var(--text-primary);
 }
 
+/* ── Delete button (read items) ── */
+.notif-delete {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  color: var(--text-faint);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 150ms, background 150ms, color 150ms;
+  flex-shrink: 0;
+}
+
+.notif-item:hover .notif-delete {
+  opacity: 1;
+}
+
+.notif-delete:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
+}
+
 /* ── Admin message style ── */
 .notif-text--admin {
   display: flex;

@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useUserCtx } from '../context/UserContext';
 import { useTradeAnim } from '../context/TradeAnimContext';
-import { getNotifications, getUnreadCount, markRead, markAllRead } from '../api/notificationApi';
+import { getNotifications, getUnreadCount, markRead, markAllRead, deleteNotification } from '../api/notificationApi';
 import type { NotificationItem } from '../api/notificationApi';
-import { Mail, MailOpen, User } from './icons';
+import { Mail, MailOpen, User, Trash } from './icons';
 import './NotificationButton.css';
 
 function relativeTime(dateStr: string): string {
@@ -87,6 +87,15 @@ export default function NotificationButton() {
       setDismissingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
       setUnreadCount(prev => Math.max(0, prev - 1));
       markRead(id).catch(() => {});
+    }, 180);
+  }
+
+  function handleDelete(id: string) {
+    setDismissingIds(prev => new Set([...prev, id]));
+    setTimeout(() => {
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      setDismissingIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+      deleteNotification(id).catch(() => {});
     }, 180);
   }
 
@@ -183,6 +192,7 @@ export default function NotificationButton() {
                         dismissing={false}
                         isRead={true}
                         onDismiss={handleDismiss}
+                        onDelete={handleDelete}
                         onViewTrade={handleViewTrade}
                       />
                     ))}
@@ -209,10 +219,11 @@ interface NotifItemProps {
   dismissing: boolean;
   isRead: boolean;
   onDismiss: (id: string) => void;
+  onDelete?: (id: string) => void;
   onViewTrade: (n: NotificationItem) => void;
 }
 
-function NotifItem({ n, dismissing, isRead, onDismiss, onViewTrade }: NotifItemProps) {
+function NotifItem({ n, dismissing, isRead, onDismiss, onDelete, onViewTrade }: NotifItemProps) {
   const itemClass = [
     'notif-item',
     isRead ? 'notif-item--read' : 'notif-item--unread',
@@ -242,6 +253,15 @@ function NotifItem({ n, dismissing, isRead, onDismiss, onViewTrade }: NotifItemP
           aria-label="Marquer comme lu"
         >
           ×
+        </button>
+      )}
+      {isRead && onDelete && (
+        <button
+          className="notif-delete"
+          onClick={() => onDelete(n.id)}
+          aria-label="Supprimer"
+        >
+          <Trash size={13} aria-hidden />
         </button>
       )}
     </div>

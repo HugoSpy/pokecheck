@@ -23,3 +23,7 @@ export function markRead(id: string): Promise<{ ok: boolean }> {
 export function markAllRead(): Promise<{ updated: number }> {
   return apiFetch('/notifications/read-all', { method: 'PATCH' });
 }
+
+export function deleteNotification(id: string): Promise<{ ok: boolean }> {
+  return apiFetch(`/notifications/${id}`, { method: 'DELETE' });
+}

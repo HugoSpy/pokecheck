@@ -47,4 +47,16 @@ router.patch('/:id/read', async (req: Request, res: Response): Promise<void> => 
   res.json({ ok: true });
 });
 
+router.delete('/:id', async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const id = String(req.params.id);
+  const notif = await prisma.notification.findUnique({ where: { id } });
+  if (!notif || notif.user_id !== userId) {
+    res.status(404).json({ error: 'Notification not found' });
+    return;
+  }
+  await prisma.notification.delete({ where: { id } });
+  res.json({ ok: true });
+});
+
 export default router;
