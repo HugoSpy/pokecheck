@@ -1,15 +1,15 @@
 /* ── Wrapper (fixed anchor for button + popover) ── */
 .notif-wrapper {
   position: fixed;
-  bottom: 72px; /* 20px patchnotes + 40px height + 12px gap */
+  bottom: 20px;
   right: 20px;
   z-index: 50;
 }
 
 /* ── Trigger button ── */
 .notif-btn {
-  width: 40px;
-  height: 40px;
+  width: 3.25rem;
+  height: 3.25rem;
   border-radius: 50%;
   background: var(--accent);
   border: none;
@@ -65,6 +65,7 @@
   border: 2px solid var(--bg-void);
   animation: notif-badge-pop 250ms cubic-bezier(0.23, 1, 0.32, 1) both;
   line-height: 1;
+  pointer-events: none;
 }
 
 @keyframes notif-badge-pop {
@@ -325,6 +326,28 @@
   color: var(--text-primary);
 }
 
+/* ── Admin message style ── */
+.notif-text--admin {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.notif-admin-label {
+  font-family: var(--font-display);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--warning);
+  background: var(--warning-dim);
+  border: 1px solid rgba(251, 191, 36, 0.2);
+  border-radius: 3px;
+  padding: 1px 5px;
+  align-self: flex-start;
+  margin-bottom: 2px;
+}
+
 /* ── "Voir l'échange" CTA ── */
 .notif-action-btn {
   display: inline-block;
@@ -355,7 +378,7 @@
 /* ── Mobile ── */
 @media (max-width: 640px) {
   .notif-wrapper {
-    bottom: calc(var(--nav-h) + 68px); /* nav + gap + patchnotes */
+    bottom: calc(var(--nav-h) + 16px);
     right: 14px;
   }
 

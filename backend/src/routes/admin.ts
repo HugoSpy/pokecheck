@@ -3,7 +3,7 @@ import crypto from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { adminMiddleware } from '../middleware/adminMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
-import { createNotificationForAllUsers } from '../utils/notifications';
+import { createNotification, createNotificationForAllUsers } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -218,6 +218,43 @@ router.post('/attendance/:id/cancel', async (req: Request, res: Response): Promi
   }, { timeout: 30000, maxWait: 10000 });
 
   res.json(result);
+});
+
+// GET /admin/users — dropdown list for messaging
+router.get('/users', async (_req: Request, res: Response): Promise<void> => {
+  const users = await prisma.user.findMany({
+    select: { id: true, display_name: true },
+    orderBy: { display_name: 'asc' },
+  });
+  res.json({ users });
+});
+
+// POST /admin/message/all — broadcast to every user
+router.post('/message/all', async (req: Request, res: Response): Promise<void> => {
+  const { content } = req.body as { content?: string };
+  if (!content?.trim()) {
+    res.status(400).json({ error: 'content is required' });
+    return;
+  }
+  await createNotificationForAllUsers('ADMIN_MESSAGE', { content: content.trim(), fromAdmin: true });
+  const count = await prisma.user.count();
+  res.json({ sent: count });
+});
+
+// POST /admin/message/user — message to a specific user
+router.post('/message/user', async (req: Request, res: Response): Promise<void> => {
+  const { userId, content } = req.body as { userId?: string; content?: string };
+  if (!userId || !content?.trim()) {
+    res.status(400).json({ error: 'userId and content are required' });
+    return;
+  }
+  const target = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  if (!target) {
+    res.status(404).json({ error: 'User not found' });
+    return;
+  }
+  await createNotification(userId, 'ADMIN_MESSAGE', { content: content.trim(), fromAdmin: true });
+  res.json({ ok: true });
 });
 
 export default router;

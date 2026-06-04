@@ -14,8 +14,8 @@ import Market from './pages/Market';
 import Events from './pages/Events';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
+import AdminPortal from './pages/AdminPortal';
 import Layout from './components/Layout';
-import PatchNotesButton from './components/PatchNotesButton';
 
 function AppRoutes() {
   const location = useLocation();
@@ -43,6 +43,10 @@ function AppRoutes() {
         <Route path="/events"      element={<Events />} />
         <Route path="/profile"     element={<Profile />} />
         <Route
+          path="/admin"
+          element={isAdmin ? <AdminPortal /> : <Navigate to="/leaderboard" replace />}
+        />
+        <Route
           path="/admin/attendance"
           element={isAdmin ? <AdminAttendance /> : <Navigate to="/leaderboard" replace />}
         />
@@ -62,7 +66,6 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('session')) {
-      // Legacy cleanup for old OAuth redirects. New sessions are HttpOnly cookies.
       params.delete('session');
       const clean = [window.location.pathname, params.toString() ? '?' + params.toString() : ''].join('');
       window.history.replaceState({}, '', clean);
@@ -77,7 +80,6 @@ export default function App() {
       <UserProvider>
         <TradeAnimProvider>
           <AppRoutes />
-          <PatchNotesButton />
         </TradeAnimProvider>
       </UserProvider>
     </BrowserRouter>

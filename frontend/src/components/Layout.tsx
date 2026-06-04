@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet } from 'react-router-dom';
 import { logout } from '../api/client';
-import { generateAdminPack } from '../api/adminApi';
 import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import NotificationButton from './NotificationButton';
+import AdminPortalButton from './AdminPortalButton';
 import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
 import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
@@ -20,7 +20,6 @@ const NAV_LINKS = [
   { to: '/profile',     label: 'Profil'     },
 ];
 
-// Mobile bottom nav. Classement stays reachable via the top logo.
 const BOTTOM_NAV = [
   { to: '/pokedex', label: 'Pokédex',  Icon: Grid        },
   { to: '/trades',  label: 'Échanges', Icon: Swap        },
@@ -31,16 +30,9 @@ const BOTTOM_NAV = [
 ];
 
 export default function Layout() {
-  const navigate = useNavigate();
   const { profile: user, coins, authenticated, clearProfile } = useUserCtx();
   const isAdmin = user?.is_admin === true;
 
-  const [showModal, setShowModal] = useState(false);
-  const [forceShiny, setForceShiny] = useState(false);
-  const [forceDitto, setForceDitto] = useState(false); // HIDDEN FEATURE
-  const [packLoading, setPackLoading] = useState(false);
-
-  // Attendance availability — poll every 15s, dot on "Ouvrir", toast on new check
   const [attAvailable, setAttAvailable] = useState(false);
   const [attToast, setAttToast] = useState(false);
   const prevAvailRef = useRef<boolean | null>(null);
@@ -77,21 +69,6 @@ export default function Layout() {
     window.location.reload();
   }
 
-  async function handleOpenPack() {
-    setPackLoading(true);
-    try {
-      const { code } = await generateAdminPack(forceShiny, forceDitto);
-      setShowModal(false);
-      setForceShiny(false);
-      setForceDitto(false); // HIDDEN FEATURE — auto-reset
-      navigate(`/open?code=${code}`);
-    } catch {
-      // modal stays open on error
-    } finally {
-      setPackLoading(false);
-    }
-  }
-
   return (
     <div className={`layout${isDevEnv ? ' layout--dev' : ''}`}>
       {isDevEnv && (
@@ -119,16 +96,6 @@ export default function Layout() {
         </div>
 
         <div className="nav-user">
-          {isAdmin && (
-            <>
-              <NavLink to="/admin/attendance" className="btn btn-ghost nav-admin-btn">
-                Check présence
-              </NavLink>
-              <button className="btn btn-ghost nav-admin-btn" onClick={() => setShowModal(true)}>
-                Ouvrir un pack
-              </button>
-            </>
-          )}
           {user ? (
             <>
               <span className="nav-coins"><Coins size={14} /> {coins.toLocaleString()}</span>
@@ -179,40 +146,7 @@ export default function Layout() {
 
       <BadgeNotification />
       <NotificationButton />
-
-      {showModal && (
-        <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()}>
-            <div className="admin-modal-title">Ouvrir un pack</div>
-            <label className="admin-modal-shiny">
-              <input
-                type="checkbox"
-                checked={forceShiny}
-                onChange={e => setForceShiny(e.target.checked)}
-              />
-              Force Shiny ✨
-            </label>
-            {/* HIDDEN FEATURE */}
-            <label className="admin-modal-shiny">
-              <input
-                type="checkbox"
-                checked={forceDitto}
-                onChange={e => setForceDitto(e.target.checked)}
-              />
-              Force M. 🔮
-            </label>
-            {/* END HIDDEN FEATURE */}
-            <div className="admin-modal-actions">
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
-                Annuler
-              </button>
-              <button className="btn btn-primary" onClick={handleOpenPack} disabled={packLoading}>
-                {packLoading ? 'Génération…' : 'Ouvrir'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {isAdmin && <AdminPortalButton />}
     </div>
   );
 }

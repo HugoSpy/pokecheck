@@ -21,6 +21,7 @@ const TYPE_ICON: Record<string, string> = {
   TRADE_RECEIVED: '⇄',
   TRADE_ACCEPTED: '✅',
   ATTENDANCE: '🎓',
+  ADMIN_MESSAGE: '📢',
 };
 
 const TYPE_COLOR: Record<string, string> = {
@@ -28,6 +29,7 @@ const TYPE_COLOR: Record<string, string> = {
   TRADE_RECEIVED: 'var(--accent)',
   TRADE_ACCEPTED: 'var(--success)',
   ATTENDANCE: 'var(--warning)',
+  ADMIN_MESSAGE: 'var(--warning)',
 };
 
 export default function NotificationButton() {
@@ -128,7 +130,7 @@ export default function NotificationButton() {
         aria-label="Notifications"
         aria-expanded={open}
       >
-        {open ? <MailOpen size={18} aria-hidden /> : <Mail size={18} aria-hidden />}
+        {open ? <MailOpen size={22} aria-hidden /> : <Mail size={22} aria-hidden />}
         {unreadCount > 0 && (
           <span className="notif-badge" key={unreadCount}>
             {unreadCount > 99 ? '99+' : unreadCount}
@@ -296,6 +298,16 @@ function NotifBody({ n, onViewTrade }: { n: NotificationItem; onViewTrade: (n: N
     case 'ATTENDANCE': {
       const p = n.payload as { message?: string };
       return <div className="notif-text">{p.message ?? 'Check présence disponible !'}</div>;
+    }
+
+    case 'ADMIN_MESSAGE': {
+      const p = n.payload as { content?: string };
+      return (
+        <div className="notif-text notif-text--admin">
+          <span className="notif-admin-label">Admin</span>
+          {p.content ?? ''}
+        </div>
+      );
     }
 
     default:
