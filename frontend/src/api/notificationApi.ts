@@ -2,7 +2,7 @@ import { apiFetch } from './client';
 
 export interface NotificationItem {
   id: string;
-  type: 'BADGE' | 'TRADE_RECEIVED' | 'TRADE_ACCEPTED' | 'ATTENDANCE';
+  type: 'BADGE' | 'TRADE_RECEIVED' | 'TRADE_ACCEPTED' | 'ATTENDANCE' | 'ADMIN_MESSAGE';
   payload: Record<string, unknown>;
   read: boolean;
   created_at: string;
