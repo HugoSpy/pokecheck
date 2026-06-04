@@ -626,3 +626,31 @@
   line-height: 1.6;
   letter-spacing: 0.02em;
 }
+
+/* ── HIDDEN FEATURE — Ditto reveal ── */
+@keyframes ditto-reveal-shake {
+  0%, 100% { transform: translateX(0) rotate(0deg); }
+  15%       { transform: translateX(-6px) rotate(-0.8deg); }
+  30%       { transform: translateX(6px)  rotate(0.8deg); }
+  50%       { transform: translateX(-4px) rotate(-0.4deg); }
+  70%       { transform: translateX(4px)  rotate(0.4deg); }
+  85%       { transform: translateX(-2px); }
+}
+.reveal-block-shake {
+  animation: ditto-reveal-shake 0.3s ease-in-out;
+}
+.ditto-impostor-badge {
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #7c3aed;
+  border: 1px solid #a855f7;
+  border-radius: 4px;
+  padding: 3px 10px;
+  margin-bottom: 6px;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+}
+/* ── END HIDDEN FEATURE ── */

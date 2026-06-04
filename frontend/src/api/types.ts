@@ -10,6 +10,10 @@ export interface PokemonInfo {
   generation: number;
   bst: number;
   is_shiny?: boolean;
+  // HIDDEN FEATURE
+  is_ditto_disguise?: boolean;
+  original_legendary?: { id: number; name: string; sprite_url: string };
+  // END HIDDEN FEATURE
 }
 
 export interface UserPokemonInstance extends PokemonInfo {

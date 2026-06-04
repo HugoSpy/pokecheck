@@ -26,6 +26,9 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const forceShiny = isAdmin && (req.body as { force_shiny?: boolean }).force_shiny === true;
+  // HIDDEN FEATURE
+  const forceDitto = isAdmin && (req.body as { force_ditto?: boolean }).force_ditto === true;
+  // END HIDDEN FEATURE
 
   let result;
   try {
@@ -54,7 +57,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
         }
       }
 
-      return drawAndCreate(tx, userId, { source, forceShiny });
+      return drawAndCreate(tx, userId, { source, forceShiny, forceDitto });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (err: any) {
     if (err.status === 403) {

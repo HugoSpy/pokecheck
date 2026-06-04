@@ -20,6 +20,10 @@ export interface DrawnPokemon {
   points: number;
   types: string[];
   is_shiny: boolean;
+  // HIDDEN FEATURE
+  is_ditto_disguise?: boolean;
+  original_legendary?: { id: number; name: string; sprite_url: string };
+  // END HIDDEN FEATURE
 }
 
 export interface DrawAndCreateResult {
@@ -35,7 +39,7 @@ export interface DrawAndCreateResult {
 export async function drawAndCreate(
   tx: Tx,
   userId: string,
-  opts: { source: string; forceShiny?: boolean }
+  opts: { source: string; forceShiny?: boolean; forceDitto?: boolean }
 ): Promise<DrawAndCreateResult> {
   const rarity = pickRarity();
 
@@ -44,9 +48,25 @@ export async function drawAndCreate(
     throw Object.assign(new Error('No Pokémon found for rarity'), { status: 500 });
   }
 
-  const pokemon = pokemonsOfRarity[Math.floor(Math.random() * pokemonsOfRarity.length)];
+  let pokemon = pokemonsOfRarity[Math.floor(Math.random() * pokemonsOfRarity.length)];
 
   const isShiny = opts.forceShiny === true || Math.random() < 1 / 4096;
+
+  // HIDDEN FEATURE — Ditto substitution (LEGENDARY draws only)
+  const DITTO_ID = 132;
+  let originalLegendary: { id: number; name: string; sprite_url: string } | undefined;
+  if (rarity === 'LEGENDARY') {
+    const forceDitto = opts.forceDitto === true || process.env.FORCE_DITTO === 'true';
+    if (forceDitto || Math.random() < 0.01) {
+      const ditto = await tx.pokemon.findUnique({ where: { id: DITTO_ID } });
+      if (ditto) {
+        originalLegendary = { id: pokemon.id, name: pokemon.name, sprite_url: pokemon.sprite_url };
+        pokemon = ditto;
+      }
+    }
+  }
+  // END HIDDEN FEATURE
+
   const spriteUrl = isShiny
     ? pokemon.sprite_url.replace('/normal/', '/shiny/')
     : pokemon.sprite_url;
@@ -74,6 +94,9 @@ export async function drawAndCreate(
       points: finalPoints,
       types: pokemon.types,
       is_shiny: isShiny,
+      // HIDDEN FEATURE
+      ...(originalLegendary && { is_ditto_disguise: true, original_legendary: originalLegendary }),
+      // END HIDDEN FEATURE
     },
   };
 }

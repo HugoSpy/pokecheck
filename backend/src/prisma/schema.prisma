@@ -80,6 +80,7 @@ model OneshotToken {
   short_code  String   @unique
   used        Boolean  @default(false)
   force_shiny Boolean  @default(false)
+  force_ditto Boolean  @default(false)
   expires_at  DateTime
   created_at  DateTime @default(now())
 

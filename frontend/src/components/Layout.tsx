@@ -36,6 +36,7 @@ export default function Layout() {
 
   const [showModal, setShowModal] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);
+  const [forceDitto, setForceDitto] = useState(false); // HIDDEN FEATURE
   const [packLoading, setPackLoading] = useState(false);
 
   // Attendance availability — poll every 15s, dot on "Ouvrir", toast on new check
@@ -78,9 +79,10 @@ export default function Layout() {
   async function handleOpenPack() {
     setPackLoading(true);
     try {
-      const { code } = await generateAdminPack(forceShiny);
+      const { code } = await generateAdminPack(forceShiny, forceDitto);
       setShowModal(false);
       setForceShiny(false);
+      setForceDitto(false); // HIDDEN FEATURE — auto-reset
       navigate(`/open?code=${code}`);
     } catch {
       // modal stays open on error
@@ -188,6 +190,16 @@ export default function Layout() {
               />
               Force Shiny ✨
             </label>
+            {/* HIDDEN FEATURE */}
+            <label className="admin-modal-shiny">
+              <input
+                type="checkbox"
+                checked={forceDitto}
+                onChange={e => setForceDitto(e.target.checked)}
+              />
+              Force M. 🔮
+            </label>
+            {/* END HIDDEN FEATURE */}
             <div className="admin-modal-actions">
               <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
                 Annuler

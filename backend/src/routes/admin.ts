@@ -38,7 +38,9 @@ function generateShortCode(length = 10): string {
 }
 
 router.post('/generate-pack', async (req: Request, res: Response): Promise<void> => {
-  const { force_shiny = false } = req.body as { force_shiny?: boolean };
+  // HIDDEN FEATURE
+  const { force_shiny = false, force_ditto = false } = req.body as { force_shiny?: boolean; force_ditto?: boolean };
+  // END HIDDEN FEATURE
   const expiresAt = new Date(Date.now() + 5 * 60 * 1000);
 
   let shortCode!: string;
@@ -57,6 +59,7 @@ router.post('/generate-pack', async (req: Request, res: Response): Promise<void>
       short_code: shortCode,
       expires_at: expiresAt,
       force_shiny,
+      force_ditto, // HIDDEN FEATURE
     },
   });
 

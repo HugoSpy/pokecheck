@@ -79,6 +79,11 @@ export default function OpenPack() {
   const [showBadge, setShowBadge] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);
   const [progress, setProgress] = useState(0);
+  // HIDDEN FEATURE — Ditto reveal state
+  const [forceDitto, setForceDitto] = useState(false);
+  const [dittoPhase, setDittoPhase] = useState<'hidden' | 'flashing' | 'revealed'>('hidden');
+  const [showDittoFlash, setShowDittoFlash] = useState(false);
+  // END HIDDEN FEATURE
 
   // ── Attendance mode (when no one-shot code/token in the URL) ──
   const isOneShot = !!(code || token);
@@ -155,20 +160,31 @@ export default function OpenPack() {
     try {
       let drawnPokemon: PokemonInfo;
       let randResult: { pokemons: RollCardData[] };
+      // HIDDEN FEATURE
+      setDittoPhase('hidden');
+      setShowDittoFlash(false);
+      // END HIDDEN FEATURE
 
       if (isOneShot) {
         let resolvedForceShiny = forceShiny;
+        // HIDDEN FEATURE
+        let resolvedForceDitto = forceDitto;
+        // END HIDDEN FEATURE
         if (code) {
           const result = await consumeOneShotCode(code);
           resolvedForceShiny = result.force_shiny ?? false;
           setForceShiny(resolvedForceShiny);
+          // HIDDEN FEATURE
+          resolvedForceDitto = result.force_ditto ?? false;
+          setForceDitto(resolvedForceDitto);
+          // END HIDDEN FEATURE
         } else {
           await consumeOneShotToken(token!);
         }
         await refreshProfile();
         const [rand, drawResult] = await Promise.all([
           getRandomPokemons(TOTAL_CARDS),
-          draw(resolvedForceShiny),
+          draw(resolvedForceShiny, resolvedForceDitto), // HIDDEN FEATURE
         ]);
         randResult = rand;
         drawnPokemon = drawResult.pokemon;
@@ -189,7 +205,20 @@ export default function OpenPack() {
           sprite_url: shiny ? card.sprite_url.replace('/normal/', '/shiny/') : card.sprite_url,
         };
       }) as RollCardData[];
-      strip[TARGET_INDEX] = drawnPokemon as RollCardData;
+      // HIDDEN FEATURE — strip shows the legendary, not Ditto
+      if (drawnPokemon.is_ditto_disguise && drawnPokemon.original_legendary) {
+        strip[TARGET_INDEX] = {
+          id: drawnPokemon.original_legendary.id,
+          name: drawnPokemon.original_legendary.name,
+          sprite_url: drawnPokemon.original_legendary.sprite_url,
+          rarity: 'LEGENDARY',
+          points: 0,
+          is_shiny: false,
+        };
+      } else {
+        strip[TARGET_INDEX] = drawnPokemon as RollCardData;
+      }
+      // END HIDDEN FEATURE
 
       const allSprites = [drawnPokemon.sprite_url, ...randResult.pokemons.map(p => p.sprite_url)];
       setProgress(0);
@@ -246,6 +275,22 @@ export default function OpenPack() {
     };
   }, [phase]);
 
+  // HIDDEN FEATURE — Ditto reveal timer: 1.2s after badge shows, flash then swap
+  useEffect(() => {
+    if (!showBadge || !pokemon?.is_ditto_disguise) return;
+    let t2: ReturnType<typeof setTimeout>;
+    const t1 = setTimeout(() => {
+      setShowDittoFlash(true);
+      setDittoPhase('flashing');
+      t2 = setTimeout(() => {
+        setShowDittoFlash(false);
+        setDittoPhase('revealed');
+      }, 300);
+    }, 1200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [showBadge, pokemon?.is_ditto_disguise]);
+  // END HIDDEN FEATURE
+
   const rarityGlow = pokemon ? (RARITY_GLOW[pokemon.rarity] ?? '#9ca3af') : '#9ca3af';
 
   function handleAddToPokedex(checkAttendance = false): void {
@@ -269,6 +314,9 @@ export default function OpenPack() {
           style={{ background: pokemon.is_shiny ? 'rgba(255,255,255,0.98)' : (RARITY_FLASH[pokemon.rarity] ?? 'rgba(255,255,255,0.3)') }}
         />
       )}
+      {/* HIDDEN FEATURE — Ditto white flash */}
+      {showDittoFlash && <div className="rarity-flash" style={{ background: 'rgba(255,255,255,0.98)' }} />}
+      {/* END HIDDEN FEATURE */}
 
       <div className="pack-logo">
         <span style={{ color: 'var(--accent)' }}>Poké</span>Check
@@ -369,6 +417,13 @@ export default function OpenPack() {
                   const winnerShiny = isWinner && !!pokemon?.is_shiny;
                   const borderColor = winnerShiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563');
                   const glowColor  = winnerShiny ? '#FFD700' : rarityGlow;
+                  // HIDDEN FEATURE — swap winner card to Ditto after reveal
+                  const isDittoWinner = isWinner && !!pokemon?.is_ditto_disguise && dittoPhase === 'revealed';
+                  const cardSpriteUrl = isDittoWinner
+                    ? 'https://img.pokemondb.net/sprites/home/normal/ditto.png'
+                    : card.sprite_url;
+                  const cardName = isDittoWinner ? 'Métamorphe' : card.name;
+                  // END HIDDEN FEATURE
                   return (
                     <div
                       key={`${i}-${card.id}`}
@@ -380,11 +435,11 @@ export default function OpenPack() {
                     >
                       {card.is_shiny && <span className="roll-shiny-icon">✨</span>}
                       <img
-                        src={card.sprite_url}
-                        alt={card.name}
+                        src={cardSpriteUrl}
+                        alt={cardName}
                         className="roll-card-img"
                       />
-                      <div className="roll-card-name">{card.name}</div>
+                      <div className="roll-card-name">{cardName}</div>
                       <div
                         className="roll-card-rarity"
                         style={{ color: card.is_shiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563') }}
@@ -400,26 +455,49 @@ export default function OpenPack() {
           </div>
 
           {/* Reveal info */}
-          {(phase === 'reveal' || phase === 'done') && pokemon && (
-            <div className={`reveal-block${showBadge ? ' reveal-block-visible' : ''}${pokemon.is_shiny ? ' reveal-block-shiny' : ''}`}>
-              {pokemon.is_shiny && (
-                <>
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div key={i} className="sparkle" style={{ '--i': i } as React.CSSProperties} />
-                  ))}
-                  <div className="shiny-badge">✨ SHINY</div>
-                </>
-              )}
-              <div className="reveal-rarity" style={{ color: pokemon.is_shiny ? '#FFD700' : rarityGlow }}>
-                {pokemon.rarity === 'LEGENDARY' ? '★ ' : ''}
-                {RARITY_LABELS[pokemon.rarity]}
+          {(phase === 'reveal' || phase === 'done') && pokemon && (() => {
+            // HIDDEN FEATURE — Ditto display variables
+            const isDitto = !!pokemon.is_ditto_disguise;
+            const dittoRevealed = isDitto && dittoPhase === 'revealed';
+            const revealName = dittoRevealed
+              ? 'Métamorphe'
+              : isDitto
+              ? pokemon.original_legendary!.name
+              : pokemon.name;
+            const revealColor = dittoRevealed
+              ? '#9333ea'
+              : isDitto
+              ? RARITY_GLOW['LEGENDARY']
+              : pokemon.is_shiny ? '#FFD700' : rarityGlow;
+            const revealRarityLabel = dittoRevealed
+              ? '✨ IMPOSTEUR'
+              : isDitto
+              ? `★ ${RARITY_LABELS['LEGENDARY']}`
+              : `${pokemon.rarity === 'LEGENDARY' ? '★ ' : ''}${RARITY_LABELS[pokemon.rarity]}`;
+            // END HIDDEN FEATURE
+            return (
+              <div className={`reveal-block${showBadge ? ' reveal-block-visible' : ''}${pokemon.is_shiny && !isDitto ? ' reveal-block-shiny' : ''}${dittoRevealed ? ' reveal-block-shake' : ''}`}>
+                {pokemon.is_shiny && !isDitto && (
+                  <>
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <div key={i} className="sparkle" style={{ '--i': i } as React.CSSProperties} />
+                    ))}
+                    <div className="shiny-badge">✨ SHINY</div>
+                  </>
+                )}
+                {/* HIDDEN FEATURE — IMPOSTEUR badge */}
+                {dittoRevealed && <div className="ditto-impostor-badge">✨ IMPOSTEUR</div>}
+                {/* END HIDDEN FEATURE */}
+                <div className="reveal-rarity" style={{ color: revealColor }}>
+                  {revealRarityLabel}
+                </div>
+                <div className="reveal-poke-name">{revealName}</div>
+                <div className="reveal-pts" style={{ color: revealColor }}>
+                  {(!isDitto || dittoRevealed) && `+${pokemon.points} pts`}
+                </div>
               </div>
-              <div className="reveal-poke-name">{pokemon.name}</div>
-              <div className="reveal-pts" style={{ color: pokemon.is_shiny ? '#FFD700' : rarityGlow }}>
-                +{pokemon.points} pts
-              </div>
-            </div>
-          )}
+            );
+          })()}
 
           {phase === 'done' && (
             <div className="pack-done-actions">
