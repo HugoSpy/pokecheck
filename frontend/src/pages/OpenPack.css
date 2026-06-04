@@ -646,11 +646,30 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #fff;
-  background: #7c3aed;
-  border: 1px solid #a855f7;
+  background: #dc2626; /* Change 2: red-600 */
+  border: 1px solid #f87171;
   border-radius: 4px;
   padding: 3px 10px;
   margin-bottom: 6px;
-  box-shadow: 0 0 12px rgba(168, 85, 247, 0.6);
+  box-shadow: 0 0 12px rgba(220, 38, 38, 0.6);
 }
 /* ── END HIDDEN FEATURE ── */
+
+/* ── Change 3 — Drumroll screen shake during strip scroll ── */
+@keyframes drumroll-shake {
+  0%   { transform: translateX(-3px); }
+  50%  { transform: translateX(3px); }
+  100% { transform: translateX(-3px); }
+}
+@keyframes drumroll-fadeout {
+  0%   { transform: translateX(-3px); }
+  100% { transform: translateX(0); }
+}
+.pack-page.drumrolling {
+  animation: drumroll-shake 240ms linear infinite;
+  will-change: transform;
+}
+.pack-page.drumroll-ending {
+  animation: drumroll-fadeout 200ms ease-out forwards;
+}
+/* ── End Change 3 ── */

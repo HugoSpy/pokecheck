@@ -84,6 +84,8 @@ export default function OpenPack() {
   const [dittoPhase, setDittoPhase] = useState<'hidden' | 'flashing' | 'revealed'>('hidden');
   const [showDittoFlash, setShowDittoFlash] = useState(false);
   // END HIDDEN FEATURE
+  const [showActions, setShowActions] = useState(false);
+  const [drumrollPhase, setDrumrollPhase] = useState<'off' | 'rolling' | 'ending'>('off');
 
   // ── Attendance mode (when no one-shot code/token in the URL) ──
   const isOneShot = !!(code || token);
@@ -164,6 +166,8 @@ export default function OpenPack() {
       setDittoPhase('hidden');
       setShowDittoFlash(false);
       // END HIDDEN FEATURE
+      setShowActions(false);
+      setDrumrollPhase('off');
 
       if (isOneShot) {
         let resolvedForceShiny = forceShiny;
@@ -261,7 +265,14 @@ export default function OpenPack() {
       strip.style.transform = `translateX(${endX}px)`;
     });
 
+    // Drumroll shake — start 2s after strip begins, ease out when it stops
+    const shakeStart = setTimeout(() => setDrumrollPhase('rolling'), 2000);
+
     const timer = setTimeout(() => {
+      // Shake ease-out: 200ms transition, then off — uses same ROLL_DURATION reference
+      setDrumrollPhase('ending');
+      setTimeout(() => setDrumrollPhase('off'), 200);
+
       setShowFlash(true);
       setTimeout(() => setShowFlash(false), 300);
       setPhase('reveal');
@@ -271,9 +282,19 @@ export default function OpenPack() {
 
     return () => {
       cancelAnimationFrame(raf);
+      clearTimeout(shakeStart);
       clearTimeout(timer);
+      setDrumrollPhase('off');
     };
   }, [phase]);
+
+  // Change 1 — delay action buttons 3s extra on Ditto draws
+  useEffect(() => {
+    if (phase !== 'done') return;
+    const delay = pokemon?.is_ditto_disguise ? 3000 : 0;
+    const t = setTimeout(() => setShowActions(true), delay);
+    return () => clearTimeout(t);
+  }, [phase, pokemon?.is_ditto_disguise]);
 
   // HIDDEN FEATURE — Ditto reveal timer: 1.2s after badge shows, flash then swap
   useEffect(() => {
@@ -301,7 +322,7 @@ export default function OpenPack() {
   }
 
   return (
-    <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}>
+    <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}${drumrollPhase === 'rolling' ? ' drumrolling' : ''}${drumrollPhase === 'ending' ? ' drumroll-ending' : ''}`}>
       {/* /open is rendered outside <Layout> (fullscreen animation) — provide a
           minimal escape hatch so the user isn't stranded without browser back */}
       <Link to="/leaderboard" className="pack-home-btn">← Accueil</Link>
@@ -499,7 +520,7 @@ export default function OpenPack() {
             );
           })()}
 
-          {phase === 'done' && (
+          {showActions && (
             <div className="pack-done-actions">
               <button
                 className="open-btn open-btn-secondary"
