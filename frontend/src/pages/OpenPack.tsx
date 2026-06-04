@@ -302,19 +302,21 @@ export default function OpenPack() {
     let t2: ReturnType<typeof setTimeout>;
     let t3: ReturnType<typeof setTimeout>;
     let t4: ReturnType<typeof setTimeout>;
+    let t5: ReturnType<typeof setTimeout>;
     const t1 = setTimeout(() => {
-      setShowDittoFlash(true);
       setDittoPhase('flashing');
-      // Second shake burst: restart drumroll at flash moment, run 2s through transformation
-      setDrumrollPhase('rolling');
+      setDrumrollPhase('rolling');           // +1700ms — shake starts, builds tension
       t2 = setTimeout(() => {
-        setShowDittoFlash(false);
-        setDittoPhase('revealed');
-      }, 300);
-      t3 = setTimeout(() => setDrumrollPhase('ending'), 2000);
-      t4 = setTimeout(() => setDrumrollPhase('off'), 2200);
+        setShowDittoFlash(true);             // +2100ms — flash fires 400ms into shake
+        t5 = setTimeout(() => {
+          setShowDittoFlash(false);
+          setDittoPhase('revealed');         // +2400ms — sprite swap
+        }, 300);
+      }, 400);
+      t3 = setTimeout(() => setDrumrollPhase('ending'), 2600); // +4300ms
+      t4 = setTimeout(() => setDrumrollPhase('off'), 2800);    // +4500ms
     }, 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); clearTimeout(t5); };
   }, [showBadge, pokemon?.is_ditto_disguise]);
   // END HIDDEN FEATURE
 
