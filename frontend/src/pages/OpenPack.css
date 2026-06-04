@@ -666,7 +666,7 @@
   100% { transform: translateX(0); }
 }
 .pack-page.drumrolling {
-  animation: drumroll-shake 240ms linear infinite;
+  animation: drumroll-shake 100ms linear infinite;
   will-change: transform;
 }
 .pack-page.drumroll-ending {
