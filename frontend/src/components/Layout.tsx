@@ -5,6 +5,7 @@ import { generateAdminPack } from '../api/adminApi';
 import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
+import NotificationButton from './NotificationButton';
 import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
 import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
@@ -177,6 +178,7 @@ export default function Layout() {
       )}
 
       <BadgeNotification />
+      <NotificationButton />
 
       {showModal && (
         <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>

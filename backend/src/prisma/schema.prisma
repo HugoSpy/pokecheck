@@ -29,6 +29,7 @@ model User {
   coin_transactions CoinTransaction[]
   market_listings   MarketListing[] @relation("MarketSeller")
   market_purchases  MarketListing[] @relation("MarketBuyer")
+  notifications     Notification[]
 }
 
 model Pokemon {
@@ -145,6 +146,17 @@ model CoinTransaction {
   user_id    String
   amount     Int
   reason     String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+model Notification {
+  id         String   @id @default(uuid())
+  user_id    String
+  type       String
+  payload    Json
+  read       Boolean  @default(false)
   created_at DateTime @default(now())
 
   user User @relation(fields: [user_id], references: [id])

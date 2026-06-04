@@ -3,6 +3,7 @@ import crypto from 'crypto';
 import { Prisma, PrismaClient } from '@prisma/client';
 import { adminMiddleware } from '../middleware/adminMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
+import { createNotificationForAllUsers } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -91,6 +92,12 @@ router.post('/attendance/start', async (req: Request, res: Response): Promise<vo
   });
 
   res.json({ id: check.id, expires_at: check.expires_at });
+
+  // Fire-and-forget: notify all users that attendance is open
+  createNotificationForAllUsers('ATTENDANCE', {
+    message: 'Check présence lancé — va tirer ton Pokémon !',
+    checkId: check.id,
+  }).catch(() => {});
 });
 
 // GET /admin/attendance/active — checks from the last 24h (active, expired, cancelled)

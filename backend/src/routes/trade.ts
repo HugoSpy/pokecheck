@@ -4,6 +4,7 @@ import { authMiddleware } from '../middleware/authMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { addCoins, spendCoins } from '../services/coinService';
 import { checkBadges } from '../services/badgeService';
+import { createNotification } from '../utils/notifications';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -137,6 +138,25 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
   });
 
   res.status(201).json(trade);
+
+  // Fire-and-forget: notify recipient that a trade was proposed
+  const fromUserId = userId;
+  const fromDisplayName = req.user!.display_name;
+  const fromPokemonId = myPokemon.pokemon_id;
+  Promise.all([
+    prisma.pokemon.findUnique({ where: { id: fromPokemonId }, select: { name: true } }),
+    to_pokemon_id
+      ? prisma.userPokemon.findUnique({ where: { id: to_pokemon_id }, include: { pokemon: true } })
+      : Promise.resolve(null),
+  ]).then(([fromPkm, toPkmRaw]) =>
+    createNotification(to_user_id, 'TRADE_RECEIVED', {
+      tradeId: trade.id,
+      fromUserId,
+      fromUserName: fromDisplayName,
+      fromPokemonName: fromPkm?.name ?? '?',
+      toPokemonName: toPkmRaw?.pokemon?.name ?? null,
+    })
+  ).catch(() => {});
 });
 
 router.post('/accept/:id', async (req: Request, res: Response): Promise<void> => {
@@ -253,6 +273,31 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
   }
 
   res.json({ success: true, bonusDraws, new_badges: { from: fromBadges, to: toBadges } });
+
+  // Fire-and-forget: notify proposer that their trade was accepted
+  const accepterName = req.user!.display_name;
+  const fromPokemonId2 = trade.from_pokemon_id;
+  const toPokemonId2 = trade.to_pokemon_id;
+  const fromUserId2 = trade.from_user_id;
+  Promise.all([
+    prisma.userPokemon.findUnique({ where: { id: fromPokemonId2 }, include: { pokemon: true } }),
+    toPokemonId2
+      ? prisma.userPokemon.findUnique({ where: { id: toPokemonId2 }, include: { pokemon: true } })
+      : Promise.resolve(null),
+  ]).then(([fromUpkm, toUpkm]) => {
+    const shinySprite = (up: typeof fromUpkm) =>
+      up ? (up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url) : '';
+    return createNotification(fromUserId2, 'TRADE_ACCEPTED', {
+      tradeId: trade.id,
+      accepterName,
+      givenPokemonName: fromUpkm?.pokemon.name ?? '?',
+      givenPokemonSprite: shinySprite(fromUpkm),
+      givenPokemonIsShiny: fromUpkm?.is_shiny ?? false,
+      receivedPokemonName: toUpkm?.pokemon.name ?? null,
+      receivedPokemonSprite: toUpkm ? shinySprite(toUpkm) : null,
+      receivedPokemonIsShiny: toUpkm?.is_shiny ?? false,
+    });
+  }).catch(() => {});
 });
 
 router.post('/decline/:id', async (req: Request, res: Response): Promise<void> => {

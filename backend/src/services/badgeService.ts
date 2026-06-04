@@ -56,6 +56,18 @@ async function unlockBadge(
     await prisma.userBadge.create({
       data: { user_id: userId, badge_id: badgeId, notified: false },
     });
+    // Fire-and-forget notification
+    prisma.notification.create({
+      data: {
+        user_id: userId,
+        type: 'BADGE',
+        payload: {
+          badgeName: badge.name,
+          badgeDescription: badge.description,
+          badgeIcon: badge.icon_url ?? null,
+        },
+      },
+    }).catch(() => {});
     return badgeId;
   } catch {
     return null;

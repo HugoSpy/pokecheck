@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { UserProvider, useUserCtx } from './context/UserContext';
+import { TradeAnimProvider } from './context/TradeAnimContext';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
 import EventPackOpen from './pages/EventPackOpen';
@@ -74,8 +75,10 @@ export default function App() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <AppRoutes />
-        <PatchNotesButton />
+        <TradeAnimProvider>
+          <AppRoutes />
+          <PatchNotesButton />
+        </TradeAnimProvider>
       </UserProvider>
     </BrowserRouter>
   );
