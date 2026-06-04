@@ -494,12 +494,12 @@ export default function OpenPack() {
               ? pokemon.original_legendary!.name
               : pokemon.name;
             const revealColor = dittoRevealed
-              ? '#9333ea'
+              ? RARITY_GLOW['COMMON']
               : isDitto
               ? RARITY_GLOW['LEGENDARY']
               : pokemon.is_shiny ? '#FFD700' : rarityGlow;
             const revealRarityLabel = dittoRevealed
-              ? '✨ IMPOSTEUR'
+              ? RARITY_LABELS['COMMON']
               : isDitto
               ? `★ ${RARITY_LABELS['LEGENDARY']}`
               : `${pokemon.rarity === 'LEGENDARY' ? '★ ' : ''}${RARITY_LABELS[pokemon.rarity]}`;
@@ -514,9 +514,6 @@ export default function OpenPack() {
                     <div className="shiny-badge">✨ SHINY</div>
                   </>
                 )}
-                {/* HIDDEN FEATURE — IMPOSTEUR badge */}
-                {dittoRevealed && <div className="ditto-impostor-badge">✨ IMPOSTEUR</div>}
-                {/* END HIDDEN FEATURE */}
                 <div className="reveal-rarity" style={{ color: revealColor }}>
                   {revealRarityLabel}
                 </div>

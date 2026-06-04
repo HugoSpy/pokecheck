@@ -55,8 +55,12 @@ export async function spendCoins(
 
 export function getSellPrice(userPokemon: {
   is_shiny: boolean;
-  pokemon: { points: number; rarity: string };
+  pokemon: { id?: number; points: number; rarity: string };
 }): number {
+  if (userPokemon.pokemon.id === 132) {
+    return userPokemon.is_shiny ? 333 : 111;
+  }
+
   const effectivePoints = userPokemon.pokemon.points * (userPokemon.is_shiny ? 3 : 1);
   const dropRate = DROP_RATE[userPokemon.pokemon.rarity] ?? 0.60;
   return Math.round(effectivePoints * (1 / dropRate) / NORM);
