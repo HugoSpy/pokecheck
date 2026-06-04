@@ -300,15 +300,21 @@ export default function OpenPack() {
   useEffect(() => {
     if (!showBadge || !pokemon?.is_ditto_disguise) return;
     let t2: ReturnType<typeof setTimeout>;
+    let t3: ReturnType<typeof setTimeout>;
+    let t4: ReturnType<typeof setTimeout>;
     const t1 = setTimeout(() => {
       setShowDittoFlash(true);
       setDittoPhase('flashing');
+      // Second shake burst: restart drumroll at flash moment, run 2s through transformation
+      setDrumrollPhase('rolling');
       t2 = setTimeout(() => {
         setShowDittoFlash(false);
         setDittoPhase('revealed');
       }, 300);
+      t3 = setTimeout(() => setDrumrollPhase('ending'), 2000);
+      t4 = setTimeout(() => setDrumrollPhase('off'), 2200);
     }, 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); clearTimeout(t4); };
   }, [showBadge, pokemon?.is_ditto_disguise]);
   // END HIDDEN FEATURE
 
