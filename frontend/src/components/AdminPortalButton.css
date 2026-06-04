@@ -1,8 +1,8 @@
 .ap-portal-btn {
   position: fixed;
-  top: calc(var(--nav-h) + 10px);
+  top: calc(var(--layout-header-h, var(--nav-h)) + 10px);
   right: 16px;
-  z-index: 40;
+  z-index: 39; /* intentionnellement sous la nav (z-index: 100) */
   display: flex;
   align-items: center;
   gap: 6px;
