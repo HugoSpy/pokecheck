@@ -448,6 +448,7 @@ export default function OpenPack() {
                   const glowColor  = winnerShiny ? '#FFD700' : rarityGlow;
                   // HIDDEN FEATURE — swap winner card to Ditto after reveal
                   const isDittoWinner = isWinner && !!pokemon?.is_ditto_disguise && dittoPhase === 'revealed';
+                  const cardDisplayRarity = isDittoWinner ? 'COMMON' : card.rarity;
                   const cardSpriteUrl = isDittoWinner
                     ? 'https://img.pokemondb.net/sprites/home/normal/ditto.png'
                     : card.sprite_url;
@@ -471,10 +472,10 @@ export default function OpenPack() {
                       <div className="roll-card-name">{cardName}</div>
                       <div
                         className="roll-card-rarity"
-                        style={{ color: card.is_shiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563') }}
+                        style={{ color: card.is_shiny && !isDittoWinner ? '#d4af37' : (RARITY_BORDER[cardDisplayRarity] ?? '#4b5563') }}
                       >
-                        {card.rarity === 'LEGENDARY' ? '★ ' : ''}
-                        {RARITY_LABELS[card.rarity] ?? card.rarity}
+                        {cardDisplayRarity === 'LEGENDARY' ? '★ ' : ''}
+                        {RARITY_LABELS[cardDisplayRarity] ?? cardDisplayRarity}
                       </div>
                     </div>
                   );
