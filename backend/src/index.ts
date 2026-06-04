@@ -94,7 +94,7 @@ const rl = (max: number) => rateLimit({
 // /market/buy covers POST /market/buy/:id, etc.
 app.use('/daily-login',   rl(10));
 app.use('/draw',          rl(10));
-app.use('/sell',          rl(10));
+// /sell has a per-user-id limiter defined in the route itself (user-keyed, 1 req/s)
 app.use('/market/buy',    rl(10));
 app.use('/trade/accept',  rl(10));
 app.use('/event/draw',    rl(10));

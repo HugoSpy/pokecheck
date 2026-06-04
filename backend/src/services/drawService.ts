@@ -41,7 +41,9 @@ export async function drawAndCreate(
   userId: string,
   opts: { source: string; forceShiny?: boolean; forceDitto?: boolean }
 ): Promise<DrawAndCreateResult> {
-  const rarity = pickRarity();
+  // HIDDEN FEATURE — forceDitto guarantees a LEGENDARY base draw so the secondary roll fires
+  const rarity = opts.forceDitto === true ? 'LEGENDARY' : pickRarity();
+  // END HIDDEN FEATURE
 
   const pokemonsOfRarity = await tx.pokemon.findMany({ where: { rarity } });
   if (pokemonsOfRarity.length === 0) {

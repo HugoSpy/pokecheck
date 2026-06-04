@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
+import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { getSellPrice, addCoins } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
@@ -8,7 +9,18 @@ import { checkBadges } from '../services/badgeService';
 const router = Router();
 const prisma = new PrismaClient();
 
-router.post('/:userPokemonId', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+// 1 sell/s per user — keyed by JWT user id, not IP, because students share a
+// Cloudflare egress IP. Placed after authMiddleware so req.user is populated.
+const sellLimiter = rateLimit({
+  windowMs: 1_000,
+  max: 1,
+  keyGenerator: (req) => req.user?.userId ?? req.ip ?? 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please slow down.' },
+});
+
+router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const userPokemonId = String(req.params.userPokemonId);
 
