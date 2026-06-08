@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getBattleSocket } from '../socket/battleSocket';
+import { getBattleSocket, getPendingAnimation, clearPendingAnimation } from '../socket/battleSocket';
 import type {
   BattleAck,
   BattleAnimationPayload,
@@ -33,9 +33,11 @@ export function useBattle() {
       if (lobbyIdRef.current === next.id) setLobby(next);
     }
     function handleAnimationStart(payload: BattleAnimationPayload) {
+      // The authoritative copy is already in the module store (battleSocket.ts);
+      // mirror it into React state so the arena re-renders.
       if (lobbyIdRef.current === payload.roomId) {
         setBattleError(null);
-        setBattleAnimation(payload);
+        setBattleAnimation(getPendingAnimation() ?? payload);
       }
     }
     function handleError(payload: BattleErrorPayload) {
@@ -101,6 +103,7 @@ export function useBattle() {
     setLobby(null);
     setBattleAnimation(null);
     setBattleError(null);
+    clearPendingAnimation();
   }, [setLobby]);
 
   // Phase 2 — fired by the arena once a player's animation finishes; the backend

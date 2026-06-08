@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PackRoll from '../components/PackRoll';
+import { getPendingAnimation } from '../socket/battleSocket';
 import type { Lobby, BattleAnimationPayload, BattlePokemon } from '../socket/battleTypes';
 import type { RollCardData } from '../api/types';
 import './Battle.css';
@@ -36,35 +37,47 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
   const [showOutcome, setShowOutcome] = useState(false);
   const ackedRef = useRef(false);
 
+  // Fall back to the module-level store if the prop hasn't propagated yet — the
+  // arena can mount in the same tick the event arrives, before useBattle's React
+  // state updates. Guard by roomId so a stale payload from a prior battle is
+  // never used. startAt still keeps every client's animation in sync.
+  const pending = getPendingAnimation();
+  const anim: BattleAnimationPayload | null =
+    battleAnimation && battleAnimation.roomId === lobby.id
+      ? battleAnimation
+      : pending && pending.roomId === lobby.id
+        ? pending
+        : null;
+
   // Order players: me first (rendered big), everyone else after (rendered mini).
   const order = useMemo(() => {
-    if (!battleAnimation) return [];
-    const ids = Object.keys(battleAnimation.strips);
+    if (!anim) return [];
+    const ids = Object.keys(anim.strips);
     return ids.sort((a, b) => {
       if (a === myUserId) return -1;
       if (b === myUserId) return 1;
       return 0;
     });
-  }, [battleAnimation, myUserId]);
+  }, [anim, myUserId]);
 
   // Preload every sprite of every strip before arming the animation, so no card
   // pops in mid-roll. Falls back after 8s if some sprites are slow.
   useEffect(() => {
-    if (!battleAnimation) return;
+    if (!anim) return;
     let cancelled = false;
-    const urls = Object.values(battleAnimation.strips).flat().map(c => c.sprite_url);
+    const urls = Object.values(anim.strips).flat().map(c => c.sprite_url);
     Promise.race([
       preloadImages(urls),
       new Promise<void>(resolve => setTimeout(resolve, 8000)),
     ]).then(() => { if (!cancelled) setReady(true); });
     return () => { cancelled = true; };
-  }, [battleAnimation]);
+  }, [anim]);
 
   // Reveal the outcome banner once all rolls have finished, and ack the result
   // so the backend persists the BattleRecord (only the first ack writes).
   useEffect(() => {
-    if (!battleAnimation || !ready) return;
-    const doneIn = Math.max(0, battleAnimation.startAt - Date.now()) + ROLL_DURATION + REVEAL_TAIL;
+    if (!anim || !ready) return;
+    const doneIn = Math.max(0, anim.startAt - Date.now()) + ROLL_DURATION + REVEAL_TAIL;
     const t = setTimeout(() => {
       setShowOutcome(true);
       if (!ackedRef.current) {
@@ -73,21 +86,21 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
       }
     }, doneIn + 250);
     return () => clearTimeout(t);
-  }, [battleAnimation, ready, onAck]);
+  }, [anim, ready, onAck]);
 
   // Winner = highest-points result. Ties resolve to the first in player order.
   const winnerId = useMemo(() => {
-    if (!battleAnimation) return null;
+    if (!anim) return null;
     let best = -Infinity;
     let id: string | null = null;
-    for (const [uid, poke] of Object.entries(battleAnimation.results)) {
+    for (const [uid, poke] of Object.entries(anim.results)) {
       if (poke.points > best) { best = poke.points; id = uid; }
     }
     return id;
-  }, [battleAnimation]);
+  }, [anim]);
 
   // ── Waiting for the draw / sprite preload ──
-  if (!battleAnimation || !ready) {
+  if (!anim || !ready) {
     return (
       <div className="battle-arena">
         <div className="battle-arena-spinner" />
@@ -101,7 +114,7 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
   const others = me ? order.slice(1) : order;
 
   const toCards = (strip: BattlePokemon[]): RollCardData[] => strip as RollCardData[];
-  const winnerOf = (uid: string) => battleAnimation.results[uid];
+  const winnerOf = (uid: string) => anim.results[uid];
 
   return (
     <div className="battle-arena-stage">
@@ -114,9 +127,9 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
           </div>
           <div className="battle-roll-cell full">
             <PackRoll
-              strip={toCards(battleAnimation.strips[me])}
+              strip={toCards(anim.strips[me])}
               winner={winnerOf(me)}
-              startAt={battleAnimation.startAt}
+              startAt={anim.startAt}
               flash
               onDone={() => { /* outcome handled centrally */ }}
             />
@@ -135,9 +148,9 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
               </div>
               <div className="battle-roll-cell mini">
                 <PackRoll
-                  strip={toCards(battleAnimation.strips[uid])}
+                  strip={toCards(anim.strips[uid])}
                   winner={winnerOf(uid)}
-                  startAt={battleAnimation.startAt}
+                  startAt={anim.startAt}
                 />
               </div>
             </div>
