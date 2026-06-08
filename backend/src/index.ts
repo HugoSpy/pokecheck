@@ -1,4 +1,5 @@
 import 'dotenv/config';
+import { createServer } from 'http';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -18,6 +19,9 @@ import sellRouter from './routes/sell';
 import marketRouter from './routes/market';
 import eventRouter from './routes/event';
 import attendanceRouter from './routes/attendance';
+import notificationsRouter from './routes/notifications';
+import devAuthRouter from './routes/devAuth';
+import { initBattleSocket } from './socket';
 
 const app = express();
 
@@ -114,9 +118,22 @@ app.use('/sell', sellRouter);
 app.use('/market', marketRouter);
 app.use('/event', eventRouter);
 app.use('/attendance', attendanceRouter);
+app.use('/notifications', notificationsRouter);
+
+// [DEV ONLY - NEVER MERGE] — test-account backdoor login, gated by
+// DEV_BACKDOOR=true (must never be set in the prod .env).
+if (process.env.DEV_BACKDOOR === 'true') {
+  app.use('/dev', devAuthRouter);
+}
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
-app.listen(PORT, '127.0.0.1', () => {
+
+// http.createServer wraps the Express app so Socket.IO can share the same
+// listener (the "Battle de caisse" lobby runs over WebSockets on /socket.io).
+const server = createServer(app);
+initBattleSocket(server);
+
+server.listen(PORT, '127.0.0.1', () => {
   console.log(`PokéCheck API running on port ${PORT}`);
 });
 

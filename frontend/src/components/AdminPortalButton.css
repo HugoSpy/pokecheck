@@ -1,0 +1,42 @@
+.ap-portal-btn {
+  position: fixed;
+  top: calc(var(--layout-header-h, var(--nav-h)) + 10px);
+  right: 16px;
+  z-index: 39; /* intentionnellement sous la nav (z-index: 100) */
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 9px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-pill);
+  color: var(--text-secondary);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: var(--shadow-card);
+  transition: background 150ms, border-color 150ms, color 150ms;
+}
+
+.ap-portal-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.ap-portal-btn:active {
+  transform: scale(0.97);
+  transition: transform 100ms;
+}
+
+@media (max-width: 640px) {
+  .ap-portal-btn span {
+    display: none;
+  }
+  .ap-portal-btn {
+    padding: 7px 9px;
+  }
+}

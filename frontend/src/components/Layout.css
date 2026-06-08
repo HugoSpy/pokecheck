@@ -2,6 +2,11 @@
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
+  --layout-header-h: var(--nav-h); /* 64px — used by fixed children */
+}
+
+.layout--dev {
+  --layout-header-h: calc(var(--nav-h) + 26px); /* nav + dev banner */
 }
 
 /* ── Dev environment banner ── */

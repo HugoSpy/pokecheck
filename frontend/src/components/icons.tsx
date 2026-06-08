@@ -133,3 +133,54 @@ export function Pokeball(props: IconProps) {
     </Svg>
   );
 }
+
+export function Trash(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M3 6h18" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </Svg>
+  );
+}
+
+export function Shield(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
+    </Svg>
+  );
+}
+
+export function Mail(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <rect width="20" height="16" x="2" y="4" rx="2" />
+      <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+    </Svg>
+  );
+}
+
+export function MailOpen(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="M21.2 8.4c.5.38.8.97.8 1.6v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V10a2 2 0 0 1 .8-1.6l8-6a2 2 0 0 1 2.4 0l8 6Z" />
+      <path d="m22 10-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 10" />
+    </Svg>
+  );
+}
+
+export function Swords(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <polyline points="14.5 17.5 3 6 3 3 6 3 17.5 14.5" />
+      <line x1="13" x2="19" y1="19" y2="13" />
+      <line x1="16" x2="20" y1="16" y2="20" />
+      <line x1="19" x2="21" y1="21" y2="19" />
+      <polyline points="14.5 6.5 18 3 21 3 21 6 17.5 9.5" />
+      <line x1="5" x2="9" y1="14" y2="18" />
+      <line x1="7" x2="4" y1="17" y2="20" />
+      <line x1="3" x2="5" y1="19" y2="21" />
+    </Svg>
+  );
+}

@@ -55,6 +55,19 @@ export interface TradeOffer {
   from_user: { id: string; display_name: string };
   fromPokemon: { pokemon: PokemonInfo; id: string; tradeable_at: string | null; is_shiny: boolean } | null;
   toPokemon: { pokemon: PokemonInfo; id: string; is_shiny: boolean } | null;
+  coins_offered: number;
+  coins_requested: number;
+  status: string;
+  created_at: string;
+}
+
+export interface SentTrade {
+  id: string;
+  to_user: { id: string; display_name: string };
+  fromPokemon: TradeOffer['fromPokemon'];
+  toPokemon: TradeOffer['toPokemon'];
+  coins_offered: number;
+  coins_requested: number;
   status: string;
   created_at: string;
 }
@@ -63,6 +76,8 @@ export interface ProposeTradePayload {
   from_pokemon_id: string;
   to_user_id: string;
   to_pokemon_id: string;
+  coins_offered?: number;
+  coins_requested?: number;
 }
 
 export interface Badge {

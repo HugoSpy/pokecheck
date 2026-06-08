@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { UserProvider, useUserCtx } from './context/UserContext';
+import { TradeAnimProvider } from './context/TradeAnimContext';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
 import EventPackOpen from './pages/EventPackOpen';
@@ -11,10 +12,11 @@ import UserPokedex from './pages/UserPokedex';
 import DevTradeAnim from './pages/DevTradeAnim';
 import Market from './pages/Market';
 import Events from './pages/Events';
+import Battle from './pages/Battle';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
+import AdminPortal from './pages/AdminPortal';
 import Layout from './components/Layout';
-import PatchNotesButton from './components/PatchNotesButton';
 
 function AppRoutes() {
   const location = useLocation();
@@ -40,7 +42,12 @@ function AppRoutes() {
         <Route path="/u/:id"       element={<UserPokedex />} />
         <Route path="/market"      element={<Market />} />
         <Route path="/events"      element={<Events />} />
+        <Route path="/battle"      element={<Battle />} />
         <Route path="/profile"     element={<Profile />} />
+        <Route
+          path="/admin"
+          element={isAdmin ? <AdminPortal /> : <Navigate to="/leaderboard" replace />}
+        />
         <Route
           path="/admin/attendance"
           element={isAdmin ? <AdminAttendance /> : <Navigate to="/leaderboard" replace />}
@@ -61,7 +68,6 @@ export default function App() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.has('session')) {
-      // Legacy cleanup for old OAuth redirects. New sessions are HttpOnly cookies.
       params.delete('session');
       const clean = [window.location.pathname, params.toString() ? '?' + params.toString() : ''].join('');
       window.history.replaceState({}, '', clean);
@@ -74,8 +80,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <UserProvider>
-        <AppRoutes />
-        <PatchNotesButton />
+        <TradeAnimProvider>
+          <AppRoutes />
+        </TradeAnimProvider>
       </UserProvider>
     </BrowserRouter>
   );

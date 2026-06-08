@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { logout } from '../api/client';
-import { generateAdminPack } from '../api/adminApi';
+import { NavLink, Outlet } from 'react-router-dom';
+import { logout, DEV_TOKEN_STORAGE_KEY } from '../api/client';
 import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
-import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball } from './icons';
+import NotificationButton from './NotificationButton';
+import AdminPortalButton from './AdminPortalButton';
+import { Coins, Grid, Swap, ShoppingBag, Calendar, User, Pokeball, Swords } from './icons';
 import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
 
@@ -15,31 +16,25 @@ const NAV_LINKS = [
   { to: '/trades',      label: 'Échanges'   },
   { to: '/market',      label: 'Marché'     },
   { to: '/events',      label: 'Événements' },
+  { to: '/battle',      label: 'Battle'     },
   { to: '/leaderboard', label: 'Classement' },
   { to: '/profile',     label: 'Profil'     },
 ];
 
-// Mobile bottom nav. Classement stays reachable via the top logo.
 const BOTTOM_NAV = [
   { to: '/pokedex', label: 'Pokédex',  Icon: Grid        },
   { to: '/trades',  label: 'Échanges', Icon: Swap        },
   { to: '/open',    label: 'Ouvrir',   Icon: Pokeball    },
   { to: '/market',  label: 'Marché',   Icon: ShoppingBag },
   { to: '/events',  label: 'Events',   Icon: Calendar    },
+  { to: '/battle',  label: 'Battle',   Icon: Swords      },
   { to: '/profile', label: 'Profil',   Icon: User        },
 ];
 
 export default function Layout() {
-  const navigate = useNavigate();
   const { profile: user, coins, authenticated, clearProfile } = useUserCtx();
   const isAdmin = user?.is_admin === true;
 
-  const [showModal, setShowModal] = useState(false);
-  const [forceShiny, setForceShiny] = useState(false);
-  const [forceDitto, setForceDitto] = useState(false); // HIDDEN FEATURE
-  const [packLoading, setPackLoading] = useState(false);
-
-  // Attendance availability — poll every 15s, dot on "Ouvrir", toast on new check
   const [attAvailable, setAttAvailable] = useState(false);
   const [attToast, setAttToast] = useState(false);
   const prevAvailRef = useRef<boolean | null>(null);
@@ -72,23 +67,11 @@ export default function Layout() {
 
   async function handleLogout() {
     await logout().catch(() => {});
+    // [DEV ONLY - NEVER MERGE] drop the test-account JWT so logout doesn't
+    // immediately re-authenticate the tab via the stale sessionStorage token.
+    sessionStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
     clearProfile();
     window.location.reload();
-  }
-
-  async function handleOpenPack() {
-    setPackLoading(true);
-    try {
-      const { code } = await generateAdminPack(forceShiny, forceDitto);
-      setShowModal(false);
-      setForceShiny(false);
-      setForceDitto(false); // HIDDEN FEATURE — auto-reset
-      navigate(`/open?code=${code}`);
-    } catch {
-      // modal stays open on error
-    } finally {
-      setPackLoading(false);
-    }
   }
 
   return (
@@ -118,16 +101,6 @@ export default function Layout() {
         </div>
 
         <div className="nav-user">
-          {isAdmin && (
-            <>
-              <NavLink to="/admin/attendance" className="btn btn-ghost nav-admin-btn">
-                Check présence
-              </NavLink>
-              <button className="btn btn-ghost nav-admin-btn" onClick={() => setShowModal(true)}>
-                Ouvrir un pack
-              </button>
-            </>
-          )}
           {user ? (
             <>
               <span className="nav-coins"><Coins size={14} /> {coins.toLocaleString()}</span>
@@ -177,40 +150,8 @@ export default function Layout() {
       )}
 
       <BadgeNotification />
-
-      {showModal && (
-        <div className="admin-modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="admin-modal" onClick={e => e.stopPropagation()}>
-            <div className="admin-modal-title">Ouvrir un pack</div>
-            <label className="admin-modal-shiny">
-              <input
-                type="checkbox"
-                checked={forceShiny}
-                onChange={e => setForceShiny(e.target.checked)}
-              />
-              Force Shiny ✨
-            </label>
-            {/* HIDDEN FEATURE */}
-            <label className="admin-modal-shiny">
-              <input
-                type="checkbox"
-                checked={forceDitto}
-                onChange={e => setForceDitto(e.target.checked)}
-              />
-              Force M. 🔮
-            </label>
-            {/* END HIDDEN FEATURE */}
-            <div className="admin-modal-actions">
-              <button className="btn btn-ghost" onClick={() => setShowModal(false)}>
-                Annuler
-              </button>
-              <button className="btn btn-primary" onClick={handleOpenPack} disabled={packLoading}>
-                {packLoading ? 'Génération…' : 'Ouvrir'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <NotificationButton />
+      {isAdmin && <AdminPortalButton />}
     </div>
   );
 }

@@ -53,7 +53,7 @@ const RARITY_PILL_CLASS: Record<string, string> = {
   SHINY: 'pill-shiny',
 };
 
-const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack3D>> = {
+export const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack3D>> = {
   'Shiny Surge': {
     textureUrl: '/shiny_surge_pack.png',
     textureFlipY: true,

@@ -1,0 +1,468 @@
+/* ── Page ── */
+.battle-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.battle-title {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff 30%, rgba(255, 255, 255, 0.45));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* ── Menu ── */
+.battle-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 360px;
+}
+
+.battle-menu-btn {
+  padding: 16px 24px;
+  font-size: var(--text-lg);
+}
+
+/* ── Panel ── */
+.battle-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  max-width: 640px;
+}
+
+.battle-back {
+  align-self: flex-start;
+}
+
+.battle-panel-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.battle-hint {
+  color: var(--text-secondary);
+  font-size: var(--text-base);
+}
+
+.battle-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.battle-field-label {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Pack picker ── */
+.battle-pack-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.battle-pack-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  padding: 12px 18px;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.battle-pack-option-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.battle-pack-option:hover {
+  border-color: var(--border-bright);
+}
+
+.battle-pack-option.selected {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.battle-pack-option-name {
+  font-weight: 600;
+}
+
+/* ── Player count ── */
+.battle-player-count-group {
+  display: flex;
+  gap: 8px;
+}
+
+.battle-player-count {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color var(--transition), background var(--transition);
+}
+
+.battle-player-count:hover {
+  border-color: var(--border-bright);
+}
+
+.battle-player-count.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Join list ── */
+.battle-game-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.battle-game-card {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 16px;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.battle-game-preview {
+  width: 100px;
+  height: 150px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.battle-game-preview .booster-pack-3d {
+  width: 100px;
+  height: 150px;
+}
+
+.battle-game-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+
+.battle-game-name {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.battle-game-meta {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+/* ── Lobby ── */
+.battle-lobby-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.battle-slot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px 16px;
+  color: var(--text-primary);
+}
+
+.battle-slot.empty {
+  color: var(--text-secondary);
+  border-style: dashed;
+}
+
+.battle-slot.ready {
+  border-color: var(--success);
+}
+
+.battle-slot-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+
+.battle-slot-host {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.battle-slot-status {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.battle-slot.ready .battle-slot-status {
+  color: var(--success);
+}
+
+/* ── Arena placeholder ── */
+.battle-arena {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.battle-arena-spinner {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  animation: battle-arena-spin 1s linear infinite;
+}
+
+@keyframes battle-arena-spin {
+  to { transform: rotate(360deg); }
+}
+
+.battle-arena-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.battle-arena-pack {
+  color: var(--text-secondary);
+}
+
+.battle-arena-players {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.battle-arena-player {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 8px 14px;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.battle-arena-host-tag {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+/* ── Phase 2: synchronized pack-opening arena ── */
+.battle-arena-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 12px 12px 56px;
+}
+
+.battle-roll-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.battle-roll-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.battle-roll-you {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.battle-roll-crown {
+  font-size: 1.1em;
+}
+
+/* The PackRoll frame in a battle context (scoping hook). */
+.battle-roll-frame {
+  position: relative;
+}
+
+/* Local player — full size, natural height (identical to solo). */
+.battle-roll-cell.full {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.battle-roll-cell.full .battle-roll-frame {
+  width: min(1100px, calc(100vw - 32px));
+}
+
+/* Other players — same component scaled down. The frame keeps a fixed unscaled
+   box so the scaled footprint is deterministic and the cells pack tightly. */
+.battle-roll-others {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+}
+.battle-roll-cell.mini {
+  --s: 0.52;
+  --fw: 940px;
+  --fh: 540px;
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--fw) * var(--s));
+  height: calc(var(--fh) * var(--s));
+}
+.battle-roll-cell.mini .battle-roll-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fw);
+  height: var(--fh);
+  transform: scale(var(--s));
+  transform-origin: top left;
+}
+/* Attenuated winner glow for the smaller "other player" rolls. */
+.battle-roll-cell.mini .roll-card-winner {
+  box-shadow:
+    0 0 12px var(--card-glow, var(--card-border)),
+    inset 0 0 8px rgba(255, 255, 255, 0.04);
+}
+
+/* Outcome banner */
+.battle-outcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  border: 1px solid var(--border-bright);
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-elevated);
+}
+.battle-outcome-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+.battle-outcome-sub {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.battle-outcome-prize {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Tie re-roll overlay */
+.battle-tie-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.72);
+  backdrop-filter: blur(3px);
+  animation: battle-tie-fade 200ms ease-out;
+}
+
+@keyframes battle-tie-fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.battle-tie-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 36px 48px;
+  border: 1px solid var(--warning, #f59e0b);
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  box-shadow: 0 0 48px rgba(245, 158, 11, 0.25), var(--shadow-elevated);
+}
+
+.battle-tie-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--warning, #f59e0b);
+  text-shadow: 0 0 24px rgba(245, 158, 11, 0.5);
+}
+
+.battle-tie-sub {
+  color: var(--text-primary);
+  font-weight: 600;
+}

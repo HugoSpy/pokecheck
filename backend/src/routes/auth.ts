@@ -16,7 +16,7 @@ const prisma = new PrismaClient();
 // radius if a token is stolen or the JWT_SECRET is briefly leaked.
 const SESSION_DURATION = (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'];
 
-function signSessionToken(
+export function signSessionToken(
   user: { id: string; ms_id: string; display_name: string; is_admin: boolean },
   expiresIn: jwt.SignOptions['expiresIn'] = SESSION_DURATION,
   opts: { drawGrant?: { type: 'one-shot'; tokenId: string } } = {}
@@ -126,7 +126,7 @@ function cookieDomain(): string | undefined {
   return redirect.includes('pokecheck.fr') ? '.pokecheck.fr' : undefined;
 }
 
-function setSessionCookie(res: Response, token: string): void {
+export function setSessionCookie(res: Response, token: string): void {
   res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
     secure: shouldUseSecureCookie(),
