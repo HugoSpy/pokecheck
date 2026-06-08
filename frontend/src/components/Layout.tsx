@@ -68,8 +68,8 @@ export default function Layout() {
   async function handleLogout() {
     await logout().catch(() => {});
     // [DEV ONLY - NEVER MERGE] drop the test-account JWT so logout doesn't
-    // immediately re-authenticate the tab via the stale localStorage token.
-    localStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
+    // immediately re-authenticate the tab via the stale sessionStorage token.
+    sessionStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
     clearProfile();
     window.location.reload();
   }

@@ -1,9 +1,9 @@
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
-// [DEV ONLY - NEVER MERGE] localStorage key for the test-account backdoor JWT
-// (see Login.tsx loginAsTest / backend routes/devAuth.ts). Storing it per-tab
-// in localStorage — instead of relying on the shared httpOnly session cookie —
-// lets two browser tabs be logged in as two different test accounts at once.
+// [DEV ONLY - NEVER MERGE] sessionStorage key for the test-account backdoor JWT
+// (see Login.tsx loginAsTest / backend routes/devAuth.ts). sessionStorage is
+// scoped per-tab — unlike localStorage and cookies, which are shared across
+// every tab of the same origin — so two tabs can independently be Test 1/Test 2.
 export const DEV_TOKEN_STORAGE_KEY = 'pokecheck_dev_token';
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -12,7 +12,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     ...(options.headers as Record<string, string> ?? {}),
   };
 
-  const devToken = localStorage.getItem(DEV_TOKEN_STORAGE_KEY);
+  const devToken = sessionStorage.getItem(DEV_TOKEN_STORAGE_KEY);
   if (devToken) headers['Authorization'] = `Bearer ${devToken}`;
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'include' });
@@ -21,7 +21,7 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     // Drops a stale/expired test-account token so it doesn't keep getting
     // resent on every retry. removeItem on an absent key is a no-op, so this
     // is harmless for normal (cookie-based) sessions too.
-    localStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
+    sessionStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
   }
 
   if (!res.ok) {
