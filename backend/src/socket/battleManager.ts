@@ -1,0 +1,215 @@
+import { randomUUID } from 'crypto';
+
+export interface BattlePlayer {
+  userId: string;
+  displayName: string;
+  socketId: string;
+  ready: boolean;
+  isHost: boolean;
+  joinedAt: number;
+}
+
+export interface BattleRoom {
+  id: string;
+  eventPackId: string;
+  packName: string;
+  packModelUrl: string | null;
+  packImageUrl: string | null;
+  maxPlayers: number;
+  status: 'waiting' | 'in_progress';
+  players: BattlePlayer[];
+}
+
+export interface Lobby {
+  id: string;
+  eventPackId: string;
+  packName: string;
+  packModelUrl: string | null;
+  packImageUrl: string | null;
+  maxPlayers: number;
+  status: 'waiting' | 'in_progress';
+  players: { userId: string; displayName: string; ready: boolean; isHost: boolean }[];
+}
+
+export interface BattleListItem {
+  id: string;
+  hostName: string;
+  packName: string;
+  packModelUrl: string | null;
+  packImageUrl: string | null;
+  maxPlayers: number;
+  playerCount: number;
+  status: 'waiting' | 'in_progress';
+}
+
+export interface CreateRoomOpts {
+  eventPackId: string;
+  packName: string;
+  packModelUrl: string | null;
+  packImageUrl: string | null;
+  maxPlayers: number;
+  host: { userId: string; displayName: string; socketId: string };
+}
+
+const MIN_PLAYERS = 2;
+const MAX_PLAYERS = 4;
+
+const rooms = new Map<string, BattleRoom>();
+
+function clampMaxPlayers(n: number): number {
+  if (!Number.isFinite(n)) return MIN_PLAYERS;
+  return Math.min(MAX_PLAYERS, Math.max(MIN_PLAYERS, Math.trunc(n)));
+}
+
+function toLobby(room: BattleRoom): Lobby {
+  return {
+    id: room.id,
+    eventPackId: room.eventPackId,
+    packName: room.packName,
+    packModelUrl: room.packModelUrl,
+    packImageUrl: room.packImageUrl,
+    maxPlayers: room.maxPlayers,
+    status: room.status,
+    players: room.players.map(p => ({
+      userId: p.userId,
+      displayName: p.displayName,
+      ready: p.ready,
+      isHost: p.isHost,
+    })),
+  };
+}
+
+function toListItem(room: BattleRoom): BattleListItem {
+  const host = room.players.find(p => p.isHost) ?? room.players[0];
+  return {
+    id: room.id,
+    hostName: host?.displayName ?? '',
+    packName: room.packName,
+    packModelUrl: room.packModelUrl,
+    packImageUrl: room.packImageUrl,
+    maxPlayers: room.maxPlayers,
+    playerCount: room.players.length,
+    status: room.status,
+  };
+}
+
+function reassignHost(room: BattleRoom): void {
+  room.players.forEach(p => { p.isHost = false; });
+  const oldest = [...room.players].sort((a, b) => a.joinedAt - b.joinedAt)[0];
+  if (oldest) oldest.isHost = true;
+}
+
+export function createRoom(opts: CreateRoomOpts): BattleRoom {
+  const room: BattleRoom = {
+    id: randomUUID(),
+    eventPackId: opts.eventPackId,
+    packName: opts.packName,
+    packModelUrl: opts.packModelUrl,
+    packImageUrl: opts.packImageUrl,
+    maxPlayers: clampMaxPlayers(opts.maxPlayers),
+    status: 'waiting',
+    players: [{
+      userId: opts.host.userId,
+      displayName: opts.host.displayName,
+      socketId: opts.host.socketId,
+      ready: false,
+      isHost: true,
+      joinedAt: Date.now(),
+    }],
+  };
+  rooms.set(room.id, room);
+  return room;
+}
+
+export function getRoom(roomId: string): BattleRoom | undefined {
+  return rooms.get(roomId);
+}
+
+export function findRoomBySocketId(socketId: string): BattleRoom | undefined {
+  for (const room of rooms.values()) {
+    if (room.players.some(p => p.socketId === socketId)) return room;
+  }
+  return undefined;
+}
+
+export function joinRoom(
+  roomId: string,
+  user: { userId: string; displayName: string; socketId: string },
+): { ok: true; room: BattleRoom } | { ok: false; error: string } {
+  const room = rooms.get(roomId);
+  if (!room) return { ok: false, error: 'Cette partie n\'existe plus.' };
+  if (room.status !== 'waiting') return { ok: false, error: 'Cette partie a déjà commencé.' };
+
+  const existing = room.players.find(p => p.userId === user.userId);
+  if (existing) {
+    existing.socketId = user.socketId;
+    return { ok: true, room };
+  }
+
+  if (room.players.length >= room.maxPlayers) {
+    return { ok: false, error: 'Cette partie est complète.' };
+  }
+
+  room.players.push({
+    userId: user.userId,
+    displayName: user.displayName,
+    socketId: user.socketId,
+    ready: false,
+    isHost: false,
+    joinedAt: Date.now(),
+  });
+
+  return { ok: true, room };
+}
+
+export function setReady(roomId: string, userId: string, ready: boolean): BattleRoom | undefined {
+  const room = rooms.get(roomId);
+  if (!room) return undefined;
+  const player = room.players.find(p => p.userId === userId);
+  if (!player) return undefined;
+
+  player.ready = ready;
+
+  if (room.players.length === room.maxPlayers && room.players.every(p => p.ready)) {
+    room.status = 'in_progress';
+  }
+
+  return room;
+}
+
+export function removePlayer(roomId: string, userId: string): { room: BattleRoom | undefined; deleted: boolean } {
+  const room = rooms.get(roomId);
+  if (!room) return { room: undefined, deleted: false };
+
+  room.players = room.players.filter(p => p.userId !== userId);
+
+  if (room.players.length === 0) {
+    rooms.delete(roomId);
+    return { room: undefined, deleted: true };
+  }
+
+  reassignHost(room);
+  room.players.forEach(p => { p.ready = false; });
+  room.status = 'waiting';
+
+  return { room, deleted: false };
+}
+
+export function removeBySocketId(socketId: string): { room: BattleRoom | undefined; deleted: boolean; userId: string } | undefined {
+  const room = findRoomBySocketId(socketId);
+  if (!room) return undefined;
+  const player = room.players.find(p => p.socketId === socketId);
+  if (!player) return undefined;
+  const result = removePlayer(room.id, player.userId);
+  return { ...result, userId: player.userId };
+}
+
+export function listOpenRooms(): BattleListItem[] {
+  return [...rooms.values()]
+    .filter(r => r.status === 'waiting' && r.players.length < r.maxPlayers)
+    .map(toListItem);
+}
+
+export function toLobbyView(room: BattleRoom): Lobby {
+  return toLobby(room);
+}

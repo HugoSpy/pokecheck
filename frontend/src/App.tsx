@@ -12,6 +12,7 @@ import UserPokedex from './pages/UserPokedex';
 import DevTradeAnim from './pages/DevTradeAnim';
 import Market from './pages/Market';
 import Events from './pages/Events';
+import Battle from './pages/Battle';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
 import AdminPortal from './pages/AdminPortal';
@@ -41,6 +42,7 @@ function AppRoutes() {
         <Route path="/u/:id"       element={<UserPokedex />} />
         <Route path="/market"      element={<Market />} />
         <Route path="/events"      element={<Events />} />
+        <Route path="/battle"      element={<Battle />} />
         <Route path="/profile"     element={<Profile />} />
         <Route
           path="/admin"
