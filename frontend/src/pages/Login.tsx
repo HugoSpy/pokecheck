@@ -30,6 +30,18 @@ export default function Login() {
         <MsLogo />
         Se connecter avec Microsoft
       </a>
+
+      {import.meta.env.VITE_DEV_BACKDOOR === 'true' && (
+        <div className="dev-test-accounts">
+          <p>— Dev only —</p>
+          <a href={`${API_URL}/dev/test-login?account=1`} className="dev-test-account-btn">
+            Connect as Test 1
+          </a>
+          <a href={`${API_URL}/dev/test-login?account=2`} className="dev-test-account-btn">
+            Connect as Test 2
+          </a>
+        </div>
+      )}
     </div>
   );
 }
