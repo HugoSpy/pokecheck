@@ -149,7 +149,12 @@ export default function Trades() {
       setSelectedMine(null);
       setSelectedTheirs(null);
     } catch (e) {
-      setError((e as Error).message);
+      const msg = (e as Error).message;
+      setError(
+        msg === 'POKEMON_ALREADY_IN_TRADE'
+          ? 'Un de ces Pokémon est déjà engagé dans un échange en attente.'
+          : msg,
+      );
     } finally {
       setSubmitting(false);
     }

@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { addCoins, spendCoins } from '../services/coinService';
@@ -125,17 +125,47 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     }
   }
 
-  const trade = await prisma.trade.create({
-    data: {
-      from_user_id: userId,
-      to_user_id,
-      from_pokemon_id,
-      to_pokemon_id: to_pokemon_id ?? null,
-      coins_offered,
-      coins_requested,
-      status: 'pending',
-    },
-  });
+  // A UserPokemon may only be tied to ONE pending trade at a time, on either
+  // side. The conflict check and the create run in one Serializable transaction
+  // so two simultaneous proposals can't both slip a pokemon into two pending
+  // trades (TOCTOU).
+  const pokemonIds = [from_pokemon_id, ...(to_pokemon_id ? [to_pokemon_id] : [])];
+
+  let trade;
+  try {
+    trade = await prisma.$transaction(async (tx) => {
+      const conflict = await tx.trade.findFirst({
+        where: {
+          status: 'pending',
+          OR: [
+            { from_pokemon_id: { in: pokemonIds } },
+            { to_pokemon_id: { in: pokemonIds } },
+          ],
+        },
+      });
+      if (conflict) {
+        throw Object.assign(new Error('POKEMON_ALREADY_IN_TRADE'), { status: 409 });
+      }
+
+      return tx.trade.create({
+        data: {
+          from_user_id: userId,
+          to_user_id,
+          from_pokemon_id,
+          to_pokemon_id: to_pokemon_id ?? null,
+          coins_offered,
+          coins_requested,
+          status: 'pending',
+        },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (err) {
+    if ((err as { status?: number }).status === 409) {
+      res.status(409).json({ error: 'POKEMON_ALREADY_IN_TRADE' });
+      return;
+    }
+    throw err;
+  }
 
   res.status(201).json(trade);
 
