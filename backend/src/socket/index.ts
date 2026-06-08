@@ -6,6 +6,8 @@ import { Prisma, PrismaClient } from '@prisma/client';
 import type { AuthPayload } from '../middleware/authMiddleware';
 import { loadEventPools, buildStrip, hasUniqueWinner } from '../services/battleDrawService';
 import { spendCoins } from '../services/coinService';
+import { recalculateUserPokedexValue } from '../services/pokedexValue';
+import { checkBadges } from '../services/badgeService';
 import {
   createRoom,
   joinRoom,
@@ -20,10 +22,6 @@ import {
 } from './battleManager';
 
 const prisma = new PrismaClient();
-
-// Phase 2 — flat entry cost charged to every player when a battle launches.
-// No per-battle price exists in the data model, so we use a fixed 100 coins.
-const BATTLE_COST = 100;
 
 interface SocketUser {
   userId: string;
@@ -93,19 +91,21 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
       return;
     }
 
-    // Deduct the entry cost for every player in a single Serializable
-    // transaction — spendCoins is an atomic compare-and-swap, so if any player
-    // is short the whole transaction rolls back and nobody is charged.
+    // Entry cost is the chosen event pack's price (e.g. Sinnoh = 50 coins).
+    // Deduct it from every player in a single Serializable transaction —
+    // spendCoins is an atomic compare-and-swap, so if any player is short the
+    // whole transaction rolls back and nobody is charged.
+    const entryCost = ep.price;
     try {
       await prisma.$transaction(async (tx) => {
         for (const p of room.players) {
-          await spendCoins(tx, p.userId, BATTLE_COST, 'battle');
+          await spendCoins(tx, p.userId, entryCost, 'battle');
         }
       }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
     } catch (err) {
       const status = (err as { status?: number }).status;
       failBattle(io, room, status === 402
-        ? `Un joueur n'a pas assez de coins (${BATTLE_COST} requis).`
+        ? `Un joueur n'a pas assez de coins (${entryCost} requis).`
         : 'Impossible de lancer la battle, réessaie.');
       return;
     }
@@ -151,12 +151,18 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
   }
 }
 
-// Phase 2 — persists the finished battle exactly once. Two layers guard against
-// duplicates: the in-process `persisted` flag (set synchronously before any
-// await, so concurrent acks in this single-threaded process can't both pass)
-// AND a UNIQUE constraint on BattleRecord.room_id (DB-enforced, so a duplicate
-// insert surfaces as P2002 and is treated as success). Winner = highest points.
-// Built from `rosterSnapshot` so a mid-animation disconnect can't drop a player.
+// Phase 2 — persists the finished battle exactly once AND awards the prize:
+// winner-takes-all on Pokémon. The player who drew the highest-value Pokémon
+// gets EVERY player's result Pokémon added to their Pokédex (no coin payout).
+//
+// Two layers guard against duplicates: the in-process `persisted` flag (set
+// synchronously before any await, so concurrent acks in this single-threaded
+// process can't both pass) AND a UNIQUE constraint on BattleRecord.room_id
+// (DB-enforced; a duplicate insert surfaces as P2002 and is treated as success).
+// The record write and the Pokémon grants share one Serializable transaction,
+// so the unique constraint also makes the prize idempotent. Winner = highest
+// points; built from `rosterSnapshot` so a mid-animation disconnect can't drop
+// a player.
 async function persistBattle(room: BattleRoom): Promise<void> {
   if (!room.result || room.persisted) return;
   room.persisted = true;
@@ -182,19 +188,42 @@ async function persistBattle(room: BattleRoom): Promise<void> {
     };
   });
 
+  // Every drawn Pokémon (incl. the winner's own) goes to the winner's Pokédex.
+  const prizePokemon = roster
+    .map(p => results[p.userId])
+    .filter((poke): poke is BattlePokemon => !!poke);
+
   try {
     await prisma.$transaction(async (tx) => {
       await tx.battleRecord.create({
         data: { room_id: room.id, winner_id: winnerId, pack_id: room.eventPackId, players },
       });
+      if (winnerId) {
+        for (const poke of prizePokemon) {
+          await tx.userPokemon.create({
+            data: {
+              user_id: winnerId,
+              pokemon_id: poke.id,
+              source: 'battle',
+              tradeable_at: null,
+              is_shiny: poke.is_shiny,
+            },
+          });
+        }
+        await recalculateUserPokedexValue(tx, winnerId);
+      }
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (err) {
     // P2002 = the room_id UNIQUE constraint fired: another ack already wrote the
-    // record, so this is a success, not a failure — keep `persisted` true.
+    // record (and granted the prize), so this is a success — keep `persisted`.
     if ((err as { code?: string }).code === 'P2002') return;
     // Any other error: allow a later ack to retry the write.
     room.persisted = false;
+    return;
   }
+
+  // Newly-won Pokémon may unlock Pokédex/collection badges for the winner.
+  if (winnerId) checkBadges(winnerId).catch(() => {});
 }
 
 export function initBattleSocket(httpServer: HttpServer): BattleServer {

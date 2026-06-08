@@ -39,6 +39,7 @@ export interface EventPools {
   weighted: Record<string, number>;
   total: number;
   shinyMultiplier: number | undefined;
+  price: number;
 }
 
 /**
@@ -70,7 +71,7 @@ export async function loadEventPools(prisma: Tx, eventId: string): Promise<Event
   }
   const total = Object.values(weighted).reduce((s, w) => s + w, 0);
 
-  return { pools, all, weighted, total, shinyMultiplier: multipliers.SHINY };
+  return { pools, all, weighted, total, shinyMultiplier: multipliers.SHINY, price: event.price };
 }
 
 function pickRarity(ep: EventPools): string {

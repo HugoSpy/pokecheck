@@ -201,6 +201,11 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
           <div className="battle-outcome-sub">
             {winnerOf(winnerId).name} · {winnerOf(winnerId).points} pts
           </div>
+          <div className="battle-outcome-prize">
+            {winnerId === myUserId
+              ? `Tu remportes les ${order.length} Pokémon !`
+              : `Remporte les ${order.length} Pokémon`}
+          </div>
           <button className="btn btn-primary" onClick={onReturn}>
             Retour au lobby
           </button>

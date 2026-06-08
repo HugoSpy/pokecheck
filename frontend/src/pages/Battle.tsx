@@ -5,6 +5,7 @@ import BoosterPack3D from '../components/BoosterPack3D';
 import { useUserCtx } from '../context/UserContext';
 import { useBattle } from '../hooks/useBattle';
 import BattleArena from './BattleArena';
+import { Coins } from '../components/icons';
 import type { GameEvent } from '../api/types';
 import type { BattleListItem } from '../socket/battleTypes';
 import './Battle.css';
@@ -82,6 +83,9 @@ function CreateView({
                 onClick={() => setSelectedId(event.id)}
               >
                 <span className="battle-pack-option-name">{event.name}</span>
+                <span className="battle-pack-option-price">
+                  <Coins size={14} /> {event.price}
+                </span>
               </button>
             ))}
           </div>
