@@ -86,6 +86,51 @@
   border-color: var(--danger, #ef4444);
 }
 
+.offer-coins {
+  width: 100%;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 13px;
+}
+.offer-coins.gain { color: var(--accent); }
+.offer-coins.cost { color: var(--danger, #ef4444); }
+
+.proposal-coins {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+  width: 100%;
+}
+.proposal-coins label {
+  font-family: var(--font-condensed);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+.proposal-coins input {
+  width: 100%;
+  padding: 6px 10px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: var(--font-condensed);
+  font-size: 14px;
+}
+.proposal-coins input:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.proposal-coins-hint {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.proposal-coins-hint.over {
+  color: var(--danger, #ef4444);
+}
+
 .offer-from {
   font-family: var(--font-condensed);
   font-size: var(--text-sm);

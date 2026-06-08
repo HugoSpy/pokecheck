@@ -28,6 +28,8 @@ export default function Trades() {
   const [targetUserName, setTargetUserName] = useState(state?.targetUserName ?? '');
   const [selectedMine, setSelectedMine] = useState<UserPokemonInstance | null>(null);
   const [selectedTheirs, setSelectedTheirs] = useState<UserPokemonInstance | null>(null);
+  const [coinsOffered, setCoinsOffered] = useState(0);
+  const [coinsRequested, setCoinsRequested] = useState(0);
 
   const [loadingOffers, setLoadingOffers] = useState(true);
   const [loadingMine, setLoadingMine] = useState(true);
@@ -41,7 +43,7 @@ export default function Trades() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { refreshProfile } = useUserCtx();
+  const { coins, refreshProfile } = useUserCtx();
 
   const [animation, setAnimation] = useState<{
     given:      { sprite_url: string; name: string };
@@ -158,10 +160,14 @@ export default function Trades() {
         from_pokemon_id: selectedMine.instanceId,
         to_user_id: targetUserId,
         to_pokemon_id: selectedTheirs.instanceId,
+        coins_offered: coinsOffered,
+        coins_requested: coinsRequested,
       });
       setSuccess('Offre envoyée !');
       setSelectedMine(null);
       setSelectedTheirs(null);
+      setCoinsOffered(0);
+      setCoinsRequested(0);
       getSentTrades().then(setSent).catch(() => null);
     } catch (e) {
       const msg = (e as Error).message;
@@ -368,6 +374,21 @@ export default function Trades() {
               ) : (
                 <div className="proposal-placeholder">Sélectionne ton Pokémon</div>
               )}
+              <div className="proposal-coins">
+                <label>Ajouter des coins</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={coins}
+                  value={coinsOffered || ''}
+                  disabled={coinsRequested > 0}
+                  onChange={e => setCoinsOffered(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                  placeholder="0"
+                />
+                <span className={`proposal-coins-hint${coinsOffered > coins ? ' over' : ''}`}>
+                  Solde : {coins.toLocaleString()}
+                </span>
+              </div>
             </div>
 
             <div className="proposal-arrow"><Swap size={20} /></div>
@@ -381,11 +402,22 @@ export default function Trades() {
               ) : (
                 <div className="proposal-placeholder">Sélectionne leur Pokémon</div>
               )}
+              <div className="proposal-coins">
+                <label>Demander des coins</label>
+                <input
+                  type="number"
+                  min={0}
+                  value={coinsRequested || ''}
+                  disabled={coinsOffered > 0}
+                  onChange={e => setCoinsRequested(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+                  placeholder="0"
+                />
+              </div>
             </div>
 
             <button
               className="btn btn-primary"
-              disabled={!selectedMine || !selectedTheirs || submitting}
+              disabled={!selectedMine || !selectedTheirs || submitting || coinsOffered > coins}
               onClick={handlePropose}
             >
               {submitting ? '…' : 'Proposer'}
@@ -421,6 +453,12 @@ function OfferCard({ offer, onAccept, onDecline }: {
           <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
         </div>
       </div>
+      {offer.coins_offered > 0 && (
+        <div className="offer-coins gain">Vous recevrez {offer.coins_offered.toLocaleString()} coins</div>
+      )}
+      {offer.coins_requested > 0 && (
+        <div className="offer-coins cost">Vous enverrez {offer.coins_requested.toLocaleString()} coins</div>
+      )}
       <div className="offer-actions">
         <button className="btn btn-primary" onClick={onAccept}>Accepter</button>
         <button className="btn btn-danger" onClick={onDecline}>Refuser</button>
@@ -452,6 +490,12 @@ function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void 
           <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
         </div>
       </div>
+      {trade.coins_offered > 0 && (
+        <div className="offer-coins cost">Vous envoyez {trade.coins_offered.toLocaleString()} coins</div>
+      )}
+      {trade.coins_requested > 0 && (
+        <div className="offer-coins gain">Vous recevez {trade.coins_requested.toLocaleString()} coins</div>
+      )}
       <div className="offer-actions">
         <button className="btn btn-danger" onClick={onCancel}>Annuler l'offre</button>
       </div>

@@ -102,6 +102,19 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
+  // Coin component validation. Both must be non-negative integers, and coins may
+  // only flow ONE way: offering AND requesting coins at once is nonsensical
+  // (and a pure pokemon↔coins swap is the market's job, but that's already
+  // prevented since both from_/to_pokemon are required for a normal trade).
+  if (!Number.isInteger(coins_offered) || !Number.isInteger(coins_requested) || coins_offered < 0 || coins_requested < 0) {
+    res.status(400).json({ error: 'Coin amounts must be non-negative integers' });
+    return;
+  }
+  if (coins_offered > 0 && coins_requested > 0) {
+    res.status(400).json({ error: 'Cannot both offer and request coins' });
+    return;
+  }
+
   const myPokemon = await prisma.userPokemon.findUnique({ where: { id: from_pokemon_id } });
   if (!myPokemon || myPokemon.user_id !== userId) {
     res.status(403).json({ error: 'Pokémon not owned by you' });
