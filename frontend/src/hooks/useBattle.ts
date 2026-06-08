@@ -1,5 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { getBattleSocket, getPendingAnimation, clearPendingAnimation } from '../socket/battleSocket';
+import {
+  getBattleSocket,
+  getPendingAnimation,
+  clearPendingAnimation,
+  getPendingTie,
+  clearPendingTie,
+} from '../socket/battleSocket';
 import type {
   BattleAck,
   BattleAnimationPayload,
@@ -16,6 +22,7 @@ export function useBattle() {
   const [lobby, setLobbyState] = useState<Lobby | null>(null);
   const [battleAnimation, setBattleAnimation] = useState<BattleAnimationPayload | null>(null);
   const [battleError, setBattleError] = useState<string | null>(null);
+  const [isTie, setIsTie] = useState<boolean>(getPendingTie() !== null);
   const lobbyIdRef = useRef<string | null>(null);
 
   const setLobby = useCallback((next: Lobby | null) => {
@@ -34,11 +41,18 @@ export function useBattle() {
     }
     function handleAnimationStart(payload: BattleAnimationPayload) {
       // The authoritative copy is already in the module store (battleSocket.ts);
-      // mirror it into React state so the arena re-renders.
+      // mirror it into React state so the arena re-renders. The resolved draw
+      // ends any tie state.
       if (lobbyIdRef.current === payload.roomId) {
         setBattleError(null);
+        setIsTie(false);
         setBattleAnimation(getPendingAnimation() ?? payload);
       }
+    }
+    function handleTie() {
+      // battle:tie isn't roomId-scoped, but ties only fire for the room this
+      // client is mid-launch in, so trust it while we have a lobby.
+      if (lobbyIdRef.current) setIsTie(true);
     }
     function handleError(payload: BattleErrorPayload) {
       if (lobbyIdRef.current === payload.roomId) {
@@ -52,6 +66,7 @@ export function useBattle() {
     socket.on('battle:list', handleList);
     socket.on('battle:lobby', handleLobby);
     socket.on('battle:animation_start', handleAnimationStart);
+    socket.on('battle:tie', handleTie);
     socket.on('battle:error', handleError);
 
     if (!socket.connected) socket.connect();
@@ -63,6 +78,7 @@ export function useBattle() {
       socket.off('battle:list', handleList);
       socket.off('battle:lobby', handleLobby);
       socket.off('battle:animation_start', handleAnimationStart);
+      socket.off('battle:tie', handleTie);
       socket.off('battle:error', handleError);
     };
   }, []);
@@ -103,7 +119,9 @@ export function useBattle() {
     setLobby(null);
     setBattleAnimation(null);
     setBattleError(null);
+    setIsTie(false);
     clearPendingAnimation();
+    clearPendingTie();
   }, [setLobby]);
 
   // Phase 2 — fired by the arena once a player's animation finishes; the backend
@@ -115,7 +133,7 @@ export function useBattle() {
   const clearBattleError = useCallback(() => setBattleError(null), []);
 
   return {
-    connected, openGames, lobby, battleAnimation, battleError,
+    connected, openGames, lobby, battleAnimation, battleError, isTie,
     browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
   };
 }

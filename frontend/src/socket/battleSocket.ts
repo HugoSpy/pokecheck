@@ -21,6 +21,19 @@ export function clearPendingAnimation(): void {
   _pendingAnimation = null;
 }
 
+// Same module-scope durability for tie notifications: a battle:tie may arrive
+// while the arena is between renders. Holds the latest tie until the next
+// battle:animation_start (the resolved, non-tied draw) supersedes it.
+let _pendingTie: { attempt: number } | null = null;
+
+export function getPendingTie(): { attempt: number } | null {
+  return _pendingTie;
+}
+
+export function clearPendingTie(): void {
+  _pendingTie = null;
+}
+
 export function getBattleSocket(): Socket {
   if (!socket) {
     // [DEV ONLY - NEVER MERGE] forward the test-account JWT (stored per-tab in
@@ -38,9 +51,15 @@ export function getBattleSocket(): Socket {
     });
 
     // Capture the animation payload at module scope the moment it arrives,
-    // independent of which component is currently mounted.
+    // independent of which component is currently mounted. A resolved draw also
+    // clears any pending tie — the tie is over once the real animation starts.
     socket.on('battle:animation_start', (payload: BattleAnimationPayload) => {
       _pendingAnimation = payload;
+      _pendingTie = null;
+    });
+
+    socket.on('battle:tie', (payload: { attempt: number }) => {
+      _pendingTie = payload;
     });
   }
   return socket;

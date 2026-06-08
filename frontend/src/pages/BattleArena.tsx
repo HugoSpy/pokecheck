@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PackRoll from '../components/PackRoll';
-import { getPendingAnimation } from '../socket/battleSocket';
+import { getPendingAnimation, getPendingTie } from '../socket/battleSocket';
 import type { Lobby, BattleAnimationPayload, BattlePokemon } from '../socket/battleTypes';
 import type { RollCardData } from '../api/types';
 import './Battle.css';
@@ -8,6 +8,7 @@ import './Battle.css';
 interface BattleArenaProps {
   lobby: Lobby;
   battleAnimation: BattleAnimationPayload | null;
+  isTie: boolean;
   myUserId: string | undefined;
   onReturn: () => void;
   onAck: () => void;
@@ -32,10 +33,14 @@ function displayNameFor(lobby: Lobby, userId: string): string {
   return lobby.players.find(p => p.userId === userId)?.displayName ?? 'Joueur';
 }
 
-export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn, onAck }: BattleArenaProps) {
+export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, onReturn, onAck }: BattleArenaProps) {
   const [ready, setReady] = useState(false);
   const [showOutcome, setShowOutcome] = useState(false);
   const ackedRef = useRef(false);
+  const startAtRef = useRef<number | null>(null);
+
+  // A tie is active if the hook says so, or a tie landed before this mounted.
+  const tieActive = isTie || getPendingTie() !== null;
 
   // Fall back to the module-level store if the prop hasn't propagated yet — the
   // arena can mount in the same tick the event arrives, before useBattle's React
@@ -48,6 +53,17 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
       : pending && pending.roomId === lobby.id
         ? pending
         : null;
+
+  // A new startAt means a fresh draw (e.g. the resolved roll after a tie):
+  // reset the per-roll UI state so the animation re-runs exactly like the first.
+  // The PackRoll instances are keyed by startAt below, so they re-mount too.
+  useEffect(() => {
+    if (anim && anim.startAt !== startAtRef.current) {
+      startAtRef.current = anim.startAt;
+      setShowOutcome(false);
+      ackedRef.current = false;
+    }
+  }, [anim]);
 
   // Order players: me first (rendered big), everyone else after (rendered mini).
   const order = useMemo(() => {
@@ -99,10 +115,23 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
     return id;
   }, [anim]);
 
+  // Tie overlay — the server pre-resolves ties before sending the final
+  // animation_start, so this shows while the client waits between draws.
+  const tieOverlay = tieActive ? (
+    <div className="battle-tie-overlay">
+      <div className="battle-tie-card">
+        <div className="battle-tie-title">Égalité !</div>
+        <div className="battle-tie-sub">Nouveau tirage en cours…</div>
+        <div className="battle-arena-spinner" />
+      </div>
+    </div>
+  ) : null;
+
   // ── Waiting for the draw / sprite preload ──
   if (!anim || !ready) {
     return (
       <div className="battle-arena">
+        {tieOverlay}
         <div className="battle-arena-spinner" />
         <h1 className="battle-arena-title">La battle va commencer…</h1>
         <p className="battle-arena-pack">{lobby.packName}</p>
@@ -118,6 +147,7 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
 
   return (
     <div className="battle-arena-stage">
+      {tieOverlay}
       {/* Local player — big, with glow */}
       {me && (
         <div className="battle-roll-block battle-roll-block-me">
@@ -127,6 +157,7 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
           </div>
           <div className="battle-roll-cell full">
             <PackRoll
+              key={`me-${anim.startAt}`}
               strip={toCards(anim.strips[me])}
               winner={winnerOf(me)}
               startAt={anim.startAt}
@@ -148,6 +179,7 @@ export default function BattleArena({ lobby, battleAnimation, myUserId, onReturn
               </div>
               <div className="battle-roll-cell mini">
                 <PackRoll
+                  key={`${uid}-${anim.startAt}`}
                   strip={toCards(anim.strips[uid])}
                   winner={winnerOf(uid)}
                   startAt={anim.startAt}

@@ -212,7 +212,7 @@ function LobbyView({
 export default function Battle() {
   const { profile, refreshProfile } = useUserCtx();
   const {
-    openGames, lobby, battleAnimation, battleError,
+    openGames, lobby, battleAnimation, battleError, isTie,
     browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
   } = useBattle();
   const [view, setView] = useState<View>('menu');
@@ -297,6 +297,7 @@ export default function Battle() {
         <BattleArena
           lobby={lobby}
           battleAnimation={battleAnimation}
+          isTie={isTie}
           myUserId={profile?.id}
           onReturn={handleLeave}
           onAck={() => resultAck(lobby.id)}

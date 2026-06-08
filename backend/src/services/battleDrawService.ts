@@ -114,3 +114,15 @@ export function buildStrip(ep: EventPools): { strip: BattlePokemon[]; winner: Ba
   strip[WINNER_INDEX] = winner;
   return { strip, winner };
 }
+
+/**
+ * True when exactly one player has the top score — i.e. there's a clear winner.
+ * A battle that ends tied at the top is re-rolled (see startBattle) until this
+ * returns true. An empty/solo result is trivially "unique".
+ */
+export function hasUniqueWinner(results: Record<string, BattlePokemon>): boolean {
+  const scores = Object.values(results).map(p => p.points);
+  if (scores.length === 0) return true;
+  const max = Math.max(...scores);
+  return scores.filter(s => s === max).length === 1;
+}

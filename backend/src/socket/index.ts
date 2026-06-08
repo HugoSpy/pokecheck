@@ -4,7 +4,7 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { AuthPayload } from '../middleware/authMiddleware';
-import { loadEventPools, buildStrip } from '../services/battleDrawService';
+import { loadEventPools, buildStrip, hasUniqueWinner } from '../services/battleDrawService';
 import { spendCoins } from '../services/coinService';
 import {
   createRoom,
@@ -110,13 +110,29 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
       return;
     }
 
-    const strips: Record<string, BattlePokemon[]> = {};
-    const results: Record<string, BattlePokemon> = {};
-    for (const p of room.players) {
-      const { strip, winner } = buildStrip(ep);
-      strips[p.userId] = strip;
-      results[p.userId] = winner;
-    }
+    // Roll every player's strip. If the top score is tied, the whole battle is
+    // re-rolled (NO extra coins charged) and a battle:tie is broadcast so clients
+    // can show an "Égalité" overlay before the new draw. Capped at 10 attempts so
+    // a pathological repeated tie can never loop forever — after that we just take
+    // the result and let the deterministic max-points tiebreak in persistBattle
+    // pick a winner.
+    let strips: Record<string, BattlePokemon[]> = {};
+    let results: Record<string, BattlePokemon> = {};
+    let attempt = 0;
+    do {
+      strips = {};
+      results = {};
+      for (const p of room.players) {
+        const { strip, winner } = buildStrip(ep);
+        strips[p.userId] = strip;
+        results[p.userId] = winner;
+      }
+      attempt++;
+      if (attempt > 1) {
+        io.to(room.id).emit('battle:tie', { attempt });
+        await new Promise(r => setTimeout(r, 1200)); // let clients show the tie overlay
+      }
+    } while (!hasUniqueWinner(results) && attempt < 10);
 
     room.result = { strips, results };
     // Freeze the roster at launch so the BattleRecord stays complete even if a
