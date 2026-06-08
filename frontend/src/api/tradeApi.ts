@@ -1,8 +1,16 @@
 import { apiFetch } from './client';
-import type { TradeOffer, ProposeTradePayload } from './types';
+import type { TradeOffer, SentTrade, ProposeTradePayload } from './types';
 
 export async function getTradeOffers(): Promise<TradeOffer[]> {
   return apiFetch<TradeOffer[]>('/trade/offers');
+}
+
+export async function getSentTrades(): Promise<SentTrade[]> {
+  return apiFetch<SentTrade[]>('/trade/sent');
+}
+
+export async function cancelTrade(id: string): Promise<{ ok: boolean }> {
+  return apiFetch<{ ok: boolean }>(`/trade/cancel/${id}`, { method: 'POST' });
 }
 
 export async function proposeTrade(payload: ProposeTradePayload): Promise<{ id: string }> {

@@ -11,6 +11,37 @@ const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
+// Resolves a trade's from_/to_ UserPokemon and applies shiny sprite/points so
+// the client can render the cards. Shared by the received (/offers) and sent
+// (/sent) listings.
+async function enrichTradePokemon<T extends { from_pokemon_id: string | null; to_pokemon_id: string | null }>(trade: T) {
+  const fromRaw = trade.from_pokemon_id
+    ? await prisma.userPokemon.findUnique({ where: { id: trade.from_pokemon_id }, include: { pokemon: true } })
+    : null;
+  const toRaw = trade.to_pokemon_id
+    ? await prisma.userPokemon.findUnique({ where: { id: trade.to_pokemon_id }, include: { pokemon: true } })
+    : null;
+
+  const shinyEnrich = (up: typeof fromRaw) =>
+    up
+      ? {
+          id: up.id,
+          tradeable_at: up.tradeable_at,
+          is_shiny: up.is_shiny,
+          pokemon: {
+            ...up.pokemon,
+            is_shiny: up.is_shiny,
+            sprite_url: up.is_shiny
+              ? up.pokemon.sprite_url.replace('/normal/', '/shiny/')
+              : up.pokemon.sprite_url,
+            points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
+          },
+        }
+      : null;
+
+  return { ...trade, fromPokemon: shinyEnrich(fromRaw), toPokemon: shinyEnrich(toRaw) };
+}
+
 router.get('/offers', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
 
@@ -22,42 +53,23 @@ router.get('/offers', async (req: Request, res: Response): Promise<void> => {
     orderBy: { created_at: 'desc' },
   });
 
-  const enriched = await Promise.all(
-    offers.map(async trade => {
-      const fromRaw = trade.from_pokemon_id
-        ? await prisma.userPokemon.findUnique({
-            where: { id: trade.from_pokemon_id },
-            include: { pokemon: true },
-          })
-        : null;
-      const toRaw = trade.to_pokemon_id
-        ? await prisma.userPokemon.findUnique({
-            where: { id: trade.to_pokemon_id },
-            include: { pokemon: true },
-          })
-        : null;
+  const enriched = await Promise.all(offers.map(enrichTradePokemon));
+  res.json(enriched);
+});
 
-      const shinyEnrich = (up: typeof fromRaw) =>
-        up
-          ? {
-              id: up.id,
-              tradeable_at: up.tradeable_at,
-              is_shiny: up.is_shiny,
-              pokemon: {
-                ...up.pokemon,
-                is_shiny: up.is_shiny,
-                sprite_url: up.is_shiny
-                  ? up.pokemon.sprite_url.replace('/normal/', '/shiny/')
-                  : up.pokemon.sprite_url,
-                points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
-              },
-            }
-          : null;
+// Pending trades the current user has proposed (so they can cancel them).
+router.get('/sent', async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
 
-      return { ...trade, fromPokemon: shinyEnrich(fromRaw), toPokemon: shinyEnrich(toRaw) };
-    })
-  );
+  const sent = await prisma.trade.findMany({
+    where: { from_user_id: userId, status: 'pending' },
+    include: {
+      to_user: { select: { id: true, display_name: true } },
+    },
+    orderBy: { created_at: 'desc' },
+  });
 
+  const enriched = await Promise.all(sent.map(enrichTradePokemon));
   res.json(enriched);
 });
 
@@ -346,6 +358,34 @@ router.post('/decline/:id', async (req: Request, res: Response): Promise<void> =
   });
 
   res.json({ success: true });
+});
+
+// Proposer-side cancellation of a still-pending trade. Keeps the row (status
+// 'cancelled') for history rather than deleting it.
+router.post('/cancel/:id', async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const id = String(req.params.id);
+
+  const trade = await prisma.trade.findUnique({ where: { id } });
+  if (!trade) {
+    res.status(404).json({ error: 'Trade not found' });
+    return;
+  }
+  if (trade.from_user_id !== userId) {
+    res.status(403).json({ error: 'Only the proposer can cancel this trade' });
+    return;
+  }
+  if (trade.status !== 'pending') {
+    res.status(404).json({ error: 'Trade already resolved' });
+    return;
+  }
+
+  await prisma.trade.update({
+    where: { id },
+    data: { status: 'cancelled', resolved_at: new Date() },
+  });
+
+  res.json({ ok: true });
 });
 
 export default router;

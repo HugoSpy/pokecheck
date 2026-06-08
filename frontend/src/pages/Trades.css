@@ -55,6 +55,7 @@
 .offers-list { display: flex; flex-direction: column; gap: 10px; }
 
 .offer-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 16px;
@@ -63,6 +64,26 @@
   border-radius: var(--radius);
   padding: 14px 16px;
   flex-wrap: wrap;
+}
+
+.offer-cancel-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition), border-color var(--transition);
+}
+.offer-cancel-btn:hover {
+  color: var(--danger, #ef4444);
+  border-color: var(--danger, #ef4444);
 }
 
 .offer-from {

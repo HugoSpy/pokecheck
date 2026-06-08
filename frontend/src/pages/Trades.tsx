@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { getTradeOffers, proposeTrade, acceptTrade, declineTrade } from '../api/tradeApi';
+import { getTradeOffers, getSentTrades, cancelTrade, proposeTrade, acceptTrade, declineTrade } from '../api/tradeApi';
 import { getMyPokedex, getPublicPokedex } from '../api/pokemonApi';
 import { searchUsers } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
-import type { TradeOffer, UserPokemonInstance } from '../api/types';
+import type { TradeOffer, SentTrade, UserPokemonInstance } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import TradeAnimation3D from '../components/TradeAnimation3D';
-import { Swap } from '../components/icons';
+import { Swap, Trash } from '../components/icons';
 import './Trades.css';
 
 interface LocationState {
@@ -20,6 +20,7 @@ export default function Trades() {
   const state = location.state as LocationState | null;
 
   const [offers, setOffers] = useState<TradeOffer[]>([]);
+  const [sent, setSent] = useState<SentTrade[]>([]);
   const [myPokemons, setMyPokemons] = useState<UserPokemonInstance[]>([]);
   const [theirPokemons, setTheirPokemons] = useState<UserPokemonInstance[]>([]);
 
@@ -55,11 +56,24 @@ export default function Trades() {
       .catch(e => setError((e as Error).message))
       .finally(() => setLoadingOffers(false));
 
+    getSentTrades()
+      .then(setSent)
+      .catch(() => null);
+
     getMyPokedex()
       .then(d => setMyPokemons(d.pokemons))
       .catch(() => null)
       .finally(() => setLoadingMine(false));
   }, []);
+
+  async function handleCancel(id: string) {
+    try {
+      await cancelTrade(id);
+      setSent(prev => prev.filter(t => t.id !== id));
+    } catch (e) {
+      setError((e as Error).message);
+    }
+  }
 
   useEffect(() => {
     if (!state?.targetUserId) return;
@@ -148,6 +162,7 @@ export default function Trades() {
       setSuccess('Offre envoyée !');
       setSelectedMine(null);
       setSelectedTheirs(null);
+      getSentTrades().then(setSent).catch(() => null);
     } catch (e) {
       const msg = (e as Error).message;
       setError(
@@ -220,6 +235,21 @@ export default function Trades() {
           </div>
         )}
       </section>
+
+      {/* ── Sent (pending) offers ── */}
+      {sent.length > 0 && (
+        <section className="trades-section">
+          <h2 className="trades-section-title">
+            Offres envoyées
+            <span className="badge-count">{sent.length}</span>
+          </h2>
+          <div className="offers-list">
+            {sent.map(trade => (
+              <SentCard key={trade.id} trade={trade} onCancel={() => handleCancel(trade.id)} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ── Propose a trade ── */}
       <section className="trades-section">
@@ -394,6 +424,36 @@ function OfferCard({ offer, onAccept, onDecline }: {
       <div className="offer-actions">
         <button className="btn btn-primary" onClick={onAccept}>Accepter</button>
         <button className="btn btn-danger" onClick={onDecline}>Refuser</button>
+      </div>
+    </div>
+  );
+}
+
+function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void }) {
+  const give = trade.fromPokemon?.pokemon;
+  const recv = trade.toPokemon?.pokemon;
+
+  return (
+    <div className="offer-card">
+      <button className="offer-cancel-btn" onClick={onCancel} title="Annuler l'offre" aria-label="Annuler l'offre">
+        <Trash size={16} />
+      </button>
+      <div className="offer-from">À {trade.to_user.display_name}</div>
+      <div className="offer-exchange">
+        <div className="offer-pokemon">
+          {give && <img src={give.sprite_url} alt={give.name} />}
+          <span>{give?.name ?? '?'}{give?.is_shiny ? ' ✨' : ''}</span>
+          <span className="offer-poke-pts">{give?.points ?? 0} pts</span>
+        </div>
+        <span className="offer-arrow"><Swap size={16} /></span>
+        <div className="offer-pokemon">
+          {recv && <img src={recv.sprite_url} alt={recv.name} />}
+          <span>{recv?.name ?? '?'}{recv?.is_shiny ? ' ✨' : ''}</span>
+          <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
+        </div>
+      </div>
+      <div className="offer-actions">
+        <button className="btn btn-danger" onClick={onCancel}>Annuler l'offre</button>
       </div>
     </div>
   );
