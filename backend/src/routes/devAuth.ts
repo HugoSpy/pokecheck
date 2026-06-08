@@ -1,12 +1,14 @@
 // [DEV ONLY - NEVER MERGE] — backdoor login for the two seeded test accounts
-// (see prisma/seed-test-accounts.ts). Lets multiple browser sessions log in
-// independently without going through the EPITA Microsoft OAuth flow, so
-// multi-player features (e.g. Battle lobby) can be tested locally.
+// (see prisma/seed-test-accounts.ts). Returns a raw JWT (not a session cookie)
+// so each browser tab can hold its own token in localStorage — a shared
+// httpOnly cookie would force every tab to the same account, defeating the
+// purpose of testing multi-player features (e.g. Battle lobby) with two
+// independent sessions in one browser.
 //
 // Guarded by DEV_BACKDOOR=true — must never be set in the prod .env.
 import { Router, Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { signSessionToken, setSessionCookie } from './auth';
+import { signSessionToken } from './auth';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -39,14 +41,13 @@ router.get('/test-login', async (req: Request, res: Response): Promise<void> => 
     return;
   }
 
-  const sessionToken = signSessionToken({
+  const token = signSessionToken({
     id: user.id,
     ms_id: user.ms_id,
     display_name: user.display_name,
     is_admin: user.is_admin,
   });
-  setSessionCookie(res, sessionToken);
-  res.redirect(process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app');
+  res.json({ token });
 });
 
 export default router;
