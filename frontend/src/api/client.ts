@@ -17,6 +17,13 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
 
   const res = await fetch(`${API_URL}${path}`, { ...options, headers, credentials: 'include' });
 
+  if (res.status === 401) {
+    // Drops a stale/expired test-account token so it doesn't keep getting
+    // resent on every retry. removeItem on an absent key is a no-op, so this
+    // is harmless for normal (cookie-based) sessions too.
+    localStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({ error: 'Unknown error' })) as { error?: string };
     const err = new Error(body.error ?? `HTTP ${res.status}`);

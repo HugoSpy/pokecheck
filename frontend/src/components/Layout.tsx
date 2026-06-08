@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
-import { logout } from '../api/client';
+import { logout, DEV_TOKEN_STORAGE_KEY } from '../api/client';
 import { getAttendanceAvailable } from '../api/attendanceApi';
 import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
@@ -67,6 +67,9 @@ export default function Layout() {
 
   async function handleLogout() {
     await logout().catch(() => {});
+    // [DEV ONLY - NEVER MERGE] drop the test-account JWT so logout doesn't
+    // immediately re-authenticate the tab via the stale localStorage token.
+    localStorage.removeItem(DEV_TOKEN_STORAGE_KEY);
     clearProfile();
     window.location.reload();
   }
