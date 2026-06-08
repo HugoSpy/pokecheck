@@ -210,8 +210,11 @@ function LobbyView({
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function Battle() {
-  const { profile } = useUserCtx();
-  const { openGames, lobby, browse, unbrowse, create, join, setReady, leave } = useBattle();
+  const { profile, refreshProfile } = useUserCtx();
+  const {
+    openGames, lobby, battleAnimation, battleError,
+    browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
+  } = useBattle();
   const [view, setView] = useState<View>('menu');
   const [error, setError] = useState<string | null>(null);
 
@@ -229,6 +232,20 @@ export default function Battle() {
   useEffect(() => {
     if (lobby?.status === 'in_progress') setView('arena');
   }, [lobby?.status]);
+
+  // A battle that just started charged the entry cost — refresh the coin balance.
+  useEffect(() => {
+    if (battleAnimation) void refreshProfile();
+  }, [battleAnimation, refreshProfile]);
+
+  // A failed launch (insufficient coins / missing pack) drops everyone back to
+  // the lobby with the server's message.
+  useEffect(() => {
+    if (!battleError) return;
+    setError(battleError);
+    setView('lobby');
+    clearBattleError();
+  }, [battleError, clearBattleError]);
 
   async function handleCreate(event: GameEvent, maxPlayers: number) {
     setError(null);
@@ -276,7 +293,15 @@ export default function Battle() {
           onLeave={handleLeave}
         />
       )}
-      {view === 'arena' && lobby && <BattleArena lobby={lobby} />}
+      {view === 'arena' && lobby && (
+        <BattleArena
+          lobby={lobby}
+          battleAnimation={battleAnimation}
+          myUserId={profile?.id}
+          onReturn={handleLeave}
+          onAck={() => resultAck(lobby.id)}
+        />
+      )}
     </div>
   );
 }

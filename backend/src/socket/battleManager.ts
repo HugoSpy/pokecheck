@@ -9,6 +9,26 @@ export interface BattlePlayer {
   joinedAt: number;
 }
 
+// Phase 2 — a single Pokémon as it travels through the battle pipeline. Mirrors
+// the shape returned by the event-draw route (id/name/sprite/rarity/points/shiny),
+// minus persistence: battle draws are NOT written to any Pokédex (decided later).
+export interface BattlePokemon {
+  id: number;
+  name: string;
+  sprite_url: string;
+  rarity: string;
+  points: number;
+  is_shiny: boolean;
+}
+
+// Phase 2 — the resolved outcome of a battle, computed once when every player is
+// ready. `strips` drives each player's CSGO-style roll animation; `results` is
+// the winning card (the 22nd element of each strip) used for score comparison.
+export interface BattleResult {
+  strips: Record<string, BattlePokemon[]>;
+  results: Record<string, BattlePokemon>;
+}
+
 export interface BattleRoom {
   id: string;
   eventPackId: string;
@@ -18,6 +38,13 @@ export interface BattleRoom {
   maxPlayers: number;
   status: 'waiting' | 'in_progress';
   players: BattlePlayer[];
+  // Phase 2 — populated by startBattle() when the room fills and all players
+  // ready. `starting` guards against the ready-handler launching twice;
+  // `persisted` ensures the BattleRecord is written only once across N acks.
+  result?: BattleResult;
+  startAt?: number;
+  starting?: boolean;
+  persisted?: boolean;
 }
 
 export interface Lobby {
@@ -191,6 +218,11 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
   reassignHost(room);
   room.players.forEach(p => { p.ready = false; });
   room.status = 'waiting';
+  // Drop any half-started battle state so the next ready-up re-rolls fresh.
+  room.result = undefined;
+  room.startAt = undefined;
+  room.starting = false;
+  room.persisted = false;
 
   return { room, deleted: false };
 }

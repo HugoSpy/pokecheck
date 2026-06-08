@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getBattleSocket } from '../socket/battleSocket';
-import type { BattleAck, BattleListItem, CreateBattlePayload, Lobby } from '../socket/battleTypes';
+import type {
+  BattleAck,
+  BattleAnimationPayload,
+  BattleErrorPayload,
+  BattleListItem,
+  CreateBattlePayload,
+  Lobby,
+} from '../socket/battleTypes';
 
 export function useBattle() {
   const socketRef = useRef(getBattleSocket());
   const [connected, setConnected] = useState(false);
   const [openGames, setOpenGames] = useState<BattleListItem[]>([]);
   const [lobby, setLobbyState] = useState<Lobby | null>(null);
+  const [battleAnimation, setBattleAnimation] = useState<BattleAnimationPayload | null>(null);
+  const [battleError, setBattleError] = useState<string | null>(null);
   const lobbyIdRef = useRef<string | null>(null);
 
   const setLobby = useCallback((next: Lobby | null) => {
@@ -23,11 +32,25 @@ export function useBattle() {
     function handleLobby(next: Lobby) {
       if (lobbyIdRef.current === next.id) setLobby(next);
     }
+    function handleAnimationStart(payload: BattleAnimationPayload) {
+      if (lobbyIdRef.current === payload.roomId) {
+        setBattleError(null);
+        setBattleAnimation(payload);
+      }
+    }
+    function handleError(payload: BattleErrorPayload) {
+      if (lobbyIdRef.current === payload.roomId) {
+        setBattleAnimation(null);
+        setBattleError(payload.message);
+      }
+    }
 
     socket.on('connect', handleConnect);
     socket.on('disconnect', handleDisconnect);
     socket.on('battle:list', handleList);
     socket.on('battle:lobby', handleLobby);
+    socket.on('battle:animation_start', handleAnimationStart);
+    socket.on('battle:error', handleError);
 
     if (!socket.connected) socket.connect();
     else setConnected(true);
@@ -37,6 +60,8 @@ export function useBattle() {
       socket.off('disconnect', handleDisconnect);
       socket.off('battle:list', handleList);
       socket.off('battle:lobby', handleLobby);
+      socket.off('battle:animation_start', handleAnimationStart);
+      socket.off('battle:error', handleError);
     };
   }, []);
 
@@ -74,7 +99,20 @@ export function useBattle() {
   const leave = useCallback((roomId: string) => {
     socketRef.current.emit('battle:leave', { roomId });
     setLobby(null);
+    setBattleAnimation(null);
+    setBattleError(null);
+  }, [setLobby]);
+
+  // Phase 2 — fired by the arena once a player's animation finishes; the backend
+  // persists the BattleRecord on the first ack it receives.
+  const resultAck = useCallback((roomId: string) => {
+    socketRef.current.emit('battle:result_ack', { roomId });
   }, []);
 
-  return { connected, openGames, lobby, browse, unbrowse, create, join, setReady, leave };
+  const clearBattleError = useCallback(() => setBattleError(null), []);
+
+  return {
+    connected, openGames, lobby, battleAnimation, battleError,
+    browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
+  };
 }

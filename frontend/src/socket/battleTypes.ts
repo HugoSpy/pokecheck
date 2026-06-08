@@ -1,3 +1,31 @@
+import type { Rarity } from '../api/types';
+
+// Phase 2 — one card in a battle roll. Compatible with RollCardData so it can be
+// fed straight into the shared PackRoll animation component.
+export interface BattlePokemon {
+  id: number;
+  name: string;
+  sprite_url: string;
+  rarity: Rarity;
+  points: number;
+  is_shiny: boolean;
+}
+
+// Phase 2 — broadcast to every player in the room the instant a battle starts.
+// `startAt` is a shared epoch-ms timestamp: each client schedules its animation
+// for that moment so all rolls run in lockstep regardless of network jitter.
+export interface BattleAnimationPayload {
+  roomId: string;
+  strips: Record<string, BattlePokemon[]>;
+  results: Record<string, BattlePokemon>;
+  startAt: number;
+}
+
+export interface BattleErrorPayload {
+  roomId: string;
+  message: string;
+}
+
 export interface LobbyPlayer {
   userId: string;
   displayName: string;

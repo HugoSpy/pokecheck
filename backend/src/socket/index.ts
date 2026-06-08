@@ -2,17 +2,28 @@ import type { Server as HttpServer } from 'http';
 import { Server, Socket, DefaultEventsMap } from 'socket.io';
 import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
+import { Prisma, PrismaClient } from '@prisma/client';
 import type { AuthPayload } from '../middleware/authMiddleware';
+import { loadEventPools, buildStrip } from '../services/battleDrawService';
+import { spendCoins } from '../services/coinService';
 import {
   createRoom,
   joinRoom,
   setReady,
   removePlayer,
   removeBySocketId,
+  getRoom,
   listOpenRooms,
   toLobbyView,
   type BattleRoom,
+  type BattlePokemon,
 } from './battleManager';
+
+const prisma = new PrismaClient();
+
+// Phase 2 — flat entry cost charged to every player when a battle launches.
+// No per-battle price exists in the data model, so we use a fixed 100 coins.
+const BATTLE_COST = 100;
 
 interface SocketUser {
   userId: string;
@@ -53,6 +64,110 @@ function emitList(io: BattleServer): void {
 
 function emitLobby(io: BattleServer, room: BattleRoom): void {
   io.to(room.id).emit('battle:lobby', toLobbyView(room));
+}
+
+// Phase 2 — aborts a battle that can't launch (missing pack / insufficient
+// coins / DB error): resets the room to a fresh waiting lobby and tells every
+// client to drop back out of the arena.
+function failBattle(io: BattleServer, room: BattleRoom, message: string): void {
+  room.status = 'waiting';
+  room.players.forEach(p => { p.ready = false; });
+  room.result = undefined;
+  room.startAt = undefined;
+  room.starting = false;
+  room.persisted = false;
+  io.to(room.id).emit('battle:error', { roomId: room.id, message });
+  emitLobby(io, room);
+  emitList(io);
+}
+
+// Phase 2 — runs once when a room fills and everyone is ready. Charges all
+// players atomically, rolls every player's strip in one pass, stores the result
+// on the room and broadcasts a single shared `startAt` so all clients animate in
+// lockstep. Any failure rolls the coin transaction back and aborts the battle.
+async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
+  try {
+    const ep = await loadEventPools(prisma, room.eventPackId);
+    if (!ep) {
+      failBattle(io, room, "Le pack d'événement est introuvable ou vide.");
+      return;
+    }
+
+    // Deduct the entry cost for every player in a single Serializable
+    // transaction — spendCoins is an atomic compare-and-swap, so if any player
+    // is short the whole transaction rolls back and nobody is charged.
+    try {
+      await prisma.$transaction(async (tx) => {
+        for (const p of room.players) {
+          await spendCoins(tx, p.userId, BATTLE_COST, 'battle');
+        }
+      }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    } catch (err) {
+      const status = (err as { status?: number }).status;
+      failBattle(io, room, status === 402
+        ? `Un joueur n'a pas assez de coins (${BATTLE_COST} requis).`
+        : 'Impossible de lancer la battle, réessaie.');
+      return;
+    }
+
+    const strips: Record<string, BattlePokemon[]> = {};
+    const results: Record<string, BattlePokemon> = {};
+    for (const p of room.players) {
+      const { strip, winner } = buildStrip(ep);
+      strips[p.userId] = strip;
+      results[p.userId] = winner;
+    }
+
+    room.result = { strips, results };
+    room.startAt = Date.now() + 500; // +500ms network buffer so all clients arm before T0
+
+    io.to(room.id).emit('battle:animation_start', {
+      roomId: room.id,
+      strips,
+      results,
+      startAt: room.startAt,
+    });
+  } catch {
+    failBattle(io, room, 'Impossible de lancer la battle, réessaie.');
+  }
+}
+
+// Phase 2 — persists the finished battle exactly once (guarded by room.persisted)
+// regardless of how many clients ack. Winner = highest-points result.
+async function persistBattle(room: BattleRoom): Promise<void> {
+  if (!room.result || room.persisted) return;
+  room.persisted = true;
+
+  const { results } = room.result;
+  let winnerId = '';
+  let best = -Infinity;
+  const players = room.players.map(p => {
+    const poke = results[p.userId];
+    if (poke && poke.points > best) {
+      best = poke.points;
+      winnerId = p.userId;
+    }
+    return {
+      userId: p.userId,
+      displayName: p.displayName,
+      pokemonId: poke?.id ?? null,
+      name: poke?.name ?? null,
+      points: poke?.points ?? 0,
+      rarity: poke?.rarity ?? null,
+      is_shiny: poke?.is_shiny ?? false,
+    };
+  });
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.battleRecord.create({
+        data: { room_id: room.id, winner_id: winnerId, pack_id: room.eventPackId, players },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch {
+    // Allow a later ack to retry the write if this one failed.
+    room.persisted = false;
+  }
 }
 
 export function initBattleSocket(httpServer: HttpServer): BattleServer {
@@ -139,17 +254,25 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
       emitList(io);
     });
 
-    socket.on('battle:ready', (payload: { roomId: string; ready: boolean }) => {
+    socket.on('battle:ready', async (payload: { roomId: string; ready: boolean }) => {
       const room = setReady(payload.roomId, user.userId, payload.ready);
       if (!room) return;
 
       emitLobby(io, room);
-
-      if (room.status === 'in_progress') {
-        io.to(room.id).emit('battle:start', { roomId: room.id });
-      }
-
       emitList(io);
+
+      // Phase 2 — full + everyone ready: launch the battle once. `starting`
+      // guards re-entrancy if two ready events land back-to-back.
+      if (room.status === 'in_progress' && !room.starting && !room.result) {
+        room.starting = true;
+        await startBattle(io, room);
+      }
+    });
+
+    socket.on('battle:result_ack', async (payload: { roomId: string }) => {
+      const room = getRoom(payload.roomId);
+      if (!room) return;
+      await persistBattle(room);
     });
 
     socket.on('battle:leave', (payload: { roomId: string }) => {

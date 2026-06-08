@@ -289,3 +289,116 @@
   border-radius: var(--radius-sm);
   padding: 2px 6px;
 }
+
+/* ── Phase 2: synchronized pack-opening arena ── */
+.battle-arena-stage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  padding: 12px 12px 56px;
+}
+
+.battle-roll-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.battle-roll-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.battle-roll-you {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 2px 6px;
+}
+
+.battle-roll-crown {
+  font-size: 1.1em;
+}
+
+/* The PackRoll frame in a battle context (scoping hook). */
+.battle-roll-frame {
+  position: relative;
+}
+
+/* Local player — full size, natural height (identical to solo). */
+.battle-roll-cell.full {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.battle-roll-cell.full .battle-roll-frame {
+  width: min(1100px, calc(100vw - 32px));
+}
+
+/* Other players — same component scaled down. The frame keeps a fixed unscaled
+   box so the scaled footprint is deterministic and the cells pack tightly. */
+.battle-roll-others {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 24px;
+}
+.battle-roll-cell.mini {
+  --s: 0.36;
+  --fw: 940px;
+  --fh: 540px;
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--fw) * var(--s));
+  height: calc(var(--fh) * var(--s));
+}
+.battle-roll-cell.mini .battle-roll-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fw);
+  height: var(--fh);
+  transform: scale(var(--s));
+  transform-origin: top left;
+}
+/* Attenuated winner glow for the smaller "other player" rolls. */
+.battle-roll-cell.mini .roll-card-winner {
+  box-shadow:
+    0 0 12px var(--card-glow, var(--card-border)),
+    inset 0 0 8px rgba(255, 255, 255, 0.04);
+}
+
+/* Outcome banner */
+.battle-outcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 32px;
+  border: 1px solid var(--border-bright);
+  border-radius: 20px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-elevated);
+}
+.battle-outcome-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+.battle-outcome-sub {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
