@@ -69,7 +69,13 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
 
   io.use((socket: BattleSocket, next) => {
     const cookieHeader = socket.handshake.headers.cookie;
-    const token = cookieHeader ? cookie.parse(cookieHeader).session : undefined;
+    const cookieToken = cookieHeader ? cookie.parse(cookieHeader).session : undefined;
+    // [DEV ONLY - NEVER MERGE] fall back to handshake.auth.token — the
+    // per-tab JWT stored by the test-account backdoor login (localStorage,
+    // see frontend battleSocket.ts) — when no session cookie is present.
+    // Mirrors the cookie ?? Bearer fallback in authMiddleware.ts:25-26.
+    const authToken = (socket.handshake.auth as { token?: string } | undefined)?.token;
+    const token = cookieToken ?? authToken ?? undefined;
 
     if (!token) {
       next(new Error('Missing or invalid session'));
