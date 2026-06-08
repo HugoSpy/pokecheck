@@ -41,10 +41,13 @@ export interface BattleRoom {
   // Phase 2 — populated by startBattle() when the room fills and all players
   // ready. `starting` guards against the ready-handler launching twice;
   // `persisted` ensures the BattleRecord is written only once across N acks.
+  // `rosterSnapshot` freezes who was in the battle at launch so the record stays
+  // complete even if a player disconnects mid-animation.
   result?: BattleResult;
   startAt?: number;
   starting?: boolean;
   persisted?: boolean;
+  rosterSnapshot?: { userId: string; displayName: string }[];
 }
 
 export interface Lobby {
@@ -208,6 +211,20 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
   const room = rooms.get(roomId);
   if (!room) return { room: undefined, deleted: false };
 
+  // Once a battle is in progress the outcome is locked in. A player leaving
+  // (e.g. closing their tab mid-animation) must NOT wipe the strips/result or
+  // reset the room — that would cancel a BattleRecord the others are still about
+  // to ack. Just drop them from the live roster; `rosterSnapshot` keeps the
+  // record complete. The room is only torn down once everyone has left.
+  if (room.status === 'in_progress') {
+    room.players = room.players.filter(p => p.userId !== userId);
+    if (room.players.length === 0) {
+      rooms.delete(roomId);
+      return { room: undefined, deleted: true };
+    }
+    return { room, deleted: false };
+  }
+
   room.players = room.players.filter(p => p.userId !== userId);
 
   if (room.players.length === 0) {
@@ -223,6 +240,7 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
   room.startAt = undefined;
   room.starting = false;
   room.persisted = false;
+  room.rosterSnapshot = undefined;
 
   return { room, deleted: false };
 }

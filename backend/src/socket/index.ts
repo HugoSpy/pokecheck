@@ -119,6 +119,9 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
     }
 
     room.result = { strips, results };
+    // Freeze the roster at launch so the BattleRecord stays complete even if a
+    // player disconnects during the animation (removePlayer keeps this intact).
+    room.rosterSnapshot = room.players.map(p => ({ userId: p.userId, displayName: p.displayName }));
     room.startAt = Date.now() + 500; // +500ms network buffer so all clients arm before T0
 
     io.to(room.id).emit('battle:animation_start', {
@@ -132,16 +135,21 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
   }
 }
 
-// Phase 2 — persists the finished battle exactly once (guarded by room.persisted)
-// regardless of how many clients ack. Winner = highest-points result.
+// Phase 2 — persists the finished battle exactly once. Two layers guard against
+// duplicates: the in-process `persisted` flag (set synchronously before any
+// await, so concurrent acks in this single-threaded process can't both pass)
+// AND a UNIQUE constraint on BattleRecord.room_id (DB-enforced, so a duplicate
+// insert surfaces as P2002 and is treated as success). Winner = highest points.
+// Built from `rosterSnapshot` so a mid-animation disconnect can't drop a player.
 async function persistBattle(room: BattleRoom): Promise<void> {
   if (!room.result || room.persisted) return;
   room.persisted = true;
 
   const { results } = room.result;
+  const roster = room.rosterSnapshot ?? room.players.map(p => ({ userId: p.userId, displayName: p.displayName }));
   let winnerId = '';
   let best = -Infinity;
-  const players = room.players.map(p => {
+  const players = roster.map(p => {
     const poke = results[p.userId];
     if (poke && poke.points > best) {
       best = poke.points;
@@ -164,8 +172,11 @@ async function persistBattle(room: BattleRoom): Promise<void> {
         data: { room_id: room.id, winner_id: winnerId, pack_id: room.eventPackId, players },
       });
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-  } catch {
-    // Allow a later ack to retry the write if this one failed.
+  } catch (err) {
+    // P2002 = the room_id UNIQUE constraint fired: another ack already wrote the
+    // record, so this is a success, not a failure — keep `persisted` true.
+    if ((err as { code?: string }).code === 'P2002') return;
+    // Any other error: allow a later ack to retry the write.
     room.persisted = false;
   }
 }

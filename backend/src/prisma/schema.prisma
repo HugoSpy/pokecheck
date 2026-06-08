@@ -132,7 +132,7 @@ model Event {
 // points, rarity, is_shiny }. Pokémon are NOT added to any Pokédex.
 model BattleRecord {
   id         String   @id @default(uuid())
-  room_id    String
+  room_id    String   @unique
   winner_id  String
   pack_id    String
   players    Json
