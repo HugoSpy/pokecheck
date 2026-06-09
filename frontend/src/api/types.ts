@@ -199,6 +199,19 @@ export interface AllBadgeEntry extends Badge {
   claimed_at: string | null;
 }
 
+export interface BadgeProgressEntry {
+  badgeId: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  claimed: boolean;
+  coinReward: number;
+  progress?: {
+    current: number;
+    required: number;
+    missingPokemon?: Array<{ id: number; name: string; spriteUrl: string }>;
+  };
+}
+
 export interface PublicUserInfo {
   id: string;
   display_name: string;
