@@ -7,23 +7,13 @@ import { getSellPrice } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import Toast from '../components/Toast';
 import { Search } from '../components/icons';
-import { TYPE_FR, RARITY_FR } from '../utils/pokemon';
+import { TYPE_FR, RARITY_FR, RARITIES, TYPE_COLORS } from '../utils/pokemon';
+import PokemonSearchModal from '../components/PokemonSearchModal';
 import './Pokedex.css';
 
 const BULK_SELL_CHUNK = 50; // backend caps each /sell/bulk call at 50 ids
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
-const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const;
-
-
-const TYPE_COLORS: Record<string, string> = {
-  normal: '#9CA3AF', fire: '#F97316', water: '#3B82F6',
-  electric: '#EAB308', grass: '#22C55E', ice: '#67E8F9',
-  fighting: '#DC2626', poison: '#A855F7', ground: '#D97706',
-  flying: '#818CF8', psychic: '#EC4899', bug: '#84CC16',
-  rock: '#78716C', ghost: '#6D28D9', dragon: '#7C3AED',
-  dark: '#6B7280', steel: '#94A3B8', fairy: '#F472B6',
-};
 
 export default function Pokedex() {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -31,6 +21,7 @@ export default function Pokedex() {
   const [totalPokemon, setTotalPokemon] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchModalOpen, setSearchModalOpen] = useState(false);
   const { coins, setCoins } = useUserCtx();
 
   const handleSell = useCallback(async (instanceId: string) => {
@@ -208,6 +199,9 @@ export default function Pokedex() {
         <div>
           <h1 className="pokedex-title">Mon Pokédex</h1>
           <div className="pokedex-subtitle">{user.display_name}</div>
+          <button className="pokedex-search-btn" onClick={() => setSearchModalOpen(true)}>
+            <Search size={15} /> Rechercher un Pokémon
+          </button>
         </div>
         <div className="pokedex-stats">
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />
@@ -387,6 +381,7 @@ export default function Pokedex() {
       )}
 
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
+      {searchModalOpen && <PokemonSearchModal onClose={() => setSearchModalOpen(false)} />}
     </div>
   );
 }

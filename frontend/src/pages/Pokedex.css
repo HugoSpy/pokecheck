@@ -235,6 +235,24 @@
   flex-wrap: wrap;
 }
 
+.pokedex-search-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding: 7px 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background 0.15s, filter 0.15s;
+}
+.pokedex-search-btn:hover { filter: brightness(1.15); }
+
 /* ── Bulk-sell action bar (sticky above the mobile bottom-nav) ── */
 .pokedex-bulk-bar {
   position: sticky;
