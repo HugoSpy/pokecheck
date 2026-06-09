@@ -1,6 +1,6 @@
 import { useEffect, useState, type ComponentProps } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getActiveEvents } from '../api/eventApi';
+import { getActiveEvents, drawEventPackMulti } from '../api/eventApi';
 import BoosterPack3D from '../components/BoosterPack3D';
 import { useUserCtx } from '../context/UserContext';
 import type { GameEvent } from '../api/types';
@@ -82,11 +82,13 @@ const QUANTITIES = [1, 2, 5, 10] as const;
 
 function EventCard({ event }: { event: GameEvent }) {
   const navigate = useNavigate();
-  const { coins } = useUserCtx();
+  const { coins, setCoins } = useUserCtx();
   const countdown = useCountdown(event.ends_at);
   const expired = countdown === 'Terminé';
 
   const [count, setCount] = useState<number>(1);
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const totalPrice = event.price * count;
   const canAfford = coins >= totalPrice;
 
@@ -94,8 +96,25 @@ function EventCard({ event }: { event: GameEvent }) {
     ([, mult]) => mult > 1.0,
   );
 
-  function handleBuy() {
-    navigate(`/events/pack?event_id=${event.id}&count=${count}`);
+  async function handleBuy() {
+    // Single open keeps the existing solo flow (self-drawing CSGO animation).
+    if (count === 1) {
+      navigate(`/events/pack?event_id=${event.id}`);
+      return;
+    }
+    // Multi-open: draw N packs server-side, then animate them in parallel.
+    if (opening) return;
+    setOpening(true);
+    setError(null);
+    try {
+      const draw = await drawEventPackMulti(event.id, count);
+      setCoins(draw.coins_remaining);
+      navigate('/events/pack-multi', { state: { draw, eventName: event.name } });
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      setError(err.status === 402 ? 'Coins insuffisants.' : (err.message || 'Erreur, réessaie.'));
+      setOpening(false);
+    }
   }
 
   return (
@@ -146,12 +165,15 @@ function EventCard({ event }: { event: GameEvent }) {
 
           <button
             className={`btn ${canAfford ? 'btn-primary' : 'btn-ghost'} event-open-btn`}
-            disabled={!canAfford || expired}
+            disabled={!canAfford || expired || opening}
             title={!canAfford ? 'Coins insuffisants' : undefined}
             onClick={handleBuy}
           >
-            {count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} — {totalPrice} coins
+            {opening
+              ? 'Ouverture…'
+              : `${count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} — ${totalPrice} coins`}
           </button>
+          {error && <div className="event-error">{error}</div>}
         </div>
       </div>
     </div>

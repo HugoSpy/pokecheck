@@ -148,6 +148,18 @@ export interface EventDrawResult extends DrawResult {
   strip: RollCardData[];
 }
 
+/** One opened pack in a multi-open: full 30-card strip with winner at index 22. */
+export interface EventPackResult extends DrawDuplicateInfo {
+  pokemon: PokemonInfo;
+  strip: RollCardData[];
+}
+
+export interface MultiEventDrawResult {
+  results: EventPackResult[];
+  coins_remaining: number;
+  new_badges: string[];
+}
+
 export interface DailyLoginResult {
   coins_earned: number;
   streak_days: number;

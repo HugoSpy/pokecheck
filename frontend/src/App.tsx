@@ -5,6 +5,7 @@ import { TradeAnimProvider } from './context/TradeAnimContext';
 import Login from './pages/Login';
 import OpenPack from './pages/OpenPack';
 import EventPackOpen from './pages/EventPackOpen';
+import EventPackOpenMulti from './pages/EventPackOpenMulti';
 import Pokedex from './pages/Pokedex';
 import Trades from './pages/Trades';
 import Leaderboard from './pages/Leaderboard';
@@ -35,6 +36,7 @@ function AppRoutes() {
     <Routes>
       <Route path="/open" element={<OpenPack />} />
       <Route path="/events/pack" element={<EventPackOpen />} />
+      <Route path="/events/pack-multi" element={<EventPackOpenMulti />} />
       <Route element={<Layout />}>
         <Route path="/pokedex"     element={<Pokedex />} />
         <Route path="/trades"      element={<Trades />} />

@@ -196,6 +196,13 @@
   white-space: nowrap;
 }
 
+.event-error {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  color: var(--danger, #ef4444);
+  text-align: center;
+}
+
 /* ── Empty state ── */
 .events-empty {
   text-align: center;
