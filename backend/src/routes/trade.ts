@@ -255,6 +255,7 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
   // concurrent transaction will match status='pending'; the second will get count=0
   // after PostgreSQL re-evaluates the WHERE against the first's committed state.
   let raceDetected = false;
+  let ownershipInvalid = false;
 
   const { fromUser, toUser } = await prisma.$transaction(async tx => {
     const { count } = await tx.trade.updateMany({
@@ -265,6 +266,25 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
     if (count === 0) {
       raceDetected = true;
       return { fromUser: null, toUser: null };
+    }
+
+    // Ownership re-verification: a stale duplicate proposal can reference a Pokémon
+    // whose owner changed via another accepted trade since this one was created.
+    // The by-id transfers below would otherwise silently steal it from its current
+    // owner — so cancel this trade instead of transferring.
+    const fromPokemon = await tx.userPokemon.findUnique({ where: { id: trade.from_pokemon_id } });
+    if (!fromPokemon || fromPokemon.user_id !== trade.from_user_id) {
+      await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
+      ownershipInvalid = true;
+      return { fromUser: null, toUser: null };
+    }
+    if (trade.to_pokemon_id) {
+      const toPokemon = await tx.userPokemon.findUnique({ where: { id: trade.to_pokemon_id } });
+      if (!toPokemon || toPokemon.user_id !== trade.to_user_id) {
+        await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
+        ownershipInvalid = true;
+        return { fromUser: null, toUser: null };
+      }
     }
 
     // Transfer Pokémon
@@ -279,6 +299,22 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
         data: { user_id: trade.from_user_id, tradeable_at: tradeableAt },
       });
     }
+
+    // Invalidate sibling pending trades referencing either Pokémon just exchanged,
+    // so the same Pokémon can't be offered to (and accepted by) several people.
+    const exchangedPokemonIds = [trade.from_pokemon_id];
+    if (trade.to_pokemon_id) exchangedPokemonIds.push(trade.to_pokemon_id);
+    await tx.trade.updateMany({
+      where: {
+        id: { not: id },
+        status: 'pending',
+        OR: [
+          { from_pokemon_id: { in: exchangedPokemonIds } },
+          { to_pokemon_id: { in: exchangedPokemonIds } },
+        ],
+      },
+      data: { status: 'cancelled', resolved_at: new Date() },
+    });
 
     // Transfer coins
     if (trade.coins_offered > 0) {
@@ -313,6 +349,11 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
 
   if (raceDetected) {
     res.status(409).json({ error: 'Trade already resolved' });
+    return;
+  }
+
+  if (ownershipInvalid) {
+    res.status(409).json({ error: 'POKEMON_NO_LONGER_OWNED' });
     return;
   }
 
