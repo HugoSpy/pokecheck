@@ -139,6 +139,25 @@ export async function checkBadges(userId: string): Promise<string[]> {
   ];
   if (ALL_TYPES.every(t => ownedTypes.has(t))) await unlock('all_types');
 
+  // Type collection badges — distinct species owned per type, 5/10/25 tiers.
+  // Grouped in-memory from ownedPokemons (which already includes types), so all
+  // 18 types × 3 tiers are checked without any extra DB query.
+  const speciesByType = new Map<string, Set<number>>();
+  for (const p of ownedPokemons) {
+    for (const type of p.pokemon.types) {
+      let set = speciesByType.get(type);
+      if (!set) { set = new Set(); speciesByType.set(type, set); }
+      set.add(p.pokemon_id);
+    }
+  }
+  const TYPE_BADGE_TIERS = [5, 10, 25];
+  for (const type of ALL_TYPES) {
+    const distinctCount = speciesByType.get(type)?.size ?? 0;
+    for (const threshold of TYPE_BADGE_TIERS) {
+      if (distinctCount >= threshold) await unlock(`type_${type}_${threshold}`);
+    }
+  }
+
   // Legendary badges
   const legendaryByGen = new Map<number, Set<number>>();
   for (const p of ownedPokemons) {

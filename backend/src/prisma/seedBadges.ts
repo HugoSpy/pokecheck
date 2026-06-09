@@ -53,6 +53,48 @@ const BADGES = [
   { id: 'gen7_complete', name: 'Complétion Alola',  description: 'Possède les 88 Pokémon de Alola',   category: 'generation', coin_reward: 5000 },
 ];
 
+// ── Type collection badges (3 tiers × 18 types = 54), generated programmatically.
+// `art` is the French partitive article (with its trailing space, or apostrophe
+// for "de l'") so the name reads naturally per type's gender/initial.
+const TYPE_BADGE_TYPES: Array<{ key: string; fr: string; art: string }> = [
+  { key: 'normal',   fr: 'Normal',   art: 'du '   },
+  { key: 'fire',     fr: 'Feu',      art: 'du '   },
+  { key: 'water',    fr: 'Eau',      art: "de l'" },
+  { key: 'electric', fr: 'Électrik', art: "de l'" },
+  { key: 'grass',    fr: 'Plante',   art: 'de la ' },
+  { key: 'ice',      fr: 'Glace',    art: 'de la ' },
+  { key: 'fighting', fr: 'Combat',   art: 'du '   },
+  { key: 'poison',   fr: 'Poison',   art: 'du '   },
+  { key: 'ground',   fr: 'Sol',      art: 'du '   },
+  { key: 'flying',   fr: 'Vol',      art: 'du '   },
+  { key: 'psychic',  fr: 'Psy',      art: 'du '   },
+  { key: 'bug',      fr: 'Insecte',  art: "de l'" },
+  { key: 'rock',     fr: 'Roche',    art: 'de la ' },
+  { key: 'ghost',    fr: 'Spectre',  art: 'du '   },
+  { key: 'dragon',   fr: 'Dragon',   art: 'du '   },
+  { key: 'dark',     fr: 'Ténèbres', art: 'des '  },
+  { key: 'steel',    fr: 'Acier',    art: "de l'" },
+  { key: 'fairy',    fr: 'Fée',      art: 'de la ' },
+];
+
+const TYPE_BADGE_TIERS = [
+  { threshold: 5,  prefix: 'Amateur',        coins: 75  },
+  { threshold: 10, prefix: 'Collectionneur', coins: 200 },
+  { threshold: 25, prefix: 'Chercheur',      coins: 400 },
+];
+
+for (const t of TYPE_BADGE_TYPES) {
+  for (const tier of TYPE_BADGE_TIERS) {
+    BADGES.push({
+      id: `type_${t.key}_${tier.threshold}`,
+      name: `${tier.prefix} ${t.art}${t.fr}`,
+      description: `Possède ${tier.threshold} espèces distinctes de type ${t.fr}`,
+      category: 'types',
+      coin_reward: tier.coins,
+    });
+  }
+}
+
 async function main() {
   // Fail fast if DB is unreachable
   try {
