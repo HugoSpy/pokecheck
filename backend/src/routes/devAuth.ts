@@ -45,6 +45,7 @@ router.get('/test-login', async (req: Request, res: Response): Promise<void> => 
     id: user.id,
     ms_id: user.ms_id,
     display_name: user.display_name,
+    nickname: user.nickname,
     is_admin: user.is_admin,
   });
   res.json({ token });

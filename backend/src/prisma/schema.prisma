@@ -11,6 +11,7 @@ model User {
   id                 String    @id @default(uuid())
   ms_id              String    @unique
   display_name       String
+  nickname           String?   // null = use display_name (display_name is synced from Azure AD at every login)
   is_admin           Boolean   @default(false)
   total_score        Int       @default(0)
   trade_count        Int       @default(0)

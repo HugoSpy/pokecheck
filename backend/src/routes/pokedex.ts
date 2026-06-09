@@ -16,13 +16,13 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
     }),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true, display_name: true, total_score: true, trade_count: true },
+      select: { id: true, display_name: true, nickname: true, total_score: true, trade_count: true },
     }),
     prisma.pokemon.count(),
   ]);
 
   res.json({
-    user,
+    user: user && { id: user.id, display_name: user.nickname ?? user.display_name, total_score: user.total_score, trade_count: user.trade_count },
     totalPokemon,
     pokemons: userPokemons.map(up => ({
       instanceId: up.id,
@@ -92,7 +92,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, display_name: true, total_score: true, trade_count: true, featured_badges: true },
+    select: { id: true, display_name: true, nickname: true, total_score: true, trade_count: true, featured_badges: true },
   });
 
   if (!user) {
@@ -141,7 +141,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   });
 
   res.json({
-    user: { ...user, featured_badges: featured_badge_objects },
+    user: { id: user.id, display_name: user.nickname ?? user.display_name, total_score: user.total_score, trade_count: user.trade_count, featured_badges: featured_badge_objects },
     pokemons: userPokemons.map(up => ({
       instanceId: up.id,
       obtainedAt: up.obtained_at,

@@ -14,7 +14,14 @@ router.use(authMiddleware);
 // Resolves a trade's from_/to_ UserPokemon and applies shiny sprite/points so
 // the client can render the cards. Shared by the received (/offers) and sent
 // (/sent) listings.
-async function enrichTradePokemon<T extends { from_pokemon_id: string | null; to_pokemon_id: string | null }>(trade: T) {
+type TradeUserRef = { id: string; display_name: string; nickname?: string | null };
+
+async function enrichTradePokemon<T extends {
+  from_pokemon_id: string | null;
+  to_pokemon_id: string | null;
+  from_user?: TradeUserRef;
+  to_user?: TradeUserRef;
+}>(trade: T) {
   const fromRaw = trade.from_pokemon_id
     ? await prisma.userPokemon.findUnique({ where: { id: trade.from_pokemon_id }, include: { pokemon: true } })
     : null;
@@ -39,7 +46,16 @@ async function enrichTradePokemon<T extends { from_pokemon_id: string | null; to
         }
       : null;
 
-  return { ...trade, fromPokemon: shinyEnrich(fromRaw), toPokemon: shinyEnrich(toRaw) };
+  // Surface the effective display name (nickname overrides Azure display_name).
+  const effectiveName = (u: TradeUserRef) => ({ id: u.id, display_name: u.nickname ?? u.display_name });
+
+  return {
+    ...trade,
+    ...(trade.from_user ? { from_user: effectiveName(trade.from_user) } : {}),
+    ...(trade.to_user ? { to_user: effectiveName(trade.to_user) } : {}),
+    fromPokemon: shinyEnrich(fromRaw),
+    toPokemon: shinyEnrich(toRaw),
+  };
 }
 
 router.get('/offers', async (req: Request, res: Response): Promise<void> => {
@@ -48,7 +64,7 @@ router.get('/offers', async (req: Request, res: Response): Promise<void> => {
   const offers = await prisma.trade.findMany({
     where: { to_user_id: userId, status: 'pending' },
     include: {
-      from_user: { select: { id: true, display_name: true } },
+      from_user: { select: { id: true, display_name: true, nickname: true } },
     },
     orderBy: { created_at: 'desc' },
   });
@@ -64,7 +80,7 @@ router.get('/sent', async (req: Request, res: Response): Promise<void> => {
   const sent = await prisma.trade.findMany({
     where: { from_user_id: userId, status: 'pending' },
     include: {
-      to_user: { select: { id: true, display_name: true } },
+      to_user: { select: { id: true, display_name: true, nickname: true } },
     },
     orderBy: { created_at: 'desc' },
   });

@@ -13,6 +13,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
     select: {
       id: true,
       display_name: true,
+      nickname: true,
       total_score: true,
       coins: true,
       trade_count: true,
@@ -24,7 +25,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
 
   const result = users.map(user => ({
     id: user.id,
-    display_name: user.display_name,
+    display_name: user.nickname ?? user.display_name,
     total_score: user.total_score,
     coins: user.coins,
     trade_count: user.trade_count,

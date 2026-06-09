@@ -16,15 +16,18 @@ router.get('/search', authMiddleware, async (req: Request, res: Response): Promi
 
   const users = await prisma.user.findMany({
     where: {
-      display_name: { contains: q, mode: 'insensitive' },
+      OR: [
+        { nickname: { contains: q, mode: 'insensitive' } },
+        { display_name: { contains: q, mode: 'insensitive' } },
+      ],
       NOT: { id: req.user!.userId }, // exclure soi-même
     },
-    select: { id: true, display_name: true },
+    select: { id: true, display_name: true, nickname: true },
     orderBy: { display_name: 'asc' },
     take: 8,
   });
 
-  res.json({ users });
+  res.json({ users: users.map(u => ({ id: u.id, display_name: u.nickname ?? u.display_name })) });
 });
 
 // GET /users/badges/me — liste complète des badges de l'utilisateur connecté
@@ -86,13 +89,16 @@ router.patch('/username', authMiddleware, async (req: Request, res: Response): P
     return;
   }
 
+  // Write the chosen name to `nickname`, NOT `display_name` — display_name is
+  // re-synced from Azure AD at every login and would overwrite a rename. The
+  // effective name (nickname ?? display_name) is what every display surface returns.
   const updated = await prisma.user.update({
     where: { id: userId },
-    data: { display_name: displayName },
-    select: { display_name: true },
+    data: { nickname: displayName },
+    select: { nickname: true, display_name: true },
   });
 
-  res.json({ display_name: updated.display_name });
+  res.json({ display_name: updated.nickname ?? updated.display_name });
 });
 
 // PATCH /users/featured-badges — mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
@@ -134,6 +140,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
     select: {
       id: true,
       display_name: true,
+      nickname: true,
       coins: true,
       streak_days: true,
       last_login: true,
@@ -144,7 +151,8 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
     },
   });
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
-  res.json(user);
+  const { nickname, ...rest } = user;
+  res.json({ ...rest, display_name: nickname ?? rest.display_name });
 });
 
 // GET /users/all-badges — tous les badges avec statut débloqué pour l'user connecté
