@@ -75,6 +75,9 @@ function formatDateShort(iso: string): string {
   return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}`;
 }
 
+// Quantities offered by the multi-open selector.
+const QUANTITIES = [1, 2, 5, 10] as const;
+
 // ── Sub-component ────────────────────────────────────────────────────────────
 
 function EventCard({ event }: { event: GameEvent }) {
@@ -83,18 +86,24 @@ function EventCard({ event }: { event: GameEvent }) {
   const countdown = useCountdown(event.ends_at);
   const expired = countdown === 'Terminé';
 
-  const canAfford = coins >= event.price;
+  const [count, setCount] = useState<number>(1);
+  const totalPrice = event.price * count;
+  const canAfford = coins >= totalPrice;
 
   const activePills = Object.entries(event.rarity_multiplier).filter(
     ([, mult]) => mult > 1.0,
   );
 
   function handleBuy() {
-    navigate(`/events/pack?event_id=${event.id}`);
+    navigate(`/events/pack?event_id=${event.id}&count=${count}`);
   }
 
   return (
     <div className="event-card">
+      <div className="event-pack-preview">
+        <BoosterPack3D {...EVENT_PACK_CONFIG[event.name]} />
+      </div>
+
       <div className="event-content">
         <div className="event-name">{event.name}</div>
 
@@ -121,19 +130,29 @@ function EventCard({ event }: { event: GameEvent }) {
         )}
 
         <div className="event-actions">
+          <div className="event-qty" role="group" aria-label="Quantité de packs">
+            {QUANTITIES.map(q => (
+              <button
+                key={q}
+                type="button"
+                className={`event-qty-btn${count === q ? ' active' : ''}`}
+                onClick={() => setCount(q)}
+                aria-pressed={count === q}
+              >
+                ×{q}
+              </button>
+            ))}
+          </div>
+
           <button
-            className={`btn ${canAfford ? 'btn-primary' : 'btn-ghost'}`}
+            className={`btn ${canAfford ? 'btn-primary' : 'btn-ghost'} event-open-btn`}
             disabled={!canAfford || expired}
             title={!canAfford ? 'Coins insuffisants' : undefined}
             onClick={handleBuy}
           >
-            Ouvrir un pack — {event.price} coins
+            {count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} — {totalPrice} coins
           </button>
         </div>
-      </div>
-
-      <div className="event-pack-preview">
-        <BoosterPack3D {...EVENT_PACK_CONFIG[event.name]} />
       </div>
     </div>
   );
@@ -176,7 +195,9 @@ export default function Events() {
           <div className="events-empty-sub">Reviens bientôt !</div>
         </div>
       ) : (
-        events.map(event => <EventCard key={event.id} event={event} />)
+        <div className="events-grid">
+          {events.map(event => <EventCard key={event.id} event={event} />)}
+        </div>
       )}
     </div>
   );
