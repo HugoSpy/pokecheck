@@ -11,9 +11,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   streak: 'Connexion',
   trade: 'Échanges',
   pokedex: 'Pokédex',
+  rarity: 'Rareté',
   starters: 'Starters',
   starter_evo: 'Lignées Starters',
   generation: 'Générations',
+  region: 'Régions',
   legendary: 'Légendaires',
   types: 'Types',
   battle: 'Battle',
@@ -22,9 +24,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 // Display order of badge categories. "Lignées Starters" sits between Starters
-// and Types per the design.
+// and Types; "Rareté" follows Pokédex; "Régions" follows Générations.
 const CATEGORY_ORDER = [
-  'streak', 'trade', 'pokedex', 'generation',
+  'streak', 'trade', 'pokedex', 'rarity',
+  'generation', 'region',
   'starters', 'starter_evo', 'types',
   'legendary', 'shiny', 'battle', 'market',
 ];
@@ -59,9 +62,11 @@ function categoryFallbackEmoji(category: string): string {
     streak: '🔥',
     trade: '🔄',
     pokedex: '📖',
+    rarity: '💠',
     starters: '🌱',
     starter_evo: '🌿',
     generation: '🌍',
+    region: '🗺️',
     legendary: '⭐',
     types: '💎',
     battle: '⚔️',

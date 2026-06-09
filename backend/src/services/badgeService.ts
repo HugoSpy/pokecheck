@@ -87,6 +87,19 @@ export const ALL_TYPES = [
 
 export const TYPE_BADGE_TIERS = [5, 10, 25];
 
+// Distinct-species-per-rarity tiers. Commun has no tier-5 badge (too easy).
+// id format: rarity_{rarity-lowercase}_{tier}.
+export const RARITY_COLLECTION: Record<string, number[]> = {
+  COMMON:    [10, 25, 50],
+  RARE:      [5, 10, 25, 50],
+  EPIC:      [5, 10, 25, 50],
+  LEGENDARY: [5, 10, 25, 50],
+};
+
+// Distinct-species-per-generation tiers. Tier 100 only applies to generations
+// that actually have ≥100 species (gens 6/7 don't). id format: gen{N}_{tier}.
+export const GENERATION_COLLECTION_TIERS = [10, 25, 50, 100];
+
 async function unlockBadge(
   userId: string,
   badgeId: string,
@@ -188,6 +201,19 @@ export async function checkBadges(userId: string): Promise<string[]> {
     if (shinySpecies.size >= threshold) await unlock(id);
   }
 
+  // Rarity collection badges — distinct species owned per rarity
+  const speciesByRarity = new Map<string, Set<number>>();
+  for (const p of ownedPokemons) {
+    const r = p.pokemon.rarity;
+    (speciesByRarity.get(r) ?? speciesByRarity.set(r, new Set()).get(r)!).add(p.pokemon_id);
+  }
+  for (const [rarity, tiers] of Object.entries(RARITY_COLLECTION)) {
+    const count = speciesByRarity.get(rarity)?.size ?? 0;
+    for (const tier of tiers) {
+      if (count >= tier) await unlock(`rarity_${rarity.toLowerCase()}_${tier}`);
+    }
+  }
+
   // Pokédex size badges
   for (const { id, threshold } of POKEDEX_BADGES) {
     if (distinctPokemonCount >= threshold) await unlock(id);
@@ -268,6 +294,12 @@ export async function checkBadges(userId: string): Promise<string[]> {
     const ownedInGen = ownedByGen.get(gen)?.size ?? 0;
     if (totalInGen > 0 && ownedInGen >= totalInGen) {
       await unlock(`gen${gen}_complete`);
+    }
+    // Generation collection tiers — distinct species in the gen. Tier 100 only
+    // exists for gens that actually have ≥100 species.
+    for (const tier of GENERATION_COLLECTION_TIERS) {
+      if (tier === 100 && totalInGen < 100) continue;
+      if (ownedInGen >= tier) await unlock(`gen${gen}_${tier}`);
     }
   }
 

@@ -214,12 +214,15 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
   const shinySpecies = new Set(ownedPokemons.filter(p => p.is_shiny).map(p => p.pokemon_id));
 
   const speciesByType = new Map<string, Set<number>>();
+  const speciesByRarity = new Map<string, Set<number>>();
   const legendaryOwnedByGen = new Map<number, Set<number>>();
   const ownedByGen = new Map<number, Set<number>>();
   for (const p of ownedPokemons) {
     for (const type of p.pokemon.types) {
       (speciesByType.get(type) ?? speciesByType.set(type, new Set()).get(type)!).add(p.pokemon_id);
     }
+    const rarity = p.pokemon.rarity;
+    (speciesByRarity.get(rarity) ?? speciesByRarity.set(rarity, new Set()).get(rarity)!).add(p.pokemon_id);
     const gen = p.pokemon.generation;
     (ownedByGen.get(gen) ?? ownedByGen.set(gen, new Set()).get(gen)!).add(p.pokemon_id);
     if (p.pokemon.rarity === 'LEGENDARY') {
@@ -296,6 +299,20 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
       const gen = Number(genComplete[1]);
       const total = GEN_COUNT[gen] ?? 0;
       return { current: Math.min(ownedByGen.get(gen)?.size ?? 0, total), required: total };
+    }
+
+    // Rarity collection — distinct species owned of a rarity.
+    const rarMatch = badgeId.match(/^rarity_(common|rare|epic|legendary)_(\d+)$/);
+    if (rarMatch) {
+      const cur = speciesByRarity.get(rarMatch[1].toUpperCase())?.size ?? 0;
+      return { current: Math.min(cur, Number(rarMatch[2])), required: Number(rarMatch[2]) };
+    }
+
+    // Generation collection — distinct species owned of a generation (gen{N}_{tier}).
+    const genColl = badgeId.match(/^gen(\d+)_(\d+)$/);
+    if (genColl) {
+      const cur = ownedByGen.get(Number(genColl[1]))?.size ?? 0;
+      return { current: Math.min(cur, Number(genColl[2])), required: Number(genColl[2]) };
     }
 
     return undefined;

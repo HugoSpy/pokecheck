@@ -1,6 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { STARTER_EVO } from '../services/badgeService';
+import { STARTER_EVO, RARITY_COLLECTION, GENERATION_COLLECTION_TIERS } from '../services/badgeService';
 
 const prisma = new PrismaClient();
 
@@ -112,6 +112,32 @@ for (const t of TYPE_BADGE_TYPES) {
   }
 }
 
+// ── Rarity collection badges (15): distinct species per rarity ──
+const RARITY_BADGE_DEFS: Array<{ key: string; fr: string }> = [
+  { key: 'common',    fr: 'Communs'     },
+  { key: 'rare',      fr: 'Rares'       },
+  { key: 'epic',      fr: 'Épiques'     },
+  { key: 'legendary', fr: 'Légendaires' },
+];
+const RARITY_TIER_META: Record<number, { prefix: string; coins: Record<string, number> }> = {
+  5:  { prefix: 'Amateur des',         coins: { common: 50,  rare: 75,   epic: 100,  legendary: 150  } },
+  10: { prefix: 'Collectionneur des',  coins: { common: 150, rare: 200,  epic: 300,  legendary: 500  } },
+  25: { prefix: 'Expert des',          coins: { common: 300, rare: 500,  epic: 800,  legendary: 1500 } },
+  50: { prefix: 'Maître des',          coins: { common: 600, rare: 1000, epic: 2000, legendary: 5000 } },
+};
+for (const { key, fr } of RARITY_BADGE_DEFS) {
+  for (const tier of RARITY_COLLECTION[key.toUpperCase()]) {
+    const meta = RARITY_TIER_META[tier];
+    BADGES.push({
+      id: `rarity_${key}_${tier}`,
+      name: `${meta.prefix} ${fr}`,
+      description: `Possède ${tier} Pokémon ${fr} distincts`,
+      category: 'rarity',
+      coin_reward: meta.coins[key],
+    });
+  }
+}
+
 async function main() {
   // Fail fast if DB is unreachable
   try {
@@ -137,6 +163,28 @@ async function main() {
       category: 'starter_evo',
       coin_reward: 600,
     });
+  }
+
+  // Generation collection badges — distinct species per region. Tier 100 is
+  // gated on the real per-gen species count read from the DB (gens 6/7 < 100).
+  const REGIONS: Record<number, string> = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unova', 6: 'Kalos', 7: 'Alola' };
+  const GEN_TIER_PREFIX: Record<number, string> = { 10: 'Explorateur', 25: 'Voyageur', 50: 'Habitué', 100: 'Expert' };
+  const GEN_TIER_COINS: Record<number, number> = { 10: 100, 25: 250, 50: 500, 100: 1200 };
+  const genCounts = await prisma.pokemon.groupBy({ by: ['generation'], _count: { id: true } });
+  const genTotal = new Map(genCounts.map(g => [g.generation, g._count.id]));
+  for (let gen = 1; gen <= 7; gen++) {
+    const region = REGIONS[gen];
+    const elision = /^[AEIOU]/i.test(region) ? "d'" : 'de ';
+    for (const tier of GENERATION_COLLECTION_TIERS) {
+      if (tier === 100 && (genTotal.get(gen) ?? 0) < 100) continue;
+      BADGES.push({
+        id: `gen${gen}_${tier}`,
+        name: `${GEN_TIER_PREFIX[tier]} ${elision}${region}`,
+        description: `Possède ${tier} espèces distinctes ${elision}${region}`,
+        category: 'region',
+        coin_reward: GEN_TIER_COINS[tier],
+      });
+    }
   }
 
   console.log(`Seeding ${BADGES.length} badges...`);

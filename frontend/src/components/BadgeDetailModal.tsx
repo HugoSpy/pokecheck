@@ -5,8 +5,8 @@ import PokemonCard from './PokemonCard';
 import './BadgeDetailModal.css';
 
 const CATEGORY_EMOJI: Record<string, string> = {
-  streak: '🔥', trade: '🔄', pokedex: '📖', starters: '🌱', starter_evo: '🌿',
-  generation: '🌍', legendary: '⭐', types: '💎', battle: '⚔️', market: '🪙', shiny: '✨',
+  streak: '🔥', trade: '🔄', pokedex: '📖', rarity: '💠', starters: '🌱', starter_evo: '🌿',
+  generation: '🌍', region: '🗺️', legendary: '⭐', types: '💎', battle: '⚔️', market: '🪙', shiny: '✨',
 };
 
 // Unit shown after "X / Y" in the progress bar, per badge family.
@@ -18,7 +18,9 @@ function unitFor(badge: AllBadgeEntry): string {
     case 'trade': return 'échanges';
     case 'streak': return 'jours';
     case 'shiny': return 'shinies';
-    case 'types': return 'espèces';
+    case 'types':
+    case 'rarity':
+    case 'region': return 'espèces';
     default: return 'Pokémon';
   }
 }
