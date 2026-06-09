@@ -1,0 +1,172 @@
+.psm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(2px);
+}
+
+.psm-modal {
+  width: min(720px, 100%);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated, 0 20px 60px rgba(0, 0, 0, 0.5));
+  overflow: hidden;
+}
+
+.psm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.psm-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.psm-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 20px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color 0.15s, background 0.15s;
+}
+.psm-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+
+.psm-body {
+  padding: 16px 18px;
+  overflow-y: auto;
+}
+
+.psm-loading, .psm-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 0;
+  color: var(--text-muted);
+  font-family: var(--font-condensed);
+}
+
+/* ── Step 1: species grid ── */
+.psm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.psm-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 6px;
+  background: var(--bg-deep, var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, transform 0.1s;
+}
+.psm-card:hover { border-color: var(--accent); transform: translateY(-2px); }
+
+.psm-card-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.psm-card-name {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.psm-card-rarity {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Step 2: owners ── */
+.psm-back {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.psm-back:hover { border-color: var(--border-bright); color: var(--text-primary); }
+
+.psm-owner-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 0 12px;
+}
+.psm-owner-sprite { width: 72px; height: 72px; object-fit: contain; }
+
+.psm-owners {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.psm-owner {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  background: var(--bg-deep, var(--bg-card));
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.psm-owner:hover { border-color: var(--accent); background: var(--bg-hover); }
+
+.psm-owner-name {
+  font-family: var(--font-body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.psm-owner-count {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--accent);
+  background: var(--accent-dim);
+  border-radius: var(--radius-sm);
+  padding: 2px 9px;
+}

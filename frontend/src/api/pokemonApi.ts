@@ -1,5 +1,40 @@
 import { apiFetch } from './client';
-import type { PokemonInfo, UserInfo, UserPokemonInstance, RollCardData, DrawDuplicateInfo } from './types';
+import type { PokemonInfo, UserInfo, UserPokemonInstance, RollCardData, DrawDuplicateInfo, Rarity } from './types';
+
+// A global Pokémon species (from the Pokemon table, not a user's instance).
+export interface PokemonSpecies {
+  id: number;
+  name: string;
+  rarity: Rarity;
+  points: number;
+  types: string[];
+  generation: number;
+  sprite_url: string;
+}
+
+export interface PokemonOwner {
+  userId: string;
+  displayName: string;
+  count: number;
+}
+
+export async function searchPokemonSpecies(params: {
+  name?: string;
+  type?: string | null;
+  rarity?: string | null;
+  limit?: number;
+}): Promise<{ pokemons: PokemonSpecies[] }> {
+  const qs = new URLSearchParams();
+  if (params.name) qs.set('name', params.name);
+  if (params.type) qs.set('type', params.type);
+  if (params.rarity) qs.set('rarity', params.rarity);
+  if (params.limit) qs.set('limit', String(params.limit));
+  return apiFetch<{ pokemons: PokemonSpecies[] }>(`/pokemon/search?${qs.toString()}`);
+}
+
+export async function getPokemonOwners(pokemonId: number): Promise<{ owners: PokemonOwner[] }> {
+  return apiFetch<{ owners: PokemonOwner[] }>(`/pokemon/${pokemonId}/owners`);
+}
 
 // HIDDEN FEATURE — force_ditto param added
 export async function draw(force_shiny?: boolean, force_ditto?: boolean): Promise<{ pokemon: PokemonInfo } & DrawDuplicateInfo> {
