@@ -278,6 +278,13 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 10px;
+  /* Each card keeps its natural height (same as the Pokédex grid): size rows to
+     their content, pack them from the top, and don't stretch cards to fill the
+     track. Without this, the max-height scroll container lets the grid stretch
+     the rows when there are many cards, squashing the cards into thin bars. */
+  grid-auto-rows: max-content;
+  align-items: start;
+  align-content: start;
   max-height: 480px;
   overflow-y: auto;
   padding-right: 4px;
