@@ -132,6 +132,9 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
     where: {
       user_id: userId,
       ...(lockedIds.length > 0 ? { id: { notIn: lockedIds } } : {}),
+      // For trade selection, also hide Pokémon still under the 24h trade cooldown
+      // (tradeable_at in the future). null = never traded = tradeable.
+      ...(forTrade ? { OR: [{ tradeable_at: null }, { tradeable_at: { lte: new Date() } }] } : {}),
     },
     include: { pokemon: true },
     orderBy: { obtained_at: 'desc' },
