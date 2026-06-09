@@ -106,7 +106,7 @@ export default function Trades() {
     setLoadingTheirs(true);
     setError(null);
     try {
-      const data = await getPublicPokedex(userId);
+      const data = await getPublicPokedex(userId, { forTrade: true });
       setTheirPokemons(data.pokemons);
       setTargetUserId(userId);
       setTargetUserName(data.user.display_name);
