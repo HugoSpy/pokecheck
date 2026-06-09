@@ -23,7 +23,7 @@ const BADGES = [
   { id: 'starters_gen2', name: 'Trio Johto',   description: 'Possède Germignon, Héricendre et Totodile',   category: 'starters', coin_reward: 500 },
   { id: 'starters_gen3', name: 'Trio Hoenn',   description: 'Possède Arcko, Poussifeu et Gobou',           category: 'starters', coin_reward: 500 },
   { id: 'starters_gen4', name: 'Trio Sinnoh',  description: 'Possède Tortipouss, Ouisticram et Tiplouf',   category: 'starters', coin_reward: 500 },
-  { id: 'starters_gen5', name: 'Trio Unova',   description: 'Possède Vipélierre, Gruikui et Moustillon',   category: 'starters', coin_reward: 500 },
+  { id: 'starters_gen5', name: 'Trio Unys',   description: 'Possède Vipélierre, Gruikui et Moustillon',   category: 'starters', coin_reward: 500 },
   { id: 'starters_gen6', name: 'Trio Kalos',   description: 'Possède Marisson, Feunnec et Grenousse',      category: 'starters', coin_reward: 500 },
   { id: 'starters_gen7', name: 'Trio Alola',   description: 'Possède Brindibou, Flamiaou et Otaquin',      category: 'starters', coin_reward: 500 },
   // Types
@@ -34,7 +34,7 @@ const BADGES = [
   { id: 'legendary_gen2',   name: 'Maître Johto',          description: 'Possède tous les légendaires Gen 2',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen3',   name: 'Maître Hoenn',          description: 'Possède tous les légendaires Gen 3',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen4',   name: 'Maître Sinnoh',         description: 'Possède tous les légendaires Gen 4',                 category: 'legendary', coin_reward: 2000 },
-  { id: 'legendary_gen5',   name: 'Maître Unova',          description: 'Possède tous les légendaires Gen 5',                 category: 'legendary', coin_reward: 2000 },
+  { id: 'legendary_gen5',   name: 'Maître Unys',          description: 'Possède tous les légendaires Gen 5',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen6',   name: 'Maître Kalos',          description: 'Possède tous les légendaires Gen 6',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen7',   name: 'Maître Alola',          description: 'Possède tous les légendaires Gen 7',                 category: 'legendary', coin_reward: 2000 },
   // Pokédex
@@ -49,7 +49,7 @@ const BADGES = [
   { id: 'gen2_complete', name: 'Complétion Johto',  description: 'Possède les 100 Pokémon de Johto',  category: 'generation', coin_reward: 5000 },
   { id: 'gen3_complete', name: 'Complétion Hoenn',  description: 'Possède les 135 Pokémon de Hoenn',  category: 'generation', coin_reward: 5000 },
   { id: 'gen4_complete', name: 'Complétion Sinnoh', description: 'Possède les 107 Pokémon de Sinnoh', category: 'generation', coin_reward: 5000 },
-  { id: 'gen5_complete', name: 'Complétion Unova',  description: 'Possède les 156 Pokémon de Unova',  category: 'generation', coin_reward: 5000 },
+  { id: 'gen5_complete', name: 'Complétion Unys',  description: "Possède les 156 Pokémon d'Unys",  category: 'generation', coin_reward: 5000 },
   { id: 'gen6_complete', name: 'Complétion Kalos',  description: 'Possède les 72 Pokémon de Kalos',   category: 'generation', coin_reward: 5000 },
   { id: 'gen7_complete', name: 'Complétion Alola',  description: 'Possède les 88 Pokémon de Alola',   category: 'generation', coin_reward: 5000 },
   // Battle (victoires en Battle de caisse)
@@ -167,7 +167,7 @@ async function main() {
 
   // Generation collection badges — distinct species per region. Tier 100 is
   // gated on the real per-gen species count read from the DB (gens 6/7 < 100).
-  const REGIONS: Record<number, string> = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unova', 6: 'Kalos', 7: 'Alola' };
+  const REGIONS: Record<number, string> = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unys', 6: 'Kalos', 7: 'Alola' };
   const GEN_TIER_PREFIX: Record<number, string> = { 10: 'Explorateur', 25: 'Voyageur', 50: 'Habitué', 100: 'Expert' };
   const GEN_TIER_COINS: Record<number, number> = { 10: 100, 25: 250, 50: 500, 100: 1200 };
   const genCounts = await prisma.pokemon.groupBy({ by: ['generation'], _count: { id: true } });
