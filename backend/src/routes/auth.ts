@@ -17,7 +17,7 @@ const prisma = new PrismaClient();
 const SESSION_DURATION = (process.env.SESSION_DURATION ?? '1h') as jwt.SignOptions['expiresIn'];
 
 export function signSessionToken(
-  user: { id: string; ms_id: string; display_name: string; is_admin: boolean },
+  user: { id: string; ms_id: string; display_name: string; nickname?: string | null; is_admin: boolean },
   expiresIn: jwt.SignOptions['expiresIn'] = SESSION_DURATION,
   opts: { drawGrant?: { type: 'one-shot'; tokenId: string } } = {}
 ): string {
@@ -25,7 +25,10 @@ export function signSessionToken(
     {
       userId: user.id,
       ms_id: user.ms_id,
-      display_name: user.display_name,
+      // The JWT carries the EFFECTIVE display name (nickname overrides the
+      // Azure-synced display_name), so req.user.display_name — used for trade
+      // notifications and the battle socket — reflects the chosen nickname.
+      display_name: user.nickname ?? user.display_name,
       isAdmin: user.is_admin === true,
       ...(opts.drawGrant ? { drawGrant: opts.drawGrant } : {}),
     },
@@ -173,6 +176,7 @@ if (process.env.MICROSOFT_CLIENT_ID) {
           userId: user.id,
           ms_id: user.ms_id,
           display_name: user.display_name,
+          nickname: user.nickname,
           is_admin: user.is_admin,
         });
       } catch (e) {
@@ -216,11 +220,12 @@ router.get('/microsoft/callback', (req: Request, res: Response, next: NextFuncti
         res.redirect(`${process.env.FRONTEND_REDIRECT_URL ?? 'https://pokecheck-tau.vercel.app'}?auth_error=${msg}`);
         return;
       }
-      const u = user as { userId: string; ms_id: string; display_name: string; is_admin: boolean };
+      const u = user as { userId: string; ms_id: string; display_name: string; nickname?: string | null; is_admin: boolean };
       const sessionToken = signSessionToken({
         id: u.userId,
         ms_id: u.ms_id,
         display_name: u.display_name,
+        nickname: u.nickname,
         is_admin: u.is_admin,
       });
       setSessionCookie(res, sessionToken);
@@ -294,7 +299,7 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
       { drawGrant: { type: 'one-shot', tokenId: record.id } }
     );
     setSessionCookie(res, sessionToken);
-    res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny, force_ditto: record.force_ditto }); // HIDDEN FEATURE
+    res.json({ user: { id: user.id, display_name: user.nickname ?? user.display_name, total_score: user.total_score }, force_shiny: record.force_shiny, force_ditto: record.force_ditto }); // HIDDEN FEATURE
     claimDailyLogin(user.id)
       .then(result => { if (!result.already_claimed) return checkBadges(user.id); })
       .catch(() => {});
@@ -322,7 +327,7 @@ router.get('/one-shot', async (req: Request, res: Response): Promise<void> => {
     { drawGrant: { type: 'one-shot', tokenId: record.id } }
   );
   setSessionCookie(res, sessionToken);
-  res.json({ user: { id: user.id, display_name: user.display_name, total_score: user.total_score } });
+  res.json({ user: { id: user.id, display_name: user.nickname ?? user.display_name, total_score: user.total_score } });
   claimDailyLogin(user.id)
     .then(result => { if (!result.already_claimed) return checkBadges(user.id); })
     .catch(() => {});

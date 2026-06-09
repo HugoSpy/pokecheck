@@ -223,10 +223,10 @@ router.post('/attendance/:id/cancel', async (req: Request, res: Response): Promi
 // GET /admin/users — dropdown list for messaging
 router.get('/users', async (_req: Request, res: Response): Promise<void> => {
   const users = await prisma.user.findMany({
-    select: { id: true, display_name: true },
+    select: { id: true, display_name: true, nickname: true },
     orderBy: { display_name: 'asc' },
   });
-  res.json({ users });
+  res.json({ users: users.map(u => ({ id: u.id, display_name: u.nickname ?? u.display_name })) });
 });
 
 // POST /admin/message/all — broadcast to every user

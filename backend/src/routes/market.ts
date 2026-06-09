@@ -13,7 +13,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
     where: { status: 'active' },
     orderBy: { created_at: 'desc' },
     include: {
-      seller: { select: { id: true, display_name: true } },
+      seller: { select: { id: true, display_name: true, nickname: true } },
     },
   });
 
@@ -25,6 +25,7 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
       });
       return {
         ...listing,
+        seller: { id: listing.seller.id, display_name: listing.seller.nickname ?? listing.seller.display_name },
         userPokemon: up
           ? {
               instanceId: up.id,
