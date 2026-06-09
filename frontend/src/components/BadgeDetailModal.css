@@ -32,8 +32,8 @@
 }
 
 .bdm-panel--unlocked {
-  border-color: #f5a62366;
-  box-shadow: 0 0 32px #f5a62322, var(--shadow-elevated);
+  border-color: var(--gold);
+  box-shadow: 0 0 32px var(--gold-dim), var(--shadow-elevated);
 }
 
 @keyframes bdm-pop {
@@ -48,7 +48,7 @@
   background: none;
   border: none;
   color: var(--text-muted);
-  font-size: 18px;
+  font-size: var(--text-xl);
   cursor: pointer;
   transition: color var(--transition);
 }
@@ -60,7 +60,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  filter: drop-shadow(0 0 14px rgba(245, 166, 35, 0.35));
+  filter: drop-shadow(0 0 14px var(--gold-dim));
 }
 .bdm-icon.locked {
   filter: grayscale(1);
@@ -69,29 +69,30 @@
 
 .bdm-name {
   font-family: var(--font-display);
-  font-size: var(--text-xl);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .bdm-desc {
   font-family: var(--font-condensed);
+  font-size: var(--text-base);
   color: var(--text-secondary);
-  font-size: var(--text-sm);
   max-width: 320px;
   margin: 0;
 }
 
 .bdm-unlocked-at {
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: var(--text-sm);
   color: var(--text-muted);
 }
 
 .bdm-claimed {
   font-family: var(--font-condensed);
+  font-size: var(--text-base);
   font-weight: 700;
-  color: #4ade80;
+  color: var(--success);
 }
 
 .bdm-claim-btn {
@@ -103,17 +104,18 @@
   font-family: var(--font-condensed);
   font-weight: 700;
   letter-spacing: 0.04em;
-  color: #000;
-  background: var(--gold, #f5a623);
+  font-size: var(--text-base);
+  color: #000; /* on-accent button text — project convention (btn-primary, open-btn) */
+  background: var(--gold);
   border: none;
   border-radius: var(--radius);
   cursor: pointer;
-  box-shadow: 0 0 20px #f5a62355;
+  box-shadow: 0 0 20px var(--gold-dim);
   transition: transform var(--transition), box-shadow var(--transition);
 }
 .bdm-claim-btn:hover:not(:disabled) {
   transform: translateY(-1px) scale(1.03);
-  box-shadow: 0 0 30px #f5a62388;
+  box-shadow: 0 0 30px var(--gold);
 }
 .bdm-claim-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
@@ -127,10 +129,9 @@
   font-size: var(--text-md);
   font-weight: 700;
   letter-spacing: 0.02em;
-  color: var(--gold, #f5a623);
-  background: rgba(245, 166, 35, 0.1);
-  border: 1px solid rgba(245, 166, 35, 0.35);
-  border-radius: 999px;
+  color: var(--gold);
+  background: var(--gold-dim);
+  border-radius: var(--radius-pill);
 }
 
 /* ── Progress ── */
@@ -144,19 +145,19 @@
 .bdm-progress-bar {
   height: 10px;
   width: 100%;
-  background: var(--bg-card, rgba(255, 255, 255, 0.06));
-  border-radius: 999px;
+  background: var(--bg-card);
+  border-radius: var(--radius-pill);
   overflow: hidden;
 }
 .bdm-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), var(--accent-glow, var(--accent)));
-  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+  border-radius: var(--radius-pill);
   transition: width 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .bdm-progress-label {
   font-family: var(--font-condensed);
-  font-size: var(--text-sm);
+  font-size: var(--text-base);
   font-weight: 700;
   color: var(--text-primary);
 }
