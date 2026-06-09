@@ -48,6 +48,15 @@ export interface BattleRoom {
   starting?: boolean;
   persisted?: boolean;
   rosterSnapshot?: { userId: string; displayName: string }[];
+  // Phase 2.1 — synchronized loading screen. After battle:animation_start each
+  // client preloads its sprites and emits battle:client_ready; `readyClients`
+  // counts them (deduped via `readyClientIds`). When every client is ready (or
+  // `beginTimeout` fires after 15s) the server emits battle:begin and the rolls
+  // start in lockstep. `begun` makes the begin emission idempotent.
+  readyClients?: number;
+  readyClientIds?: Set<string>;
+  beginTimeout?: ReturnType<typeof setTimeout> | null;
+  begun?: boolean;
 }
 
 export interface Lobby {
@@ -222,6 +231,14 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
       rooms.delete(roomId);
       return { room: undefined, deleted: true };
     }
+    // A player leaving while everyone is still on the synchronized loading screen
+    // invalidates the ready count — reset it so a stale tally can't trigger
+    // battle:begin early. The 15s safety timeout still guarantees the battle
+    // begins for the remaining players.
+    if (!room.begun) {
+      room.readyClients = 0;
+      room.readyClientIds?.clear();
+    }
     return { room, deleted: false };
   }
 
@@ -241,6 +258,10 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
   room.starting = false;
   room.persisted = false;
   room.rosterSnapshot = undefined;
+  room.readyClients = 0;
+  room.readyClientIds = undefined;
+  room.begun = false;
+  if (room.beginTimeout) { clearTimeout(room.beginTimeout); room.beginTimeout = null; }
 
   return { room, deleted: false };
 }

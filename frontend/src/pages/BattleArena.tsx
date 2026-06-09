@@ -1,29 +1,35 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import PackRoll from '../components/PackRoll';
 import { getPendingAnimation, getPendingTie } from '../socket/battleSocket';
-import type { Lobby, BattleAnimationPayload, BattlePokemon } from '../socket/battleTypes';
+import type { Lobby, BattleAnimationPayload, BattleBeginPayload, BattlePokemon } from '../socket/battleTypes';
 import type { RollCardData } from '../api/types';
 import './Battle.css';
+import './OpenPack.css'; // pokeball loader + preload bar (event-pack loading screen)
 
 interface BattleArenaProps {
   lobby: Lobby;
   battleAnimation: BattleAnimationPayload | null;
+  battleBegin: BattleBeginPayload | null;
   isTie: boolean;
   myUserId: string | undefined;
   onReturn: () => void;
   onAck: () => void;
+  onClientReady: (roomId: string) => void;
 }
 
 // Matches PackRoll's internal timing so we know when every roll has finished.
 const ROLL_DURATION = 4000;
 const REVEAL_TAIL = 1800;
 
-async function preloadImages(urls: string[]): Promise<void> {
+async function preloadImages(urls: string[], onProgress?: (loaded: number, total: number) => void): Promise<void> {
+  const total = urls.length;
+  let loaded = 0;
   await Promise.all(
     urls.map(url => new Promise<void>((resolve) => {
       const img = new Image();
-      img.onload = () => resolve();
-      img.onerror = () => resolve();
+      const done = () => { loaded++; onProgress?.(loaded, total); resolve(); };
+      img.onload = done;
+      img.onerror = done;
       img.src = url;
     })),
   );
@@ -33,11 +39,19 @@ function displayNameFor(lobby: Lobby, userId: string): string {
   return lobby.players.find(p => p.userId === userId)?.displayName ?? 'Joueur';
 }
 
-export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, onReturn, onAck }: BattleArenaProps) {
+export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie, myUserId, onReturn, onAck, onClientReady }: BattleArenaProps) {
   const [ready, setReady] = useState(false);
+  const [progress, setProgress] = useState(0);
   const [showOutcome, setShowOutcome] = useState(false);
   const ackedRef = useRef(false);
   const startAtRef = useRef<number | null>(null);
+  const clientReadySentRef = useRef(false);
+
+  // The real start signal (battle:begin), emitted once every client has
+  // preloaded. Until it arrives the arena stays on the loading screen. Guarded
+  // by roomId so a stale begin from a prior battle is ignored.
+  const begin: BattleBeginPayload | null =
+    battleBegin && battleBegin.roomId === lobby.id ? battleBegin : null;
 
   // A tie is active if the hook says so, or a tie landed before this mounted.
   const tieActive = isTie || getPendingTie() !== null;
@@ -61,7 +75,10 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
     if (anim && anim.startAt !== startAtRef.current) {
       startAtRef.current = anim.startAt;
       setShowOutcome(false);
+      setReady(false);
+      setProgress(0);
       ackedRef.current = false;
+      clientReadySentRef.current = false;
     }
   }, [anim]);
 
@@ -83,17 +100,27 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
     let cancelled = false;
     const urls = Object.values(anim.strips).flat().map(c => c.sprite_url);
     Promise.race([
-      preloadImages(urls),
+      preloadImages(urls, (l, t) => { if (!cancelled) setProgress(l / t); }),
       new Promise<void>(resolve => setTimeout(resolve, 8000)),
     ]).then(() => { if (!cancelled) setReady(true); });
     return () => { cancelled = true; };
   }, [anim]);
 
-  // Reveal the outcome banner once all rolls have finished, and ack the result
-  // so the backend persists the BattleRecord (only the first ack writes).
+  // Once preloaded, tell the server this client is ready (once per draw). The
+  // backend starts the rolls only when every client has signalled ready.
   useEffect(() => {
-    if (!anim || !ready) return;
-    const doneIn = Math.max(0, anim.startAt - Date.now()) + ROLL_DURATION + REVEAL_TAIL;
+    if (ready && !clientReadySentRef.current) {
+      clientReadySentRef.current = true;
+      onClientReady(lobby.id);
+    }
+  }, [ready, lobby.id, onClientReady]);
+
+  // Reveal the outcome banner once all rolls have finished, and ack the result
+  // so the backend persists the BattleRecord (only the first ack writes). Timed
+  // from battle:begin's startAt — the shared, real start instant.
+  useEffect(() => {
+    if (!begin) return;
+    const doneIn = Math.max(0, begin.startAt - Date.now()) + ROLL_DURATION + REVEAL_TAIL;
     const t = setTimeout(() => {
       setShowOutcome(true);
       if (!ackedRef.current) {
@@ -102,7 +129,7 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
       }
     }, doneIn + 250);
     return () => clearTimeout(t);
-  }, [anim, ready, onAck]);
+  }, [begin, onAck]);
 
   // Winner = highest-points result. Ties resolve to the first in player order.
   const winnerId = useMemo(() => {
@@ -127,14 +154,31 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
     </div>
   ) : null;
 
-  // ── Waiting for the draw / sprite preload ──
-  if (!anim || !ready) {
+  // ── Synchronized loading screen (event-pack style) ──
+  // Shown until battle:begin arrives: first while preloading sprites, then while
+  // waiting for every other client to finish preloading too.
+  if (!anim || !begin) {
     return (
-      <div className="battle-arena">
+      <div className="pack-page battle-loading-page">
+        <div className="scanlines" />
         {tieOverlay}
-        <div className="battle-arena-spinner" />
-        <h1 className="battle-arena-title">La battle va commencer…</h1>
-        <p className="battle-arena-pack">{lobby.packName}</p>
+        <div className="pack-stage">
+          <div className="pokeball-wrap spinning">
+            <div className="pokeball">
+              <div className="pokeball-top" />
+              <div className="pokeball-band" />
+              <div className="pokeball-bottom" />
+              <div className="pokeball-center"><div className="pokeball-button" /></div>
+            </div>
+            <div className="pokeball-glow" />
+          </div>
+          <div className="loading-label">
+            {!ready ? 'Chargement des cartes…' : 'En attente des autres joueurs…'}
+          </div>
+          <div className="preload-bar-wrap">
+            <div className="preload-bar" style={{ width: `${(ready ? 1 : progress) * 100}%` }} />
+          </div>
+        </div>
       </div>
     );
   }
@@ -157,10 +201,10 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
           </div>
           <div className="battle-roll-cell full">
             <PackRoll
-              key={`me-${anim.startAt}`}
+              key={`me-${begin.startAt}`}
               strip={toCards(anim.strips[me])}
               winner={winnerOf(me)}
-              startAt={anim.startAt}
+              startAt={begin.startAt}
               flash
               onDone={() => { /* outcome handled centrally */ }}
             />
@@ -179,10 +223,10 @@ export default function BattleArena({ lobby, battleAnimation, isTie, myUserId, o
               </div>
               <div className="battle-roll-cell mini">
                 <PackRoll
-                  key={`${uid}-${anim.startAt}`}
+                  key={`${uid}-${begin.startAt}`}
                   strip={toCards(anim.strips[uid])}
                   winner={winnerOf(uid)}
-                  startAt={anim.startAt}
+                  startAt={begin.startAt}
                 />
               </div>
             </div>

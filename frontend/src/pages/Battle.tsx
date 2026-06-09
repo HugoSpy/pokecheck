@@ -216,8 +216,8 @@ function LobbyView({
 export default function Battle() {
   const { profile, refreshProfile } = useUserCtx();
   const {
-    openGames, lobby, battleAnimation, battleError, isTie,
-    browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
+    openGames, lobby, battleAnimation, battleBegin, battleError, isTie,
+    browse, unbrowse, create, join, setReady, leave, resultAck, clientReady, clearBattleError,
   } = useBattle();
   const [view, setView] = useState<View>('menu');
   const [error, setError] = useState<string | null>(null);
@@ -301,10 +301,12 @@ export default function Battle() {
         <BattleArena
           lobby={lobby}
           battleAnimation={battleAnimation}
+          battleBegin={battleBegin}
           isTie={isTie}
           myUserId={profile?.id}
           onReturn={handleLeave}
           onAck={() => resultAck(lobby.id)}
+          onClientReady={clientReady}
         />
       )}
     </div>
