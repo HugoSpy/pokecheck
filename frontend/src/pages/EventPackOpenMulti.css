@@ -1,0 +1,154 @@
+/* Multi-pack opening — N PackRoll animations side by side, then a result grid.
+   Reuses OpenPack.css for the roll internals; only layout/scaling lives here. */
+
+.multi-pack-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  padding: 24px 12px 56px;
+}
+
+/* ── Parallel rolls ── */
+.multi-rolls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 20px;
+  width: 100%;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+/* Same deterministic fixed-frame + transform-scale trick as the battle arena's
+   "mini" rolls: the inner frame keeps its natural 940×540 box so PackRoll's
+   geometry math is unaffected, and we scale the whole footprint down by --s. */
+.multi-roll-cell {
+  --fw: 940px;
+  --fh: 540px;
+  position: relative;
+  flex: 0 0 auto;
+  width: calc(var(--fw) * var(--s, 0.5));
+  height: calc(var(--fh) * var(--s, 0.5));
+}
+
+.multi-roll-cell .battle-roll-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--fw);
+  height: var(--fh);
+  transform: scale(var(--s, 0.5));
+  transform-origin: top left;
+}
+
+/* ── Result grid ── */
+.multi-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  max-width: 920px;
+}
+
+.multi-results-title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.multi-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 14px;
+  width: 100%;
+}
+
+.multi-result-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 10px;
+  border: 1px solid var(--rcolor, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--rcolor, transparent) 22%, transparent);
+}
+
+.multi-result-card.shiny {
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.35);
+}
+
+.multi-result-shiny {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  font-size: 14px;
+}
+
+.multi-result-img {
+  width: 84px;
+  height: 84px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+
+.multi-result-name {
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.multi-result-rarity {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.multi-result-pts {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.multi-result-sell {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--gold);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--gold);
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.multi-result-sell:hover:not(:disabled) {
+  background: rgba(245, 166, 35, 0.12);
+}
+
+.multi-result-sell:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.multi-result-sold {
+  margin-top: 6px;
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--success);
+}
