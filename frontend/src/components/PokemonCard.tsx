@@ -11,6 +11,9 @@ interface Props {
   selectable?: boolean;
   onSelect?: (pokemon: UserPokemonInstance) => void;
   onSell?: (instanceId: string) => Promise<void>;
+  /** When this card stands for a group of identical copies, the group size
+   *  (renders a ×N badge). Used by the Pokédex "doublons" filter. */
+  duplicateCount?: number;
 }
 
 const RARITY_COLOR: Record<string, string> = {
@@ -22,7 +25,7 @@ const RARITY_COLOR: Record<string, string> = {
 
 const SHINY_GOLD = '#d4af37';
 
-export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect, onSell }: Props) {
+export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect, onSell, duplicateCount }: Props) {
   const [imgError,    setImgError]    = useState(false);
   const [showDetail,  setShowDetail]  = useState(false);
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
@@ -114,6 +117,18 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: 10, color: '#000', fontWeight: 700,
         }}>✓</div>
+      )}
+
+      {/* Duplicate-group count (e.g. ×3 when this card stands for 3 copies) */}
+      {duplicateCount !== undefined && duplicateCount > 1 && (
+        <div style={{
+          position: 'absolute', bottom: 8, right: 8,
+          padding: '1px 7px', borderRadius: 8,
+          background: 'rgba(0,0,0,0.6)',
+          border: `1px solid ${(isShiny ? SHINY_GOLD : accentColor)}66`,
+          color: 'var(--text-primary)', fontSize: 11, fontWeight: 700,
+          fontFamily: 'var(--font-condensed)', lineHeight: 1.5,
+        }}>×{duplicateCount}</div>
       )}
 
       {/* Lock indicator */}

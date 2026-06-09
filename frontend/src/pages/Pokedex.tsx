@@ -85,9 +85,32 @@ export default function Pokedex() {
     return counts;
   }, [pokemons]);
 
-  const duplicateSpeciesCount = useMemo(() =>
-    [...pokemonIdCounts.values()].filter(n => n >= 2).length,
-  [pokemonIdCounts]);
+  // One representative per (species, shiny) group that has duplicates: the oldest
+  // copy (obtained_at ASC) — the one that contributes to the score. Maps its
+  // instanceId → the group size, so the "doublons" filter shows a single card
+  // per duplicated variant (with a ×N badge) instead of every copy.
+  const duplicateReps = useMemo(() => {
+    const groups = new Map<string, { count: number; oldest: UserPokemonInstance }>();
+    for (const p of pokemons) {
+      const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+      const g = groups.get(key);
+      if (!g) {
+        groups.set(key, { count: 1, oldest: p });
+      } else {
+        g.count += 1;
+        if (new Date(p.obtainedAt).getTime() < new Date(g.oldest.obtainedAt).getTime()) {
+          g.oldest = p;
+        }
+      }
+    }
+    const reps = new Map<string, number>();
+    for (const g of groups.values()) {
+      if (g.count > 1) reps.set(g.oldest.instanceId, g.count);
+    }
+    return reps;
+  }, [pokemons]);
+
+  const duplicateSpeciesCount = duplicateReps.size;
 
   const distinctOwned = useMemo(() => pokemonIdCounts.size, [pokemonIdCounts]);
 
@@ -148,7 +171,9 @@ export default function Pokedex() {
 
   const filtered = useMemo(() =>
     pokemons.filter(p => {
-      if (filterDuplicates && (pokemonIdCounts.get(p.id) ?? 1) < 2) return false;
+      // Duplicates filter: keep only the representative (oldest) copy of each
+      // duplicated variant, so one card stands for the whole group.
+      if (filterDuplicates && !duplicateReps.has(p.instanceId)) return false;
       if (filterGen !== null && p.generation !== filterGen) return false;
       if (filterRarity !== null && p.rarity !== filterRarity) return false;
       if (filterType !== null && !p.types.includes(filterType)) return false;
@@ -156,7 +181,7 @@ export default function Pokedex() {
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       return true;
     }),
-  [pokemons, filterDuplicates, pokemonIdCounts, filterGen, filterRarity, filterType, filterShiny, search]);
+  [pokemons, filterDuplicates, duplicateReps, filterGen, filterRarity, filterType, filterShiny, search]);
 
   const legendaryCount = pokemons.filter(p => p.rarity === 'LEGENDARY').length;
   const shinyCount = pokemons.filter(p => p.is_shiny).length;
@@ -339,6 +364,7 @@ export default function Pokedex() {
               selected={selectedIds.has(p.instanceId)}
               onSelect={toggleSelect}
               onSell={handleSell}
+              duplicateCount={filterDuplicates ? duplicateReps.get(p.instanceId) : undefined}
             />
           ))}
         </div>
