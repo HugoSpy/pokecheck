@@ -61,6 +61,13 @@ export const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack
     textureMeshName: 'Object_4',
     transparentMeshName: 'Object_6',
   },
+  'Édition Unys': {
+    textureUrl: '/pack_texture_unys.png',
+    textureFlipY: true,
+    textureMaterialName: null,
+    textureMeshName: 'Object_4',
+    transparentMeshName: 'Object_6',
+  },
 };
 
 function formatDateShort(iso: string): string {
