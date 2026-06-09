@@ -162,6 +162,12 @@ export interface SellResult {
   new_badges: string[];
 }
 
+export interface BulkSellResult {
+  sold: number;
+  coins_earned: number;
+  new_badges: string[];
+}
+
 export interface MyProfile {
   id: string;
   display_name: string;
