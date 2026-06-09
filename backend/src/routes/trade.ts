@@ -316,6 +316,14 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
       data: { status: 'cancelled', resolved_at: new Date() },
     });
 
+    // Cancel any active market listings for the exchanged Pokémon — their owner
+    // just changed, so a stale 'active' listing would let a buyer rip the Pokémon
+    // out of its new owner (same hazard as the sibling-trade cancel above).
+    await tx.marketListing.updateMany({
+      where: { pokemon_id: { in: exchangedPokemonIds }, status: 'active' },
+      data: { status: 'cancelled' },
+    });
+
     // Transfer coins
     if (trade.coins_offered > 0) {
       await spendCoins(tx, trade.from_user_id, trade.coins_offered, 'trade');

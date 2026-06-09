@@ -137,6 +137,7 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
   // concurrent request will find status='sold' (committed by the first) and get
   // count=0, triggering the 409 before any coins are moved.
   let raceDetected = false;
+  let ownershipInvalid = false;
 
   await prisma.$transaction(async tx => {
     const { count } = await tx.marketListing.updateMany({
@@ -146,6 +147,20 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
 
     if (count === 0) {
       raceDetected = true;
+      return;
+    }
+
+    // Ownership re-verification: the listed Pokémon may have left the seller (via
+    // a trade) while the listing stayed 'active'. Don't charge the buyer or rip
+    // the Pokémon out of its current owner — cancel the stale listing instead.
+    // (Same principle as the ownership re-check in /trade/accept, hotfix 963d83b.)
+    const pokemon = await tx.userPokemon.findUnique({ where: { id: listing.pokemon_id } });
+    if (!pokemon || pokemon.user_id !== listing.seller_id) {
+      await tx.marketListing.update({
+        where: { id: listingId },
+        data: { status: 'cancelled', sold_at: null, buyer_id: null },
+      });
+      ownershipInvalid = true;
       return;
     }
 
@@ -161,7 +176,7 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
     await recalculateUserPokedexValue(tx, buyerId);
   });
 
-  if (raceDetected) {
+  if (raceDetected || ownershipInvalid) {
     res.status(409).json({ error: 'Listing no longer available' });
     return;
   }
