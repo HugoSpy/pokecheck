@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { recalculateUserPokedexValue } from './pokedexValue';
+import { getSellPrice } from './coinService';
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
@@ -29,6 +30,11 @@ export interface DrawnPokemon {
 export interface DrawAndCreateResult {
   userPokemonId: string;
   pokemon: DrawnPokemon;
+  /** True when the owner already holds another instance of this exact variant
+   *  (same pokemon_id + is_shiny) — i.e. selling it won't lower total_score. */
+  isDuplicate: boolean;
+  /** Coins the drawn Pokémon would yield if sold immediately. */
+  sellPrice: number;
 }
 
 /**
@@ -86,8 +92,19 @@ export async function drawAndCreate(
 
   await recalculateUserPokedexValue(tx, userId);
 
+  // A "duplicate" is another instance of the same variant (species + shiny state).
+  const duplicateCount = await tx.userPokemon.count({
+    where: { user_id: userId, pokemon_id: pokemon.id, is_shiny: isShiny, id: { not: created.id } },
+  });
+  const sellPrice = getSellPrice({
+    is_shiny: isShiny,
+    pokemon: { id: pokemon.id, points: pokemon.points, rarity: pokemon.rarity },
+  });
+
   return {
     userPokemonId: created.id,
+    isDuplicate: duplicateCount > 0,
+    sellPrice,
     pokemon: {
       id: pokemon.id,
       name: pokemon.name,

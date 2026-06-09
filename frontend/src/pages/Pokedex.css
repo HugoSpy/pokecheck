@@ -217,12 +217,63 @@
 
 /* ── Count ── */
 .pokedex-count {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
   font-family: var(--font-condensed);
   font-size: var(--text-sm);
   color: var(--text-muted);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+
+.pokedex-select-tools {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Bulk-sell action bar (sticky above the mobile bottom-nav) ── */
+.pokedex-bulk-bar {
+  position: sticky;
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 12px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 12px;
+  background: var(--bg-elevated, #1b1b22);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}
+
+.pokedex-bulk-count {
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.pokedex-bulk-sell-btn {
+  padding: 10px 18px;
+  border: none;
+  border-radius: 8px;
+  background: var(--gold);
+  color: #1a1500;
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: filter 0.15s ease;
+}
+
+.pokedex-bulk-sell-btn:hover:not(:disabled) { filter: brightness(1.08); }
+.pokedex-bulk-sell-btn:disabled { opacity: 0.6; cursor: default; }
 
 /* ── Grid ── */
 .pokedex-grid {

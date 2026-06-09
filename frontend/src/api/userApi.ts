@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { UserBadge, DailyLoginResult, SellResult, MyProfile, AllBadgeEntry } from './types';
+import type { UserBadge, DailyLoginResult, SellResult, BulkSellResult, MyProfile, AllBadgeEntry } from './types';
 
 export async function getMyProfile(): Promise<MyProfile> {
   return apiFetch<MyProfile>('/users/me');
@@ -19,6 +19,13 @@ export async function claimDailyLogin(): Promise<DailyLoginResult> {
 
 export async function sellPokemon(userPokemonId: string): Promise<SellResult> {
   return apiFetch<SellResult>(`/sell/${userPokemonId}`, { method: 'POST' });
+}
+
+export async function sellPokemonBulk(ids: string[]): Promise<BulkSellResult> {
+  return apiFetch<BulkSellResult>('/sell/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ ids }),
+  });
 }
 
 export async function getMyBadges(): Promise<UserBadge[]> {

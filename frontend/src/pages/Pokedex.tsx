@@ -1,12 +1,16 @@
 import { useEffect, useMemo, useState, useCallback } from 'react';
 import { getMyPokedex } from '../api/pokemonApi';
-import { sellPokemon } from '../api/userApi';
+import { sellPokemon, sellPokemonBulk } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { UserInfo, UserPokemonInstance } from '../api/types';
+import { getSellPrice } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
+import Toast from '../components/Toast';
 import { Search } from '../components/icons';
 import { TYPE_FR, RARITY_FR } from '../utils/pokemon';
 import './Pokedex.css';
+
+const BULK_SELL_CHUNK = 50; // backend caps each /sell/bulk call at 50 ids
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
 const RARITIES = ['COMMON', 'RARE', 'EPIC', 'LEGENDARY'] as const;
@@ -34,6 +38,26 @@ export default function Pokedex() {
     setPokemons(prev => prev.filter(p => p.instanceId !== instanceId));
     setCoins(coins + result.coins_earned);
   }, [coins, setCoins]);
+
+  // ── Bulk-sell multi-select ──
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkSelling, setBulkSelling] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  const toggleSelect = useCallback((p: UserPokemonInstance) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(p.instanceId)) next.delete(p.instanceId);
+      else next.add(p.instanceId);
+      return next;
+    });
+  }, []);
+
+  const exitSelectMode = useCallback(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, []);
 
   const [filterDuplicates, setFilterDuplicates] = useState(false);
   const [filterGen, setFilterGen] = useState<number | null>(null);
@@ -66,6 +90,61 @@ export default function Pokedex() {
   [pokemonIdCounts]);
 
   const distinctOwned = useMemo(() => pokemonIdCounts.size, [pokemonIdCounts]);
+
+  // Instances that are safe to sell without lowering the score: every copy of a
+  // variant (species + shiny) beyond the first. Keeping one preserves the Pokédex
+  // entry and its points.
+  const duplicateInstanceIds = useMemo(() => {
+    const seenVariants = new Set<string>();
+    const extras = new Set<string>();
+    for (const p of pokemons) {
+      const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+      if (seenVariants.has(key)) extras.add(p.instanceId);
+      else seenVariants.add(key);
+    }
+    return extras;
+  }, [pokemons]);
+
+  const selectedTotal = useMemo(() =>
+    pokemons
+      .filter(p => selectedIds.has(p.instanceId))
+      .reduce((sum, p) => sum + getSellPrice(p), 0),
+  [pokemons, selectedIds]);
+
+  const selectAllDuplicates = useCallback(() => {
+    setSelectedIds(new Set(duplicateInstanceIds));
+  }, [duplicateInstanceIds]);
+
+  const handleBulkSell = useCallback(async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0 || bulkSelling) return;
+    if (ids.length > 5 &&
+        !window.confirm(`Vendre ${ids.length} Pokémon pour ~${selectedTotal.toLocaleString()} coins ?`)) {
+      return;
+    }
+    setBulkSelling(true);
+    try {
+      let totalSold = 0;
+      let totalCoins = 0;
+      for (let i = 0; i < ids.length; i += BULK_SELL_CHUNK) {
+        const res = await sellPokemonBulk(ids.slice(i, i + BULK_SELL_CHUNK));
+        totalSold += res.sold;
+        totalCoins += res.coins_earned;
+      }
+      const soldSet = new Set(ids);
+      setPokemons(prev => prev.filter(p => !soldSet.has(p.instanceId)));
+      setCoins(coins + totalCoins);
+      setSelectedIds(new Set());
+      setSelectMode(false);
+      setToast({ msg: `${totalSold} Pokémon vendus — +${totalCoins.toLocaleString()} coins`, type: 'success' });
+      // Re-sync authoritative score from the server.
+      getMyPokedex().then(data => setUser(data.user)).catch(() => {});
+    } catch (e) {
+      setToast({ msg: (e as Error).message || 'Échec de la vente groupée', type: 'error' });
+    } finally {
+      setBulkSelling(false);
+    }
+  }, [selectedIds, bulkSelling, selectedTotal, coins, setCoins]);
 
   const filtered = useMemo(() =>
     pokemons.filter(p => {
@@ -221,9 +300,27 @@ export default function Pokedex() {
         )}
       </div>
 
-      {/* Count */}
+      {/* Count + selection toolbar */}
       <div className="pokedex-count">
-        {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+        <span>{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
+        <div className="pokedex-select-tools">
+          {!selectMode ? (
+            <button className="filter-chip" onClick={() => setSelectMode(true)}>
+              Sélectionner
+            </button>
+          ) : (
+            <>
+              <button
+                className="filter-chip"
+                onClick={selectAllDuplicates}
+                disabled={duplicateInstanceIds.size === 0}
+              >
+                Tout sélectionner les doublons ({duplicateInstanceIds.size})
+              </button>
+              <button className="filter-chip" onClick={exitSelectMode}>Annuler</button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Grid */}
@@ -235,10 +332,35 @@ export default function Pokedex() {
       ) : (
         <div className="pokedex-grid">
           {filtered.map(p => (
-            <PokemonCard key={p.instanceId} pokemon={p} onSell={handleSell} />
+            <PokemonCard
+              key={p.instanceId}
+              pokemon={p}
+              selectable={selectMode}
+              selected={selectedIds.has(p.instanceId)}
+              onSelect={toggleSelect}
+              onSell={handleSell}
+            />
           ))}
         </div>
       )}
+
+      {/* Bulk-sell action bar */}
+      {selectMode && selectedIds.size > 0 && (
+        <div className="pokedex-bulk-bar">
+          <span className="pokedex-bulk-count">
+            {selectedIds.size} Pokémon sélectionné{selectedIds.size !== 1 ? 's' : ''}
+          </span>
+          <button
+            className="pokedex-bulk-sell-btn"
+            onClick={handleBulkSell}
+            disabled={bulkSelling}
+          >
+            {bulkSelling ? 'Vente…' : `Vendre tout (${selectedTotal.toLocaleString()} coins)`}
+          </button>
+        </div>
+      )}
+
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

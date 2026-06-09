@@ -130,7 +130,15 @@ export interface MarketListing {
   userPokemon: MarketUserPokemon | null;
 }
 
-export interface DrawResult {
+/** Fields every draw endpoint returns so the client can offer a quick-resell. */
+export interface DrawDuplicateInfo {
+  user_pokemon_id: string;
+  /** True when the player already owns another instance of this exact variant. */
+  is_duplicate: boolean;
+  sell_price: number;
+}
+
+export interface DrawResult extends DrawDuplicateInfo {
   pokemon: PokemonInfo;
   coins_remaining: number;
   new_badges: string[];
@@ -151,6 +159,12 @@ export interface DailyLoginResult {
 export interface SellResult {
   coins_earned: number;
   sell_price: number;
+  new_badges: string[];
+}
+
+export interface BulkSellResult {
+  sold: number;
+  coins_earned: number;
   new_badges: string[];
 }
 

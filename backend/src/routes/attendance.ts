@@ -124,7 +124,12 @@ router.post('/open', async (req: Request, res: Response): Promise<void> => {
   const streakResult = await claimDailyLogin(userId).catch(() => null);
   if (!streakResult?.already_claimed) await checkBadges(userId);
 
-  res.json({ pokemon: drawn.pokemon });
+  res.json({
+    pokemon: drawn.pokemon,
+    user_pokemon_id: drawn.userPokemonId,
+    is_duplicate: drawn.isDuplicate,
+    sell_price: drawn.sellPrice,
+  });
 });
 
 export default router;

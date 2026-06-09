@@ -3,8 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { consumeOneShotToken, consumeOneShotCode } from '../api/authApi';
 import { draw, getRandomPokemons } from '../api/pokemonApi';
 import { getAttendanceAvailable, openAttendance, type AttendanceAvailable } from '../api/attendanceApi';
+import { sellPokemon } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
+import Toast from '../components/Toast';
 import './OpenPack.css';
 
 function formatCountdown(ms: number): string {
@@ -86,6 +88,13 @@ export default function OpenPack() {
   // END HIDDEN FEATURE
   const [showActions, setShowActions] = useState(false);
   const [drumrollPhase, setDrumrollPhase] = useState<'off' | 'rolling' | 'ending'>('off');
+  // Quick-resell of a freshly drawn duplicate (post-animation).
+  const [drawInstanceId, setDrawInstanceId] = useState<string | null>(null);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [sellPrice, setSellPrice] = useState(0);
+  const [sold, setSold] = useState(false);
+  const [selling, setSelling] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   // ── Attendance mode (when no one-shot code/token in the URL) ──
   const isOneShot = !!(code || token);
@@ -192,6 +201,9 @@ export default function OpenPack() {
         ]);
         randResult = rand;
         drawnPokemon = drawResult.pokemon;
+        setDrawInstanceId(drawResult.user_pokemon_id);
+        setIsDuplicate(drawResult.is_duplicate);
+        setSellPrice(drawResult.sell_price);
       } else {
         const [rand, openResult] = await Promise.all([
           getRandomPokemons(TOTAL_CARDS),
@@ -199,6 +211,9 @@ export default function OpenPack() {
         ]);
         randResult = rand;
         drawnPokemon = openResult.pokemon;
+        setDrawInstanceId(openResult.user_pokemon_id);
+        setIsDuplicate(openResult.is_duplicate);
+        setSellPrice(openResult.sell_price);
       }
 
       const strip = randResult.pokemons.map(card => {
@@ -326,6 +341,21 @@ export default function OpenPack() {
     navigate('/pokedex');
     if (checkAttendance) {
       window.open('https://intranet.sigl.epita.fr', '_blank', 'noopener,noreferrer');
+    }
+  }
+
+  async function handleSellDuplicate(): Promise<void> {
+    if (!drawInstanceId || selling || sold) return;
+    setSelling(true);
+    try {
+      const result = await sellPokemon(drawInstanceId);
+      setSold(true);
+      await refreshProfile();
+      setToast({ msg: `Doublon revendu — +${result.coins_earned} coins`, type: 'success' });
+    } catch {
+      setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
+    } finally {
+      setSelling(false);
     }
   }
 
@@ -541,10 +571,21 @@ export default function OpenPack() {
               >
                 Ajouter au Pokédex & Checker ma présence
               </button>
+              {isDuplicate && !sold && (
+                <button
+                  className="open-btn open-btn-secondary"
+                  style={{ '--btn-color': rarityGlow } as React.CSSProperties}
+                  onClick={handleSellDuplicate}
+                  disabled={selling}
+                >
+                  {selling ? 'Revente…' : `Revendre doublon (${sellPrice} coins)`}
+                </button>
+              )}
             </div>
           )}
         </div>
       )}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

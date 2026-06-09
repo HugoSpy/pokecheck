@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
-import { spendCoins } from '../services/coinService';
+import { spendCoins, getSellPrice } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
 
@@ -101,9 +101,9 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     : pokemon.sprite_url;
   const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
 
-  await prisma.$transaction(async tx => {
+  const { userPokemonId, isDuplicate } = await prisma.$transaction(async tx => {
     await spendCoins(tx, userId, event.price, 'event_pack');
-    await tx.userPokemon.create({
+    const created = await tx.userPokemon.create({
       data: {
         user_id: userId,
         pokemon_id: pokemon.id,
@@ -113,6 +113,16 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
       },
     });
     await recalculateUserPokedexValue(tx, userId);
+    // Duplicate = another instance of this exact variant (species + shiny state).
+    const duplicateCount = await tx.userPokemon.count({
+      where: { user_id: userId, pokemon_id: pokemon.id, is_shiny: isShiny, id: { not: created.id } },
+    });
+    return { userPokemonId: created.id, isDuplicate: duplicateCount > 0 };
+  });
+
+  const sellPrice = getSellPrice({
+    is_shiny: isShiny,
+    pokemon: { id: pokemon.id, points: pokemon.points, rarity: pokemon.rarity },
   });
 
   const newBadges = await checkBadges(userId);
@@ -148,6 +158,9 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
       types: pokemon.types,
       is_shiny: isShiny,
     },
+    user_pokemon_id: userPokemonId,
+    is_duplicate: isDuplicate,
+    sell_price: sellPrice,
     strip,
     coins_remaining: updatedUser?.coins ?? 0,
     new_badges: newBadges,

@@ -1,8 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { drawEventPack } from '../api/eventApi';
+import { sellPokemon } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
+import Toast from '../components/Toast';
 import './OpenPack.css'; // reuse exact same animation CSS
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
@@ -59,7 +61,7 @@ export default function EventPackOpen() {
   const navigate = useNavigate();
   const eventId = params.get('event_id') ?? '';
 
-  const { setCoins } = useUserCtx();
+  const { setCoins, refreshProfile } = useUserCtx();
 
   const [phase, setPhase] = useState<Phase>('idle');
   const [cards, setCards] = useState<RollCardData[]>([]);
@@ -68,6 +70,13 @@ export default function EventPackOpen() {
   const [showFlash, setShowFlash] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const [progress, setProgress] = useState(0);
+  // Quick-resell of a freshly drawn duplicate (post-animation).
+  const [drawInstanceId, setDrawInstanceId] = useState<string | null>(null);
+  const [isDuplicate, setIsDuplicate] = useState(false);
+  const [sellPrice, setSellPrice] = useState(0);
+  const [sold, setSold] = useState(false);
+  const [selling, setSelling] = useState(false);
+  const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
 
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -78,6 +87,9 @@ export default function EventPackOpen() {
     try {
       const drawResult = await drawEventPack(eventId);
       setCoins(drawResult.coins_remaining);
+      setDrawInstanceId(drawResult.user_pokemon_id);
+      setIsDuplicate(drawResult.is_duplicate);
+      setSellPrice(drawResult.sell_price);
 
       const strip: RollCardData[] = [
         ...drawResult.strip.slice(0, TARGET_INDEX),
@@ -139,6 +151,21 @@ export default function EventPackOpen() {
   }, [phase]);
 
   const rarityGlow = pokemon ? (RARITY_GLOW[pokemon.rarity] ?? '#9ca3af') : '#9ca3af';
+
+  async function handleSellDuplicate(): Promise<void> {
+    if (!drawInstanceId || selling || sold) return;
+    setSelling(true);
+    try {
+      const result = await sellPokemon(drawInstanceId);
+      setSold(true);
+      await refreshProfile();
+      setToast({ msg: `Doublon revendu — +${result.coins_earned} coins`, type: 'success' });
+    } catch {
+      setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
+    } finally {
+      setSelling(false);
+    }
+  }
 
   return (
     <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}`}>
@@ -274,16 +301,29 @@ export default function EventPackOpen() {
           )}
 
           {phase === 'done' && (
-            <button
-              className="open-btn open-btn-secondary"
-              style={{ '--btn-color': rarityGlow } as React.CSSProperties}
-              onClick={() => navigate('/events')}
-            >
-              Retour aux événements →
-            </button>
+            <div className="pack-done-actions">
+              <button
+                className="open-btn"
+                style={{ '--btn-color': rarityGlow } as React.CSSProperties}
+                onClick={() => navigate('/events')}
+              >
+                Retour aux événements →
+              </button>
+              {isDuplicate && !sold && (
+                <button
+                  className="open-btn open-btn-secondary"
+                  style={{ '--btn-color': rarityGlow } as React.CSSProperties}
+                  onClick={handleSellDuplicate}
+                  disabled={selling}
+                >
+                  {selling ? 'Revente…' : `Revendre doublon (${sellPrice} coins)`}
+                </button>
+              )}
+            </div>
           )}
         </div>
       )}
+      {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

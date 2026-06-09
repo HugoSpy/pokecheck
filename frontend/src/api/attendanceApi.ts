@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { PokemonInfo } from './types';
+import type { PokemonInfo, DrawDuplicateInfo } from './types';
 
 export interface AttendanceAvailable {
   available: boolean;
@@ -22,8 +22,8 @@ export async function getAttendanceAvailable(): Promise<AttendanceAvailable> {
   return apiFetch<AttendanceAvailable>('/attendance/available', { cache: 'no-store' });
 }
 
-export async function openAttendance(attendanceId: string): Promise<{ pokemon: PokemonInfo }> {
-  return apiFetch<{ pokemon: PokemonInfo }>('/attendance/open', {
+export async function openAttendance(attendanceId: string): Promise<{ pokemon: PokemonInfo } & DrawDuplicateInfo> {
+  return apiFetch<{ pokemon: PokemonInfo } & DrawDuplicateInfo>('/attendance/open', {
     method: 'POST',
     body: JSON.stringify({ attendance_id: attendanceId }),
   });

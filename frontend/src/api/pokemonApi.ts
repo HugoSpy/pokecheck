@@ -1,9 +1,9 @@
 import { apiFetch } from './client';
-import type { PokemonInfo, UserInfo, UserPokemonInstance, RollCardData } from './types';
+import type { PokemonInfo, UserInfo, UserPokemonInstance, RollCardData, DrawDuplicateInfo } from './types';
 
 // HIDDEN FEATURE — force_ditto param added
-export async function draw(force_shiny?: boolean, force_ditto?: boolean): Promise<{ pokemon: PokemonInfo }> {
-  return apiFetch<{ pokemon: PokemonInfo }>('/draw', {
+export async function draw(force_shiny?: boolean, force_ditto?: boolean): Promise<{ pokemon: PokemonInfo } & DrawDuplicateInfo> {
+  return apiFetch<{ pokemon: PokemonInfo } & DrawDuplicateInfo>('/draw', {
     method: 'POST',
     body: JSON.stringify({
       ...(force_shiny ? { force_shiny: true } : {}),
