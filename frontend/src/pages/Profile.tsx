@@ -33,6 +33,18 @@ function categoryLabel(cat: string): string {
   return CATEGORY_LABELS[cat] ?? cat;
 }
 
+// Persisted per-category collapse state for the badges page.
+const BADGES_COLLAPSED_KEY = 'pokecheck_badges_collapsed';
+
+function loadCollapsed(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(BADGES_COLLAPSED_KEY);
+    return raw ? JSON.parse(raw) as Record<string, boolean> : {};
+  } catch {
+    return {};
+  }
+}
+
 function formatDate(iso: string | null): string {
   if (!iso) return '—';
   const d = new Date(iso);
@@ -66,6 +78,7 @@ export default function Profile() {
   const [badges, setBadges] = useState<AllBadgeEntry[]>([]);
   const [progressMap, setProgressMap] = useState<Map<string, BadgeProgressEntry>>(new Map());
   const [selectedBadge, setSelectedBadge] = useState<AllBadgeEntry | null>(null);
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>(loadCollapsed);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState(false);
@@ -84,6 +97,14 @@ export default function Profile() {
   const showToast = useCallback((msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
     setTimeout(() => setToast(null), 3000);
+  }, []);
+
+  const toggleCategory = useCallback((cat: string) => {
+    setCollapsedCats(prev => {
+      const next = { ...prev, [cat]: !prev[cat] };
+      try { localStorage.setItem(BADGES_COLLAPSED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -300,10 +321,21 @@ export default function Profile() {
 
         {categories.map(cat => {
           const catBadges = badges.filter(b => b.category === cat);
+          const isCollapsed = !!collapsedCats[cat];
           return (
             <div key={cat} className="badge-category-group">
-              <div className="badge-category-title">{categoryLabel(cat)}</div>
-              <div className="badges-grid">
+              <button
+                type="button"
+                className="badge-category-title"
+                onClick={() => toggleCategory(cat)}
+                aria-expanded={!isCollapsed}
+              >
+                {categoryLabel(cat)}
+                <span className="badge-category-line" />
+                <span className="badge-category-arrow">{isCollapsed ? '▶' : '▼'}</span>
+              </button>
+              <div className={`badge-category-content${isCollapsed ? ' collapsed' : ''}`}>
+                <div className="badges-grid">
                 {catBadges.map(badge => (
                   <button
                     type="button"
@@ -327,6 +359,7 @@ export default function Profile() {
                     )}
                   </button>
                 ))}
+                </div>
               </div>
             </div>
           );

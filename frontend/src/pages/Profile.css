@@ -96,6 +96,11 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
   font-family: var(--font-condensed);
   font-size: var(--text-md);
   font-weight: 700;
@@ -103,9 +108,13 @@
   text-transform: uppercase;
   color: var(--text-secondary);
   margin-bottom: 14px;
+  transition: color var(--transition);
+}
+.badge-category-title:hover {
+  color: var(--text-primary);
 }
 
-/* Accent bar before the label + a divider line filling the rest of the row. */
+/* Accent bar before the label. */
 .badge-category-title::before {
   content: '';
   flex: 0 0 auto;
@@ -115,11 +124,30 @@
   background: var(--accent);
   box-shadow: 0 0 8px var(--accent-glow, var(--accent));
 }
-.badge-category-title::after {
-  content: '';
+/* Divider line filling the rest of the row, between label and arrow. */
+.badge-category-line {
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, var(--border), transparent);
+}
+.badge-category-arrow {
+  flex: 0 0 auto;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+}
+
+/* ── Collapsible category content (pure-CSS 0fr/1fr grid transition) ── */
+.badge-category-content {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 280ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.badge-category-content.collapsed {
+  grid-template-rows: 0fr;
+}
+.badge-category-content > .badges-grid {
+  overflow: hidden;
+  min-height: 0;
 }
 
 /* ── Badges grid ── */
