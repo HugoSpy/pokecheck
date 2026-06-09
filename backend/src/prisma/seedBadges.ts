@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { STARTER_EVO } from '../services/badgeService';
 
 const prisma = new PrismaClient();
 
@@ -51,6 +52,22 @@ const BADGES = [
   { id: 'gen5_complete', name: 'Complétion Unova',  description: 'Possède les 156 Pokémon de Unova',  category: 'generation', coin_reward: 5000 },
   { id: 'gen6_complete', name: 'Complétion Kalos',  description: 'Possède les 72 Pokémon de Kalos',   category: 'generation', coin_reward: 5000 },
   { id: 'gen7_complete', name: 'Complétion Alola',  description: 'Possède les 88 Pokémon de Alola',   category: 'generation', coin_reward: 5000 },
+  // Battle (victoires en Battle de caisse)
+  { id: 'battle_first_win', name: 'Baptême du Feu',      description: 'Remporte ta première battle',  category: 'battle', coin_reward: 100  },
+  { id: 'battle_5_wins',    name: 'Combattant',          description: 'Remporte 5 battles',           category: 'battle', coin_reward: 300  },
+  { id: 'battle_10_wins',   name: 'Guerrier',            description: 'Remporte 10 battles',          category: 'battle', coin_reward: 600  },
+  { id: 'battle_25_wins',   name: 'Vétéran',             description: 'Remporte 25 battles',          category: 'battle', coin_reward: 1200 },
+  { id: 'battle_50_wins',   name: 'Champion de Battle',  description: 'Remporte 50 battles',          category: 'battle', coin_reward: 2500 },
+  // Marché
+  { id: 'market_sell_1',  name: 'Premier Vendeur',  description: 'Vends 1 Pokémon sur le marché',   category: 'market', coin_reward: 50   },
+  { id: 'market_sell_10', name: 'Marchand',         description: 'Vends 10 Pokémon sur le marché',  category: 'market', coin_reward: 200  },
+  { id: 'market_sell_50', name: 'Baron du Marché',  description: 'Vends 50 Pokémon sur le marché',  category: 'market', coin_reward: 1000 },
+  { id: 'market_buy_1',   name: 'Premier Achat',    description: 'Achète 1 Pokémon sur le marché',  category: 'market', coin_reward: 50   },
+  { id: 'market_buy_10',  name: 'Acheteur Régulier', description: 'Achète 10 Pokémon sur le marché', category: 'market', coin_reward: 200 },
+  // Shinies
+  { id: 'shiny_1',  name: 'Première Étoile',              description: 'Possède 1 Pokémon shiny',             category: 'shiny', coin_reward: 200  },
+  { id: 'shiny_5',  name: 'Collectionneur Chromatique',   description: 'Possède 5 Pokémon shiny distincts',   category: 'shiny', coin_reward: 700  },
+  { id: 'shiny_10', name: 'Chasseur Chromatique',         description: 'Possède 10 Pokémon shiny distincts',  category: 'shiny', coin_reward: 1500 },
 ];
 
 // ── Type collection badges (3 tiers × 18 types = 54), generated programmatically.
@@ -102,6 +119,24 @@ async function main() {
   } catch {
     console.error('Cannot connect to database. Check DATABASE_URL and that PostgreSQL is running.');
     process.exit(1);
+  }
+
+  // Starter evolution lineage badges (21) — named after the base starter using
+  // the FR name from the Pokemon table, e.g. "Lignée Salamèche".
+  const evoBaseIds = Object.values(STARTER_EVO).map(ids => ids[0]);
+  const evoBaseNames = new Map(
+    (await prisma.pokemon.findMany({ where: { id: { in: evoBaseIds } }, select: { id: true, name: true } }))
+      .map(p => [p.id, p.name]),
+  );
+  for (const [id, ids] of Object.entries(STARTER_EVO)) {
+    const baseName = evoBaseNames.get(ids[0]) ?? `#${ids[0]}`;
+    BADGES.push({
+      id,
+      name: `Lignée ${baseName}`,
+      description: `Possède toutes les évolutions de ${baseName}`,
+      category: 'starter_evo',
+      coin_reward: 600,
+    });
   }
 
   console.log(`Seeding ${BADGES.length} badges...`);

@@ -182,7 +182,10 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
     return;
   }
 
+  // The buyer earns buy badges; the seller just completed a sale, so re-check
+  // their market-sell badges too (fire-and-forget — not part of the response).
   const newBadges = await checkBadges(buyerId);
+  checkBadges(listing.seller_id).catch(() => {});
 
   const updatedBuyer = await prisma.user.findUnique({
     where: { id: buyerId },
