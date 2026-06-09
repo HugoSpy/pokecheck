@@ -117,6 +117,22 @@
 }
 .bdm-claim-btn:disabled { opacity: 0.6; cursor: not-allowed; }
 
+/* ── Reward (locked badge) ── */
+.bdm-reward {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  font-family: var(--font-condensed);
+  font-size: var(--text-md);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--gold, #f5a623);
+  background: rgba(245, 166, 35, 0.1);
+  border: 1px solid rgba(245, 166, 35, 0.35);
+  border-radius: 999px;
+}
+
 /* ── Progress ── */
 .bdm-progress {
   width: 100%;
@@ -160,30 +176,6 @@
 }
 .bdm-missing-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
-  gap: 8px;
-}
-.bdm-missing-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 8px 4px;
-  background: var(--bg-card, rgba(255, 255, 255, 0.04));
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-}
-.bdm-missing-card img {
-  width: 48px;
-  height: 48px;
-  object-fit: contain;
-  image-rendering: pixelated;
-  filter: grayscale(1) brightness(1.4) opacity(0.5);
-}
-.bdm-missing-card span {
-  font-family: var(--font-condensed);
-  font-size: 10px;
-  color: var(--text-secondary);
-  text-align: center;
-  line-height: 1.1;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
 }

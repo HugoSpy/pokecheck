@@ -200,7 +200,7 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
       where: { user_id: userId },
       select: { pokemon_id: true, is_shiny: true, pokemon: { select: { generation: true, rarity: true, types: true } } },
     }),
-    prisma.pokemon.findMany({ select: { id: true, name: true, sprite_url: true, rarity: true, generation: true } }),
+    prisma.pokemon.findMany({ select: { id: true, name: true, sprite_url: true, rarity: true, generation: true, points: true, types: true } }),
     prisma.battleRecord.count({ where: { winner_id: userId } }),
     prisma.marketListing.count({ where: { seller_id: userId, status: 'sold' } }),
     prisma.marketListing.count({ where: { buyer_id: userId, status: 'sold' } }),
@@ -238,12 +238,24 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
   const missing = (ids: number[]) =>
     ids.filter(id => !ownedIds.has(id)).map(id => {
       const p = pokemonMap.get(id);
-      return { id, name: p?.name ?? `#${id}`, spriteUrl: p?.sprite_url ?? '' };
+      return {
+        id,
+        name: p?.name ?? `#${id}`,
+        spriteUrl: p?.sprite_url ?? '',
+        rarity: p?.rarity ?? 'COMMON',
+        points: p?.points ?? 0,
+        types: p?.types ?? [],
+        generation: p?.generation ?? 0,
+      };
     });
 
   const thr = (arr: Array<{ id: string; threshold: number }>, id: string) => arr.find(b => b.id === id)?.threshold;
 
-  type Progress = { current: number; required: number; missingPokemon?: Array<{ id: number; name: string; spriteUrl: string }> };
+  type Progress = {
+    current: number;
+    required: number;
+    missingPokemon?: Array<{ id: number; name: string; spriteUrl: string; rarity: string; points: number; types: string[]; generation: number }>;
+  };
   function computeProgress(badgeId: string): Progress | undefined {
     let t: number | undefined;
     if ((t = thr(STREAK_BADGES, badgeId)) !== undefined)      return { current: Math.min(user!.streak_days, t), required: t };

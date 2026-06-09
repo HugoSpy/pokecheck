@@ -208,7 +208,15 @@ export interface BadgeProgressEntry {
   progress?: {
     current: number;
     required: number;
-    missingPokemon?: Array<{ id: number; name: string; spriteUrl: string }>;
+    missingPokemon?: Array<{
+      id: number;
+      name: string;
+      spriteUrl: string;
+      rarity: Rarity;
+      points: number;
+      types: string[];
+      generation: number;
+    }>;
   };
 }
 

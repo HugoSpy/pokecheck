@@ -87,14 +87,39 @@
   flex-direction: column;
 }
 
+/* Clear visual break between categories when scrolling. */
+.badge-category-group + .badge-category-group {
+  margin-top: 26px;
+}
+
 .badge-category-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   font-family: var(--font-condensed);
-  font-size: var(--text-xs);
+  font-size: var(--text-md);
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 10px;
+  color: var(--text-secondary);
+  margin-bottom: 14px;
+}
+
+/* Accent bar before the label + a divider line filling the rest of the row. */
+.badge-category-title::before {
+  content: '';
+  flex: 0 0 auto;
+  width: 4px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent-glow, var(--accent));
+}
+.badge-category-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
 }
 
 /* ── Badges grid ── */

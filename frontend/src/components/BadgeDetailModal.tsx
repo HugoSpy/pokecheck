@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from 'react';
-import type { AllBadgeEntry, BadgeProgressEntry } from '../api/types';
+import type { AllBadgeEntry, BadgeProgressEntry, UserPokemonInstance } from '../api/types';
 import { Coins } from './icons';
+import PokemonCard from './PokemonCard';
 import './BadgeDetailModal.css';
 
 const CATEGORY_EMOJI: Record<string, string> = {
@@ -83,6 +84,10 @@ export default function BadgeDetailModal({ badge, progress, claiming, onClaim, o
           </>
         ) : (
           <>
+            <div className="bdm-reward">
+              <Coins size={16} /> {badge.coin_reward.toLocaleString()} coins à la clé
+            </div>
+
             {p && (
               <div className="bdm-progress">
                 <div className="bdm-progress-bar">
@@ -96,12 +101,24 @@ export default function BadgeDetailModal({ badge, progress, claiming, onClaim, o
               <div className="bdm-missing">
                 <div className="bdm-missing-title">Pokémon manquants</div>
                 <div className="bdm-missing-grid">
-                  {p.missingPokemon.map(m => (
-                    <div key={m.id} className="bdm-missing-card">
-                      {m.spriteUrl && <img src={m.spriteUrl} alt={m.name} />}
-                      <span>{m.name}</span>
-                    </div>
-                  ))}
+                  {p.missingPokemon.map(m => {
+                    const inst: UserPokemonInstance = {
+                      id: m.id,
+                      name: m.name,
+                      sprite_url: m.spriteUrl,
+                      rarity: m.rarity,
+                      points: m.points,
+                      types: m.types,
+                      generation: m.generation,
+                      bst: 0,
+                      is_shiny: false,
+                      instanceId: `missing-${m.id}`,
+                      obtainedAt: '',
+                      source: 'missing',
+                      tradeable_at: null,
+                    };
+                    return <PokemonCard key={m.id} pokemon={inst} />;
+                  })}
                 </div>
               </div>
             )}
