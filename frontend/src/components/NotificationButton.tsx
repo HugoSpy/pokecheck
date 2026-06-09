@@ -138,7 +138,7 @@ export default function NotificationButton() {
         aria-label="Notifications"
         aria-expanded={open}
       >
-        {open ? <MailOpen size={22} aria-hidden /> : <Mail size={22} aria-hidden />}
+        {open ? <MailOpen size={26} aria-hidden /> : <Mail size={26} aria-hidden />}
         {unreadCount > 0 && (
           <span className="notif-badge" key={unreadCount}>
             {unreadCount > 99 ? '99+' : unreadCount}

@@ -8,8 +8,8 @@
 
 /* ── Trigger button ── */
 .notif-btn {
-  width: 3.25rem;
-  height: 3.25rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   background: var(--accent);
   border: none;
