@@ -74,7 +74,13 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
 
   const newBadges = await checkBadges(userId);
 
-  res.json({ pokemon: result.pokemon, new_badges: newBadges });
+  res.json({
+    pokemon: result.pokemon,
+    user_pokemon_id: result.userPokemonId,
+    is_duplicate: result.isDuplicate,
+    sell_price: result.sellPrice,
+    new_badges: newBadges,
+  });
 });
 
 export default router;

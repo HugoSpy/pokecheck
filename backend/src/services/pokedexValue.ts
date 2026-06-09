@@ -6,15 +6,21 @@ export async function calculateUserPokedexValue(
   prisma: PrismaExecutor,
   userId: string
 ): Promise<number> {
-  const ownedPokemons = await prisma.userPokemon.findMany({
+  // A species contributes to the score only once, no matter how many copies are
+  // owned. A shiny is treated as a *distinct variant* (its own 1/4096 rarity), so
+  // the dedup key is (pokemon_id, is_shiny): owning a normal AND a shiny of the
+  // same species counts twice, but a second normal (or second shiny) adds nothing.
+  // Each distinct variant is worth points × (is_shiny ? 3 : 1).
+  const variants = await prisma.userPokemon.findMany({
     where: { user_id: userId },
+    distinct: ['pokemon_id', 'is_shiny'],
     select: {
       is_shiny: true,
       pokemon: { select: { points: true } },
     },
   });
 
-  return ownedPokemons.reduce(
+  return variants.reduce(
     (total, owned) => total + owned.pokemon.points * (owned.is_shiny ? 3 : 1),
     0
   );
