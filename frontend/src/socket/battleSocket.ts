@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client';
-import type { BattleAnimationPayload } from './battleTypes';
+import type { BattleAnimationPayload, BattleBeginPayload } from './battleTypes';
 
 const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
@@ -33,6 +33,19 @@ export function clearPendingTie(): void {
   _pendingTie = null;
 }
 
+// Same module-scope durability for the begin signal: battle:begin can land in
+// the same tick the arena re-renders. Held until consumed or superseded by the
+// next battle:animation_start (a fresh draw).
+let _pendingBegin: BattleBeginPayload | null = null;
+
+export function getPendingBegin(): BattleBeginPayload | null {
+  return _pendingBegin;
+}
+
+export function clearPendingBegin(): void {
+  _pendingBegin = null;
+}
+
 export function getBattleSocket(): Socket {
   if (!socket) {
     socket = io(API_URL, {
@@ -48,10 +61,15 @@ export function getBattleSocket(): Socket {
     socket.on('battle:animation_start', (payload: BattleAnimationPayload) => {
       _pendingAnimation = payload;
       _pendingTie = null;
+      _pendingBegin = null; // a fresh draw supersedes any earlier begin
     });
 
     socket.on('battle:tie', (payload: { attempt: number }) => {
       _pendingTie = payload;
+    });
+
+    socket.on('battle:begin', (payload: BattleBeginPayload) => {
+      _pendingBegin = payload;
     });
   }
   return socket;

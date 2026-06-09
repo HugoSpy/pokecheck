@@ -138,7 +138,14 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
     // Freeze the roster at launch so the BattleRecord stays complete even if a
     // player disconnects during the animation (removePlayer keeps this intact).
     room.rosterSnapshot = room.players.map(p => ({ userId: p.userId, displayName: p.displayName }));
-    room.startAt = Date.now() + 500; // +500ms network buffer so all clients arm before T0
+    room.startAt = Date.now() + 500; // fallback start (only used if a client never readies)
+
+    // Reset the synchronized-loading tally for this draw, then arm a 15s safety
+    // timeout so a slow/stuck client can never block the battle forever.
+    room.readyClients = 0;
+    room.readyClientIds = new Set();
+    room.begun = false;
+    if (room.beginTimeout) clearTimeout(room.beginTimeout);
 
     io.to(room.id).emit('battle:animation_start', {
       roomId: room.id,
@@ -146,9 +153,22 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
       results,
       startAt: room.startAt,
     });
+
+    room.beginTimeout = setTimeout(() => beginBattle(io, room), 15_000);
   } catch {
     failBattle(io, room, 'Impossible de lancer la battle, réessaie.');
   }
+}
+
+// Phase 2.1 — emits battle:begin (the real start signal) exactly once, either
+// when every client has finished preloading or when the safety timeout fires.
+// startAt is +300ms so all clients schedule their roll for the same instant.
+function beginBattle(io: BattleServer, room: BattleRoom): void {
+  if (room.begun) return;
+  room.begun = true;
+  if (room.beginTimeout) { clearTimeout(room.beginTimeout); room.beginTimeout = null; }
+  room.startAt = Date.now() + 300;
+  io.to(room.id).emit('battle:begin', { roomId: room.id, startAt: room.startAt });
 }
 
 // Phase 2 — persists the finished battle exactly once AND awards the prize:
@@ -323,6 +343,18 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
         room.starting = true;
         await startBattle(io, room);
       }
+    });
+
+    // Phase 2.1 — a client finished preloading its strip sprites. Count it
+    // (deduped per user) and, once every client in the room is ready, fire the
+    // real start signal so all rolls begin in lockstep.
+    socket.on('battle:client_ready', (payload: { roomId: string }) => {
+      const room = getRoom(payload.roomId);
+      if (!room || room.status !== 'in_progress' || !room.result || room.begun) return;
+      room.readyClientIds ??= new Set();
+      room.readyClientIds.add(user.userId);
+      room.readyClients = room.readyClientIds.size;
+      if (room.readyClients >= room.players.length) beginBattle(io, room);
     });
 
     socket.on('battle:result_ack', async (payload: { roomId: string }) => {

@@ -26,6 +26,14 @@ export interface BattleErrorPayload {
   message: string;
 }
 
+// Phase 2.1 — the real "go" signal, emitted once every client has finished
+// preloading its strip sprites (or after the server's 15s safety timeout).
+// `startAt` supersedes BattleAnimationPayload.startAt as the lockstep epoch.
+export interface BattleBeginPayload {
+  roomId: string;
+  startAt: number;
+}
+
 export interface LobbyPlayer {
   userId: string;
   displayName: string;

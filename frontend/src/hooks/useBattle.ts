@@ -5,10 +5,13 @@ import {
   clearPendingAnimation,
   getPendingTie,
   clearPendingTie,
+  getPendingBegin,
+  clearPendingBegin,
 } from '../socket/battleSocket';
 import type {
   BattleAck,
   BattleAnimationPayload,
+  BattleBeginPayload,
   BattleErrorPayload,
   BattleListItem,
   CreateBattlePayload,
@@ -21,6 +24,7 @@ export function useBattle() {
   const [openGames, setOpenGames] = useState<BattleListItem[]>([]);
   const [lobby, setLobbyState] = useState<Lobby | null>(null);
   const [battleAnimation, setBattleAnimation] = useState<BattleAnimationPayload | null>(null);
+  const [battleBegin, setBattleBegin] = useState<BattleBeginPayload | null>(getPendingBegin());
   const [battleError, setBattleError] = useState<string | null>(null);
   const [isTie, setIsTie] = useState<boolean>(getPendingTie() !== null);
   const lobbyIdRef = useRef<string | null>(null);
@@ -46,8 +50,12 @@ export function useBattle() {
       if (lobbyIdRef.current === payload.roomId) {
         setBattleError(null);
         setIsTie(false);
+        setBattleBegin(null); // a fresh draw clears the previous begin
         setBattleAnimation(getPendingAnimation() ?? payload);
       }
+    }
+    function handleBegin(payload: BattleBeginPayload) {
+      if (lobbyIdRef.current === payload.roomId) setBattleBegin(payload);
     }
     function handleTie() {
       // battle:tie isn't roomId-scoped, but ties only fire for the room this
@@ -66,6 +74,7 @@ export function useBattle() {
     socket.on('battle:list', handleList);
     socket.on('battle:lobby', handleLobby);
     socket.on('battle:animation_start', handleAnimationStart);
+    socket.on('battle:begin', handleBegin);
     socket.on('battle:tie', handleTie);
     socket.on('battle:error', handleError);
 
@@ -78,6 +87,7 @@ export function useBattle() {
       socket.off('battle:list', handleList);
       socket.off('battle:lobby', handleLobby);
       socket.off('battle:animation_start', handleAnimationStart);
+      socket.off('battle:begin', handleBegin);
       socket.off('battle:tie', handleTie);
       socket.off('battle:error', handleError);
     };
@@ -118,11 +128,19 @@ export function useBattle() {
     socketRef.current.emit('battle:leave', { roomId });
     setLobby(null);
     setBattleAnimation(null);
+    setBattleBegin(null);
     setBattleError(null);
     setIsTie(false);
     clearPendingAnimation();
     clearPendingTie();
+    clearPendingBegin();
   }, [setLobby]);
+
+  // Phase 2.1 — the arena calls this once its strip sprites are preloaded; the
+  // backend starts the rolls only when every client has signalled ready.
+  const clientReady = useCallback((roomId: string) => {
+    socketRef.current.emit('battle:client_ready', { roomId });
+  }, []);
 
   // Phase 2 — fired by the arena once a player's animation finishes; the backend
   // persists the BattleRecord on the first ack it receives.
@@ -133,7 +151,7 @@ export function useBattle() {
   const clearBattleError = useCallback(() => setBattleError(null), []);
 
   return {
-    connected, openGames, lobby, battleAnimation, battleError, isTie,
-    browse, unbrowse, create, join, setReady, leave, resultAck, clearBattleError,
+    connected, openGames, lobby, battleAnimation, battleBegin, battleError, isTie,
+    browse, unbrowse, create, join, setReady, leave, resultAck, clientReady, clearBattleError,
   };
 }
