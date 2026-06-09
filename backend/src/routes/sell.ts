@@ -65,22 +65,27 @@ router.post('/bulk', authMiddleware, bulkSellLimiter, async (req: Request, res: 
         throw Object.assign(new Error('One or more Pokémon are not yours or no longer exist'), { status: 403 });
       }
 
-      // Refuse the whole batch if any selected Pokémon is locked in a pending trade.
-      const lockedTrade = await tx.trade.findFirst({
+      // Refuse only if one of these Pokémon is in the caller's OWN pending offer
+      // (from_pokemon_id). Incoming proposals that request them (to_pokemon_id)
+      // are cancelled in cascade below, not blocking.
+      const ownPendingOffer = await tx.trade.findFirst({
         where: {
           status: 'pending',
-          OR: [
-            { from_pokemon_id: { in: uniqueIds } },
-            { to_pokemon_id: { in: uniqueIds } },
-          ],
+          from_user_id: userId,
+          from_pokemon_id: { in: uniqueIds },
         },
       });
-      if (lockedTrade) {
-        throw Object.assign(new Error('One or more Pokémon are in a pending trade offer'), { status: 409 });
+      if (ownPendingOffer) {
+        throw Object.assign(new Error('One or more Pokémon are in your own pending trade offer'), { status: 409 });
       }
 
       const coinsEarned = owned.reduce((sum, up) => sum + getSellPrice(up), 0);
 
+      // Cancel any incoming pending proposals targeting these Pokémon.
+      await tx.trade.updateMany({
+        where: { status: 'pending', to_pokemon_id: { in: uniqueIds } },
+        data: { status: 'cancelled', resolved_at: new Date() },
+      });
       // Auto-cancel any active market listings for these Pokémon, then delete.
       await tx.marketListing.updateMany({
         where: { pokemon_id: { in: uniqueIds }, status: 'active' },
@@ -124,17 +129,14 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
     return;
   }
 
-  // Check no pending trade references this pokemon
-  const pendingTrade = await prisma.trade.findFirst({
-    where: {
-      status: 'pending',
-      OR: [
-        { from_pokemon_id: userPokemonId },
-        { to_pokemon_id: userPokemonId },
-      ],
-    },
+  // Only the seller's OWN pending offer (this Pokémon as from_pokemon_id) blocks
+  // the sale — they'd be selling something they're actively offering. A proposal
+  // that merely REQUESTS this Pokémon (to_pokemon_id, an incoming offer the owner
+  // never accepted) must NOT block them; it's cancelled in cascade below.
+  const ownPendingOffer = await prisma.trade.findFirst({
+    where: { status: 'pending', from_pokemon_id: userPokemonId, from_user_id: userId },
   });
-  if (pendingTrade) {
+  if (ownPendingOffer) {
     res.status(409).json({ error: 'Pokémon is in a pending trade offer' });
     return;
   }
@@ -142,6 +144,12 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
   const sellPrice = getSellPrice(userPokemon);
 
   await prisma.$transaction(async tx => {
+    // Cancel any incoming pending proposals targeting this Pokémon — selling it
+    // frees the owner, and the proposers' offers simply fall through.
+    await tx.trade.updateMany({
+      where: { status: 'pending', to_pokemon_id: userPokemonId },
+      data: { status: 'cancelled', resolved_at: new Date() },
+    });
     // Auto-cancel any active market listing so the user can sell directly
     await tx.marketListing.updateMany({
       where: { pokemon_id: userPokemonId, status: 'active' },
