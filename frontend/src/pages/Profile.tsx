@@ -322,6 +322,8 @@ export default function Profile() {
         {categories.map(cat => {
           const catBadges = badges.filter(b => b.category === cat);
           const isCollapsed = !!collapsedCats[cat];
+          const catUnlocked = catBadges.filter(b => b.unlocked).length;
+          const catPct = catBadges.length > 0 ? Math.round((catUnlocked / catBadges.length) * 100) : 0;
           return (
             <div key={cat} className="badge-category-group">
               <button
@@ -331,7 +333,16 @@ export default function Profile() {
                 aria-expanded={!isCollapsed}
               >
                 {categoryLabel(cat)}
-                <span className="badge-category-line" />
+                {isCollapsed ? (
+                  <span className="badge-category-progress">
+                    <span className="badge-category-progress-bar">
+                      <span className="badge-category-progress-fill" style={{ width: `${catPct}%` }} />
+                    </span>
+                    <span className="badge-category-progress-label">{catPct}%</span>
+                  </span>
+                ) : (
+                  <span className="badge-category-line" />
+                )}
                 <span className="badge-category-arrow">{isCollapsed ? '▶' : '▼'}</span>
               </button>
               <div className={`badge-category-content${isCollapsed ? ' collapsed' : ''}`}>

@@ -136,6 +136,37 @@
   color: var(--text-muted);
 }
 
+/* Progress bar shown in the header when the category is collapsed. */
+.badge-category-progress {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-category-progress-bar {
+  flex: 1;
+  height: 6px;
+  background: var(--bg-card);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.badge-category-progress-fill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), var(--accent-glow));
+  border-radius: var(--radius-pill);
+  transition: width 300ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.badge-category-progress-label {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text-secondary);
+}
+
 /* ── Collapsible category content (pure-CSS 0fr/1fr grid transition) ── */
 .badge-category-content {
   display: grid;
