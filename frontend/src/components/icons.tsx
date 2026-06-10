@@ -103,6 +103,17 @@ export function ShoppingBag(props: IconProps) {
   );
 }
 
+export function Store(props: IconProps) {
+  return (
+    <Svg {...props}>
+      <path d="m2 7 1.5-4h17L22 7" />
+      <path d="M4 7v13a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V7" />
+      <path d="M2 7a3 3 0 0 0 6 0 3 3 0 0 0 6 0 3 3 0 0 0 6 0" />
+      <path d="M9 21v-6h6v6" />
+    </Svg>
+  );
+}
+
 export function Calendar(props: IconProps) {
   return (
     <Svg {...props}>

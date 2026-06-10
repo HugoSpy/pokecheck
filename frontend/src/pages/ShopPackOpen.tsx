@@ -1,11 +1,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { drawEventPack, claimDailyShinyPack } from '../api/eventApi';
+import { buyShopPack } from '../api/shopApi';
 import { sellPokemon } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
 import Toast from '../components/Toast';
-import './OpenPack.css'; // reuse exact same animation CSS
+import './OpenPack.css'; // reuse exact same animation CSS (do not modify)
 
 type Phase = 'idle' | 'loading' | 'rolling' | 'reveal' | 'done';
 
@@ -56,13 +56,10 @@ async function preloadImages(urls: string[], onProgress?: (loaded: number, total
   );
 }
 
-export default function EventPackOpen() {
+export default function ShopPackOpen() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
-  const eventId = params.get('event_id') ?? '';
-  // Free daily Shiny pack mode (opened from the profile page) - claims the
-  // /users/daily-shiny-pack endpoint instead of a paid event draw.
-  const isShinyDaily = params.get('shiny') === '1';
+  const gen = parseInt(params.get('gen') ?? '', 10);
 
   const { setCoins, refreshProfile } = useUserCtx();
 
@@ -73,7 +70,6 @@ export default function EventPackOpen() {
   const [showFlash, setShowFlash] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const [progress, setProgress] = useState(0);
-  // Quick-resell of a freshly drawn duplicate (post-animation).
   const [drawInstanceId, setDrawInstanceId] = useState<string | null>(null);
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [sellPrice, setSellPrice] = useState(0);
@@ -84,11 +80,11 @@ export default function EventPackOpen() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   async function handleOpen() {
-    if (!eventId && !isShinyDaily) { setError('Paramètres manquants.'); return; }
+    if (!Number.isInteger(gen) || gen < 1 || gen > 7) { setError('Pack invalide.'); return; }
     setPhase('loading');
     setError(null);
     try {
-      const drawResult = isShinyDaily ? await claimDailyShinyPack() : await drawEventPack(eventId);
+      const drawResult = await buyShopPack(gen);
       setCoins(drawResult.coins_remaining);
       setDrawInstanceId(drawResult.user_pokemon_id);
       setIsDuplicate(drawResult.is_duplicate);
@@ -113,8 +109,10 @@ export default function EventPackOpen() {
       setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      if (e.status === 429) setError('Pack Shiny déjà récupéré aujourd\'hui.');
-      else setError(e.status === 402 ? 'Coins insuffisants.' : (err as Error).message);
+      if (e.status === 409) setError('Pack déjà acheté aujourd\'hui.');
+      else if (e.status === 402) setError('Coins insuffisants.');
+      else if (e.status === 400) setError('Ce pack n\'est plus disponible.');
+      else setError((err as Error).message);
       setPhase('idle');
     }
   }
@@ -309,9 +307,9 @@ export default function EventPackOpen() {
               <button
                 className="open-btn"
                 style={{ '--btn-color': rarityGlow } as React.CSSProperties}
-                onClick={() => navigate(isShinyDaily ? '/profile' : '/events')}
+                onClick={() => navigate('/shop')}
               >
-                {isShinyDaily ? 'Retour au profil →' : 'Retour aux événements →'}
+                Retour à la boutique →
               </button>
               {isDuplicate && !sold && (
                 <button

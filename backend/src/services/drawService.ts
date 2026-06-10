@@ -45,13 +45,18 @@ export interface DrawAndCreateResult {
 export async function drawAndCreate(
   tx: Tx,
   userId: string,
-  opts: { source: string; forceShiny?: boolean; forceDitto?: boolean }
+  opts: { source: string; forceShiny?: boolean; forceDitto?: boolean; generation?: number }
 ): Promise<DrawAndCreateResult> {
   // HIDDEN FEATURE - forceDitto guarantees a LEGENDARY base draw so the secondary roll fires
   const rarity = opts.forceDitto === true ? 'LEGENDARY' : pickRarity();
   // END HIDDEN FEATURE
 
-  const pokemonsOfRarity = await tx.pokemon.findMany({ where: { rarity } });
+  // `generation` restricts the pool to a single gen (used by the daily shop packs).
+  // Undefined = all generations, the normal /draw + /attendance behaviour.
+  const where = opts.generation === undefined
+    ? { rarity }
+    : { rarity, generation: opts.generation };
+  const pokemonsOfRarity = await tx.pokemon.findMany({ where });
   if (pokemonsOfRarity.length === 0) {
     throw Object.assign(new Error('No Pokémon found for rarity'), { status: 500 });
   }
