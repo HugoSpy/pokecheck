@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getMarketListings, createListing, buyListing, cancelListing } from '../api/marketApi';
 import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
@@ -7,7 +7,9 @@ import { getSellPrice } from '../api/types';
 import RarityBadge from '../components/RarityBadge';
 import Toast from '../components/Toast';
 import { Coins, Clock } from '../components/icons';
+import { RARITIES, RARITY_FR, TYPE_FR, TYPE_COLORS } from '../utils/pokemon';
 import './Market.css';
+import './Pokedex.css';
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -32,6 +34,13 @@ export default function Market() {
   const [tab, setTab] = useState<Tab>('buy');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Filter state (buy + mine tabs)
+  const [search, setSearch] = useState('');
+  const [filterGen, setFilterGen] = useState<number | null>(null);
+  const [filterRarity, setFilterRarity] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<string | null>(null);
+  const [filterShiny, setFilterShiny] = useState(false);
 
   // Sell form state
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemonInstance | null>(null);
@@ -129,6 +138,30 @@ export default function Market() {
   const activeListings = listings.filter(l => l.status === 'active');
   const myListings = listings.filter(l => l.seller_id === userId);
 
+  function applyFilters(list: MarketListing[]) {
+    return list.filter(l => {
+      const poke = l.userPokemon?.pokemon;
+      if (!poke) return true;
+      if (search && !poke.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filterGen !== null && poke.generation !== filterGen) return false;
+      if (filterRarity !== null && poke.rarity !== filterRarity) return false;
+      if (filterType !== null && !poke.types.includes(filterType)) return false;
+      if (filterShiny && !l.userPokemon?.is_shiny) return false;
+      return true;
+    });
+  }
+
+  const filteredActiveListings = useMemo(() => applyFilters(activeListings),
+    [activeListings, search, filterGen, filterRarity, filterType, filterShiny]);
+  const filteredMyListings = useMemo(() => applyFilters(myListings),
+    [myListings, search, filterGen, filterRarity, filterType, filterShiny]);
+
+  const allTypes = useMemo(() => {
+    const types = new Set<string>();
+    activeListings.forEach(l => l.userPokemon?.pokemon.types.forEach(t => types.add(t)));
+    return [...types].sort();
+  }, [activeListings]);
+
   // Pokemon available for sale: exclude those already listed
   const listedInstanceIds = new Set(
     listings
@@ -174,6 +207,69 @@ export default function Market() {
         </button>
       </div>
 
+      {/* ── Filters (buy + mine tabs) ── */}
+      {(tab === 'buy' || tab === 'mine') && (
+        <div className="pokedex-filters">
+          <input
+            className="filter-search"
+            type="text"
+            placeholder="Rechercher un Pokémon…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+
+          <div className="filter-row">
+            <div className="filter-label">Génération</div>
+            <div className="filter-group">
+              {[1,2,3,4,5,6,7].map(g => (
+                <button
+                  key={g}
+                  className={`filter-chip${filterGen === g ? ' active' : ''}`}
+                  onClick={() => setFilterGen(filterGen === g ? null : g)}
+                >Gen {g}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Rareté</div>
+            <div className="filter-group">
+              {RARITIES.map(r => (
+                <button
+                  key={r}
+                  className={`filter-chip rarity-chip rarity-${r.toLowerCase()}${filterRarity === r ? ' active' : ''}`}
+                  onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+                >{RARITY_FR[r]}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Type</div>
+            <div className="filter-group filter-types">
+              {allTypes.map(t => (
+                <button
+                  key={t}
+                  className={`filter-chip type-chip${filterType === t ? ' active' : ''}`}
+                  style={{ '--type-color': TYPE_COLORS[t] ?? '#9CA3AF' } as React.CSSProperties}
+                  onClick={() => setFilterType(filterType === t ? null : t)}
+                >{TYPE_FR[t] ?? t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Autres</div>
+            <div className="filter-group">
+              <button
+                className={`filter-chip${filterShiny ? ' active' : ''}`}
+                onClick={() => setFilterShiny(v => !v)}
+              >✨ Shiny</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Buy tab ── */}
       {tab === 'buy' && (
         <div className="market-section">
@@ -181,11 +277,11 @@ export default function Market() {
             <Coins size={16} /> <span className="market-balance-num">{coins.toLocaleString()}</span> coins
           </div>
 
-          {activeListings.length === 0 ? (
+          {filteredActiveListings.length === 0 ? (
             <div className="market-empty">Aucune annonce active pour le moment.</div>
           ) : (
             <div className="market-listings">
-              {activeListings.map(listing => {
+              {filteredActiveListings.map(listing => {
                 const poke = listing.userPokemon?.pokemon;
                 const isMine = listing.seller_id === userId;
                 const cantAfford = coins < listing.price_coins;
@@ -253,11 +349,11 @@ export default function Market() {
       {/* ── My listings tab ── */}
       {tab === 'mine' && (
         <div className="market-section">
-          {myListings.length === 0 ? (
+          {filteredMyListings.length === 0 ? (
             <div className="market-empty">Vous n'avez aucune annonce active.</div>
           ) : (
             <div className="market-listings">
-              {myListings.map(listing => {
+              {filteredMyListings.map(listing => {
                 const poke = listing.userPokemon?.pokemon;
                 const isLoading = actionLoading === listing.id;
 
