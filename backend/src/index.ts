@@ -19,6 +19,7 @@ import dailyLoginRouter from './routes/daily-login';
 import sellRouter from './routes/sell';
 import marketRouter from './routes/market';
 import eventRouter from './routes/event';
+import shopRouter from './routes/shop';
 import attendanceRouter from './routes/attendance';
 import notificationsRouter from './routes/notifications';
 import { initBattleSocket } from './socket';
@@ -102,6 +103,7 @@ app.use('/draw',          rl(10));
 app.use('/market/buy',    rl(10));
 app.use('/trade/accept',  rl(10));
 app.use('/event/draw',    rl(10));
+app.use('/shop/buy',      rl(10));
 // /auth/one-shot is a login endpoint - more generous to avoid blocking a whole
 // class behind the same school NAT during a simultaneous login session.
 app.use('/auth/one-shot', rl(30));
@@ -118,6 +120,7 @@ app.use('/daily-login', dailyLoginRouter);
 app.use('/sell', sellRouter);
 app.use('/market', marketRouter);
 app.use('/event', eventRouter);
+app.use('/shop', shopRouter);
 app.use('/attendance', attendanceRouter);
 app.use('/notifications', notificationsRouter);
 

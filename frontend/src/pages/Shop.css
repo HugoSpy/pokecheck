@@ -1,0 +1,186 @@
+/* ── Page ── */
+.shop-page {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.shop-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.shop-title {
+  font-family: var(--font-display);
+  font-size: var(--text-display);
+  font-weight: 700;
+  background: linear-gradient(135deg, #fff 30%, rgba(255, 255, 255, 0.45));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+.shop-rotation {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.shop-rotation-label {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.shop-rotation-timer {
+  font-family: var(--font-mono);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.shop-subtitle {
+  font-family: var(--font-condensed);
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* ── Grid: always 3 packs on one row, each as big as the row allows ── */
+.shop-grid {
+  --pack-gap: 32px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--pack-gap);
+  align-items: start;
+}
+
+/* ── Pack card ── */
+.shop-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  transition: border-color var(--transition);
+}
+
+.shop-card:hover {
+  border-color: var(--border-bright);
+}
+
+.shop-pack-art {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* The 3D booster canvas fills the art area (idle float + hover tilt live in
+   BoosterPack3D itself). */
+.shop-pack-art .booster-pack-3d {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: grab;
+  touch-action: none;
+}
+
+.shop-card-name {
+  font-family: var(--font-display);
+  font-size: clamp(18px, 2.4vw, 22px);
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+
+.shop-card-price {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-mono);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  color: var(--gold, #f5a623);
+}
+
+/* ── Actions (quantity selector + buy button) ── */
+.shop-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.shop-qty {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.shop-qty-btn {
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.shop-qty-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.shop-qty-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.shop-buy-btn {
+  width: 100%;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.shop-error {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  color: var(--danger, #ef4444);
+  text-align: center;
+}
+
+/* ── Mobile: keep the 3 packs on one row, just tighten spacing ── */
+@media (max-width: 640px) {
+  .shop-grid {
+    --pack-gap: 10px;
+  }
+
+  .shop-card {
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .shop-qty-btn {
+    padding: 6px 0;
+  }
+}

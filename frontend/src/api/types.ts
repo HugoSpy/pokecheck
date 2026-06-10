@@ -148,6 +148,24 @@ export interface EventDrawResult extends DrawResult {
   strip: RollCardData[];
 }
 
+// ── Daily shop ────────────────────────────────────────────────────────────────
+
+export interface ShopPack {
+  generation: number;
+  name: string;
+  texture_url: string;
+  price: number;
+}
+
+export interface DailyShop {
+  packs: ShopPack[];
+  /** ISO timestamp of the next rotation (Paris midnight). */
+  rotates_at: string;
+}
+
+/** POST /shop/buy/:gen - same shape as an event draw (winner + decoration strip). */
+export type ShopBuyResult = EventDrawResult;
+
 /** One opened pack in a multi-open: full 30-card strip with winner at index 22. */
 export interface EventPackResult extends DrawDuplicateInfo {
   pokemon: PokemonInfo;

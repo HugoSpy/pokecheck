@@ -32,6 +32,22 @@ model User {
   market_listings   MarketListing[] @relation("MarketSeller")
   market_purchases  MarketListing[] @relation("MarketBuyer")
   notifications     Notification[]
+  shop_purchases    ShopPurchase[]
+}
+
+// Daily shop anti-replay: one row per (user, gen, day). The @@unique constraint
+// is the source of truth for "already bought today" - enforced at the DB level
+// instead of by scanning UserPokemon.source strings.
+model ShopPurchase {
+  id         String   @id @default(uuid())
+  user_id    String
+  gen        Int
+  day        String   // "YYYY-MM-DD" in Paris time
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, gen, day])
 }
 
 model Pokemon {

@@ -13,6 +13,9 @@ import UserPokedex from './pages/UserPokedex';
 import DevTradeAnim from './pages/DevTradeAnim';
 import Market from './pages/Market';
 import Events from './pages/Events';
+import Shop from './pages/Shop';
+import ShopPackOpen from './pages/ShopPackOpen';
+import ShopPackOpenMulti from './pages/ShopPackOpenMulti';
 import Battle from './pages/Battle';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
@@ -22,7 +25,7 @@ import Layout from './components/Layout';
 function AppRoutes() {
   const location = useLocation();
   const { profile, loading, authenticated } = useUserCtx();
-  const isPublicPackRoute = location.pathname === '/open' || location.pathname === '/events/pack';
+  const isPublicPackRoute = location.pathname === '/open' || location.pathname === '/events/pack' || location.pathname === '/shop/pack';
   const isDevTradeAnim = location.pathname === '/dev/trade-anim';
   const isAdmin = profile?.is_admin === true;
 
@@ -37,6 +40,8 @@ function AppRoutes() {
       <Route path="/open" element={<OpenPack />} />
       <Route path="/events/pack" element={<EventPackOpen />} />
       <Route path="/events/pack-multi" element={<EventPackOpenMulti />} />
+      <Route path="/shop/pack" element={<ShopPackOpen />} />
+      <Route path="/shop/pack-multi" element={<ShopPackOpenMulti />} />
       <Route element={<Layout />}>
         <Route path="/pokedex"     element={<Pokedex />} />
         <Route path="/trades"      element={<Trades />} />
@@ -44,6 +49,7 @@ function AppRoutes() {
         <Route path="/u/:id"       element={<UserPokedex />} />
         <Route path="/market"      element={<Market />} />
         <Route path="/events"      element={<Events />} />
+        <Route path="/shop"        element={<Shop />} />
         <Route path="/battle"      element={<Battle />} />
         <Route path="/profile"     element={<Profile />} />
         <Route
