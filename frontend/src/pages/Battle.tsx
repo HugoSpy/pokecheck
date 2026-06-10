@@ -1,22 +1,17 @@
 import { useEffect, useState } from 'react';
-import { getActiveEvents } from '../api/eventApi';
-import { EVENT_PACK_CONFIG } from '../config/eventPackConfig';
+import { getDailyShop } from '../api/shopApi';
 import BoosterPack3D from '../components/BoosterPack3D';
 import { useUserCtx } from '../context/UserContext';
 import { useBattle } from '../hooks/useBattle';
 import BattleArena from './BattleArena';
 import { Coins } from '../components/icons';
-import type { GameEvent } from '../api/types';
+import type { ShopPack } from '../api/types';
 import type { BattleListItem } from '../socket/battleTypes';
 import './Battle.css';
 
 type View = 'menu' | 'create' | 'join' | 'lobby' | 'arena';
 
 const PLAYER_COUNTS = [2, 3, 4] as const;
-
-function packPreviewProps(packName: string) {
-  return EVENT_PACK_CONFIG[packName];
-}
 
 // ── Menu ─────────────────────────────────────────────────────────────────────
 
@@ -40,25 +35,25 @@ function CreateView({
   onCreate,
 }: {
   onBack: () => void;
-  onCreate: (event: GameEvent, maxPlayers: number) => void;
+  onCreate: (pack: ShopPack, maxPlayers: number) => void;
 }) {
-  const [events, setEvents] = useState<GameEvent[]>([]);
+  const [packs, setPacks] = useState<ShopPack[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedGen, setSelectedGen] = useState<number | null>(null);
   const [maxPlayers, setMaxPlayers] = useState<number>(2);
 
   useEffect(() => {
-    getActiveEvents()
-      .then(list => {
-        setEvents(list);
-        if (list.length > 0) setSelectedId(list[0].id);
+    getDailyShop()
+      .then(shop => {
+        setPacks(shop.packs);
+        if (shop.packs.length > 0) setSelectedGen(shop.packs[0].generation);
       })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 
-  const selected = events.find(e => e.id === selectedId) ?? null;
+  const selected = packs.find(p => p.generation === selectedGen) ?? null;
 
   return (
     <div className="battle-panel">
@@ -68,23 +63,23 @@ function CreateView({
       {loading && <div className="battle-hint">Chargement des packs…</div>}
       {error && <div className="error-banner">{error}</div>}
 
-      {!loading && !error && events.length === 0 && (
-        <div className="battle-hint">Aucun pack d'événement disponible pour le moment.</div>
+      {!loading && !error && packs.length === 0 && (
+        <div className="battle-hint">Aucun pack disponible pour le moment.</div>
       )}
 
-      {events.length > 0 && (
+      {packs.length > 0 && (
         <>
           <div className="battle-pack-grid">
-            {events.map(event => (
+            {packs.map(pack => (
               <button
-                key={event.id}
+                key={pack.generation}
                 type="button"
-                className={`battle-pack-option${selectedId === event.id ? ' selected' : ''}`}
-                onClick={() => setSelectedId(event.id)}
+                className={`battle-pack-option${selectedGen === pack.generation ? ' selected' : ''}`}
+                onClick={() => setSelectedGen(pack.generation)}
               >
-                <span className="battle-pack-option-name">{event.name}</span>
+                <span className="battle-pack-option-name">{pack.name}</span>
                 <span className="battle-pack-option-price">
-                  <Coins size={14} /> {event.price}
+                  <Coins size={14} /> {pack.price}
                 </span>
               </button>
             ))}
@@ -142,7 +137,7 @@ function JoinView({
           {games.map(game => (
             <div key={game.id} className="battle-game-card">
               <div className="battle-game-preview">
-                <BoosterPack3D {...packPreviewProps(game.packName)} />
+                <BoosterPack3D textureUrl={game.packImageUrl ?? undefined} />
               </div>
               <div className="battle-game-info">
                 <div className="battle-game-name">{game.packName}</div>
@@ -251,14 +246,13 @@ export default function Battle() {
     clearBattleError();
   }, [battleError, clearBattleError]);
 
-  async function handleCreate(event: GameEvent, maxPlayers: number) {
+  async function handleCreate(pack: ShopPack, maxPlayers: number) {
     setError(null);
-    const config = EVENT_PACK_CONFIG[event.name];
     const res = await create({
-      eventPackId: event.id,
-      packName: event.name,
+      gen: pack.generation,
+      packName: pack.name,
       packModelUrl: null,
-      packImageUrl: config?.textureUrl ?? null,
+      packImageUrl: pack.texture_url,
       maxPlayers,
     });
     if (!res.ok) setError(res.error);

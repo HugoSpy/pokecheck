@@ -4,7 +4,8 @@ import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { AuthPayload } from '../middleware/authMiddleware';
-import { loadEventPools, buildStrip, hasUniqueWinner } from '../services/battleDrawService';
+import { loadGenPools, buildStrip, hasUniqueWinner } from '../services/battleDrawService';
+import { dailyGenerations, parisDayKey } from '../services/shopService';
 import { spendCoins } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
@@ -85,13 +86,13 @@ function failBattle(io: BattleServer, room: BattleRoom, message: string): void {
 // lockstep. Any failure rolls the coin transaction back and aborts the battle.
 async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
   try {
-    const ep = await loadEventPools(prisma, room.eventPackId);
+    const ep = await loadGenPools(prisma, room.gen);
     if (!ep) {
-      failBattle(io, room, "Le pack d'événement est introuvable ou vide.");
+      failBattle(io, room, 'Le pack est introuvable ou vide.');
       return;
     }
 
-    // Entry cost is the chosen event pack's price (e.g. Sinnoh = 50 coins).
+    // Entry cost is the daily shop pack price (SHOP_PACK_PRICE).
     // Deduct it from every player in a single Serializable transaction -
     // spendCoins is an atomic compare-and-swap, so if any player is short the
     // whole transaction rolls back and nobody is charged.
@@ -216,7 +217,7 @@ async function persistBattle(room: BattleRoom): Promise<void> {
   try {
     await prisma.$transaction(async (tx) => {
       await tx.battleRecord.create({
-        data: { room_id: room.id, winner_id: winnerId, pack_id: room.eventPackId, players },
+        data: { room_id: room.id, winner_id: winnerId, pack_id: String(room.gen), players },
       });
       if (winnerId) {
         for (const poke of prizePokemon) {
@@ -295,11 +296,18 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
     });
 
     socket.on('battle:create', (
-      payload: { eventPackId: string; packName: string; packModelUrl: string | null; packImageUrl: string | null; maxPlayers: number },
+      payload: { gen: number; packName: string; packModelUrl: string | null; packImageUrl: string | null; maxPlayers: number },
       ack?: (res: { ok: true; room: ReturnType<typeof toLobbyView> } | { ok: false; error: string }) => void,
     ) => {
+      // Server-authoritative: only today's Boutique gens can host a battle.
+      const gen = Math.trunc(Number(payload.gen));
+      if (!dailyGenerations(parisDayKey()).includes(gen)) {
+        ack?.({ ok: false, error: "Ce pack n'est pas disponible aujourd'hui." });
+        return;
+      }
+
       const room = createRoom({
-        eventPackId: payload.eventPackId,
+        gen,
         packName: payload.packName,
         packModelUrl: payload.packModelUrl ?? null,
         packImageUrl: payload.packImageUrl ?? null,

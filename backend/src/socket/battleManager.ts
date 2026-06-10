@@ -31,7 +31,7 @@ export interface BattleResult {
 
 export interface BattleRoom {
   id: string;
-  eventPackId: string;
+  gen: number;
   packName: string;
   packModelUrl: string | null;
   packImageUrl: string | null;
@@ -61,7 +61,7 @@ export interface BattleRoom {
 
 export interface Lobby {
   id: string;
-  eventPackId: string;
+  gen: number;
   packName: string;
   packModelUrl: string | null;
   packImageUrl: string | null;
@@ -82,7 +82,7 @@ export interface BattleListItem {
 }
 
 export interface CreateRoomOpts {
-  eventPackId: string;
+  gen: number;
   packName: string;
   packModelUrl: string | null;
   packImageUrl: string | null;
@@ -103,7 +103,7 @@ function clampMaxPlayers(n: number): number {
 function toLobby(room: BattleRoom): Lobby {
   return {
     id: room.id,
-    eventPackId: room.eventPackId,
+    gen: room.gen,
     packName: room.packName,
     packModelUrl: room.packModelUrl,
     packImageUrl: room.packImageUrl,
@@ -141,7 +141,7 @@ function reassignHost(room: BattleRoom): void {
 export function createRoom(opts: CreateRoomOpts): BattleRoom {
   const room: BattleRoom = {
     id: randomUUID(),
-    eventPackId: opts.eventPackId,
+    gen: opts.gen,
     packName: opts.packName,
     packModelUrl: opts.packModelUrl,
     packImageUrl: opts.packImageUrl,

@@ -7,6 +7,7 @@
 // decoupled from persistence and can be run for every player in one pass.
 import { Prisma, PrismaClient } from '@prisma/client';
 import type { BattlePokemon } from '../socket/battleManager';
+import { getPackPrice } from './shopService';
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
@@ -72,6 +73,33 @@ export async function loadEventPools(prisma: Tx, eventId: string): Promise<Event
   const total = Object.values(weighted).reduce((s, w) => s + w, 0);
 
   return { pools, all, weighted, total, shinyMultiplier: multipliers.SHINY, price: event.price };
+}
+
+/**
+ * Loads a generation's Pokémon pool grouped by rarity, using the same base rate
+ * distribution as a normal draw (no event multiplier) and the daily shop price.
+ * Powers the "Battle de caisse" packs, which are now the Boutique's daily gen
+ * packs instead of hardcoded events. Returns null if the gen pool is empty.
+ */
+export async function loadGenPools(prisma: Tx, gen: number): Promise<EventPools | null> {
+  const select = { id: true, name: true, sprite_url: true, rarity: true, points: true } as const;
+
+  const [commons, rares, epics, legendaries] = await Promise.all([
+    prisma.pokemon.findMany({ where: { generation: gen, rarity: 'COMMON' }, select }),
+    prisma.pokemon.findMany({ where: { generation: gen, rarity: 'RARE' }, select }),
+    prisma.pokemon.findMany({ where: { generation: gen, rarity: 'EPIC' }, select }),
+    prisma.pokemon.findMany({ where: { generation: gen, rarity: 'LEGENDARY' }, select }),
+  ]);
+
+  const pools: Record<string, PoolPokemon[]> = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
+  const all = [...commons, ...rares, ...epics, ...legendaries];
+  if (all.length === 0) return null;
+
+  const weighted: Record<string, number> = {};
+  for (const [rarity, base] of Object.entries(BASE_RATES)) weighted[rarity] = base;
+  const total = Object.values(weighted).reduce((s, w) => s + w, 0);
+
+  return { pools, all, weighted, total, shinyMultiplier: undefined, price: getPackPrice() };
 }
 
 function pickRarity(ep: EventPools): string {

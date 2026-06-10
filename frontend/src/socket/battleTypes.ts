@@ -43,7 +43,7 @@ export interface LobbyPlayer {
 
 export interface Lobby {
   id: string;
-  eventPackId: string;
+  gen: number;
   packName: string;
   packModelUrl: string | null;
   packImageUrl: string | null;
@@ -64,7 +64,7 @@ export interface BattleListItem {
 }
 
 export interface CreateBattlePayload {
-  eventPackId: string;
+  gen: number;
   packName: string;
   packModelUrl: string | null;
   packImageUrl: string | null;
