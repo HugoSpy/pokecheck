@@ -22,9 +22,9 @@
   display: grid;
   /* Cap each pack's width so cards stay small instead of stretching to fill
      the row when only a few packs are available; center the leftover space. */
-  grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+  grid-template-columns: repeat(auto-fill, minmax(108px, 132px));
   justify-content: center;
-  gap: 20px;
+  gap: 16px;
   align-items: start;
 }
 
