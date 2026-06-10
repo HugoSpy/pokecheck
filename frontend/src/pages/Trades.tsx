@@ -479,23 +479,35 @@ export default function Trades() {
   );
 }
 
-// A side's Pokémon as a row of thumbnails (max 3 shown, then "+N").
-function ItemsRow({ items }: { items: TradeItemView[] }) {
-  const shown = items.slice(0, 3);
-  const extra = items.length - shown.length;
+const RARITY_COLOR: Record<string, string> = {
+  COMMON:    '#9ca3af',
+  RARE:      '#3b82f6',
+  EPIC:      '#a855f7',
+  LEGENDARY: '#f5a623',
+};
+const SHINY_GOLD = '#d4af37';
+
+// A side's Pokémon, shown in FULL (no truncation): every sprite + name + a
+// rarity-colored indicator, wrapping onto multiple rows as needed. Trust matters
+// in a trade - the user must see exactly what's exchanged before accepting.
+function TradeSide({ items }: { items: TradeItemView[] }) {
+  if (items.length === 0) return <div className="trade-side trade-side-empty">—</div>;
   return (
-    <div className="offer-items">
-      {shown.map(it => (
-        <img
-          key={it.id}
-          src={it.pokemon.sprite_url}
-          alt={it.pokemon.name}
-          title={it.pokemon.name + (it.is_shiny ? ' ✨' : '')}
-          className={`offer-item-thumb${it.is_shiny ? ' shiny' : ''}`}
-        />
-      ))}
-      {extra > 0 && <span className="offer-items-more">+{extra}</span>}
-      {items.length === 0 && <span className="offer-items-empty">—</span>}
+    <div className="trade-side">
+      {items.map(it => {
+        const color = it.is_shiny ? SHINY_GOLD : (RARITY_COLOR[it.pokemon.rarity] ?? '#9ca3af');
+        return (
+          <div
+            key={it.id}
+            className={`trade-side-item${it.is_shiny ? ' shiny' : ''}`}
+            style={{ '--rc': color } as React.CSSProperties}
+            title={it.pokemon.name + (it.is_shiny ? ' ✨' : '')}
+          >
+            <img src={it.pokemon.sprite_url} alt={it.pokemon.name} className="trade-side-sprite" />
+            <span className="trade-side-name">{it.pokemon.name}{it.is_shiny ? ' ✨' : ''}</span>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -512,9 +524,9 @@ function OfferCard({ offer, onAccept, onDecline }: {
     <div className="offer-card">
       <div className="offer-from">De {offer.from_user.display_name}</div>
       <div className="offer-exchange">
-        <ItemsRow items={fromItems} />
+        <TradeSide items={fromItems} />
         <span className="offer-arrow"><Swap size={16} /></span>
-        <ItemsRow items={toItems} />
+        <TradeSide items={toItems} />
       </div>
       {offer.coins_offered > 0 && (
         <div className="offer-coins gain">Vous recevrez {offer.coins_offered.toLocaleString()} coins</div>
@@ -541,9 +553,9 @@ function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void 
       </button>
       <div className="offer-from">À {trade.to_user.display_name}</div>
       <div className="offer-exchange">
-        <ItemsRow items={fromItems} />
+        <TradeSide items={fromItems} />
         <span className="offer-arrow"><Swap size={16} /></span>
-        <ItemsRow items={toItems} />
+        <TradeSide items={toItems} />
       </div>
       {trade.coins_offered > 0 && (
         <div className="offer-coins cost">Vous envoyez {trade.coins_offered.toLocaleString()} coins</div>
