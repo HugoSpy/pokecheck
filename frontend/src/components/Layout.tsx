@@ -6,7 +6,7 @@ import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import NotificationButton from './NotificationButton';
 import AdminPortalButton from './AdminPortalButton';
-import { Coins, Grid, Swap, ShoppingBag, Store, Calendar, User, Pokeball, Swords } from './icons';
+import { Coins, Grid, Swap, ShoppingBag, Store, User, Pokeball, Swords } from './icons';
 import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
 
@@ -16,7 +16,6 @@ const NAV_LINKS = [
   { to: '/trades',      label: 'Échanges'    },
   { to: '/market',      label: 'Marché'      },
   { to: '/shop',        label: 'Boutique'    },
-  { to: '/events',      label: 'Événements'  },
   { to: '/battle',      label: 'Battle'      },
   { to: '/leaderboard', label: 'Classement'  },
   { to: '/profile',     label: 'Profil'      },
@@ -28,7 +27,6 @@ const BOTTOM_NAV = [
   { to: '/open',    label: 'Ouvrir',     Icon: Pokeball    },
   { to: '/shop',    label: 'Boutique',   Icon: ShoppingBag },
   { to: '/market',  label: 'Marché',     Icon: Store       },
-  { to: '/events',  label: 'Événements', Icon: Calendar    },
   { to: '/battle',  label: 'Battle',     Icon: Swords      },
   { to: '/profile', label: 'Profil',     Icon: User        },
 ];

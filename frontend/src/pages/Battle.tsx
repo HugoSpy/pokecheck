@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { getActiveEvents } from '../api/eventApi';
-import { EVENT_PACK_CONFIG } from './Events';
+import { EVENT_PACK_CONFIG } from '../config/eventPackConfig';
 import BoosterPack3D from '../components/BoosterPack3D';
 import { useUserCtx } from '../context/UserContext';
 import { useBattle } from '../hooks/useBattle';

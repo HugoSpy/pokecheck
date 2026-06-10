@@ -12,7 +12,6 @@ import Leaderboard from './pages/Leaderboard';
 import UserPokedex from './pages/UserPokedex';
 import DevTradeAnim from './pages/DevTradeAnim';
 import Market from './pages/Market';
-import Events from './pages/Events';
 import Shop from './pages/Shop';
 import ShopPackOpen from './pages/ShopPackOpen';
 import ShopPackOpenMulti from './pages/ShopPackOpenMulti';
@@ -48,7 +47,6 @@ function AppRoutes() {
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/u/:id"       element={<UserPokedex />} />
         <Route path="/market"      element={<Market />} />
-        <Route path="/events"      element={<Events />} />
         <Route path="/shop"        element={<Shop />} />
         <Route path="/battle"      element={<Battle />} />
         <Route path="/profile"     element={<Profile />} />
