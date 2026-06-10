@@ -11,117 +11,136 @@ const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
-// Resolves a trade's from_/to_ UserPokemon and applies shiny sprite/points so
-// the client can render the cards. Shared by the received (/offers) and sent
-// (/sent) listings.
+const MAX_PER_SIDE = 6;
+
+// ── Enrichment ────────────────────────────────────────────────────────────────
+
 type TradeUserRef = { id: string; display_name: string; nickname?: string | null };
 
-async function enrichTradePokemon<T extends {
-  from_pokemon_id: string | null;
-  to_pokemon_id: string | null;
-  from_user?: TradeUserRef;
-  to_user?: TradeUserRef;
-}>(trade: T) {
-  const fromRaw = trade.from_pokemon_id
-    ? await prisma.userPokemon.findUnique({ where: { id: trade.from_pokemon_id }, include: { pokemon: true } })
-    : null;
-  const toRaw = trade.to_pokemon_id
-    ? await prisma.userPokemon.findUnique({ where: { id: trade.to_pokemon_id }, include: { pokemon: true } })
-    : null;
+// A UserPokemon row joined with its species, with shiny sprite/points applied.
+function shinyEnrich(up: {
+  id: string;
+  tradeable_at: Date | null;
+  is_shiny: boolean;
+  pokemon: { sprite_url: string; points: number } & Record<string, unknown>;
+} | null) {
+  if (!up) return null;
+  return {
+    id: up.id,
+    tradeable_at: up.tradeable_at,
+    is_shiny: up.is_shiny,
+    pokemon: {
+      ...up.pokemon,
+      is_shiny: up.is_shiny,
+      sprite_url: up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url,
+      points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
+    },
+  };
+}
 
-  const shinyEnrich = (up: typeof fromRaw) =>
-    up
-      ? {
-          id: up.id,
-          tradeable_at: up.tradeable_at,
-          is_shiny: up.is_shiny,
-          pokemon: {
-            ...up.pokemon,
-            is_shiny: up.is_shiny,
-            sprite_url: up.is_shiny
-              ? up.pokemon.sprite_url.replace('/normal/', '/shiny/')
-              : up.pokemon.sprite_url,
-            points: up.is_shiny ? up.pokemon.points * 3 : up.pokemon.points,
-          },
-        }
-      : null;
+// Loads every TradeItem for a trade, grouped + enriched. Returns the full `items`
+// array plus legacy `fromPokemon`/`toPokemon` (the first item of each side) so the
+// current single-Pokémon frontend keeps rendering during the transition.
+async function buildItems(tradeId: string) {
+  const rows = await prisma.tradeItem.findMany({
+    where: { trade_id: tradeId },
+    include: { pokemon: { include: { pokemon: true } } },
+    orderBy: { id: 'asc' },
+  });
 
-  // Surface the effective display name (nickname overrides Azure display_name).
+  const items = rows.map(r => ({ owner: r.owner, ...shinyEnrich(r.pokemon)! }));
+  const fromItems = items.filter(i => i.owner === 'from');
+  const toItems = items.filter(i => i.owner === 'to');
+  return {
+    items,
+    fromPokemon: fromItems[0] ?? null,
+    toPokemon: toItems[0] ?? null,
+  };
+}
+
+async function enrichTrade<T extends { id: string; from_user?: TradeUserRef; to_user?: TradeUserRef }>(trade: T) {
+  const { items, fromPokemon, toPokemon } = await buildItems(trade.id);
   const effectiveName = (u: TradeUserRef) => ({ id: u.id, display_name: u.nickname ?? u.display_name });
-
   return {
     ...trade,
     ...(trade.from_user ? { from_user: effectiveName(trade.from_user) } : {}),
     ...(trade.to_user ? { to_user: effectiveName(trade.to_user) } : {}),
-    fromPokemon: shinyEnrich(fromRaw),
-    toPokemon: shinyEnrich(toRaw),
+    items,
+    fromPokemon,
+    toPokemon,
   };
 }
 
+// ── Listings ──────────────────────────────────────────────────────────────────
+
 router.get('/offers', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
-
   const offers = await prisma.trade.findMany({
     where: { to_user_id: userId, status: 'pending' },
-    include: {
-      from_user: { select: { id: true, display_name: true, nickname: true } },
-    },
+    include: { from_user: { select: { id: true, display_name: true, nickname: true } } },
     orderBy: { created_at: 'desc' },
   });
-
-  const enriched = await Promise.all(offers.map(enrichTradePokemon));
-  res.json(enriched);
+  res.json(await Promise.all(offers.map(enrichTrade)));
 });
 
-// Pending trades the current user has proposed (so they can cancel them).
 router.get('/sent', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
-
   const sent = await prisma.trade.findMany({
     where: { from_user_id: userId, status: 'pending' },
-    include: {
-      to_user: { select: { id: true, display_name: true, nickname: true } },
-    },
+    include: { to_user: { select: { id: true, display_name: true, nickname: true } } },
     orderBy: { created_at: 'desc' },
   });
-
-  const enriched = await Promise.all(sent.map(enrichTradePokemon));
-  res.json(enriched);
+  res.json(await Promise.all(sent.map(enrichTrade)));
 });
+
+// ── Propose ───────────────────────────────────────────────────────────────────
+
+function normalizeIds(value: unknown): string[] | null {
+  if (!Array.isArray(value)) return null;
+  if (!value.every(v => typeof v === 'string' && v.length > 0)) return null;
+  return value as string[];
+}
 
 router.post('/propose', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const {
-    from_pokemon_id,
+    from_pokemon_ids,
     to_user_id,
-    to_pokemon_id,
+    to_pokemon_ids,
     coins_offered = 0,
     coins_requested = 0,
   } = req.body as {
-    from_pokemon_id: string;
+    from_pokemon_ids: string[];
     to_user_id: string;
-    to_pokemon_id?: string;
+    to_pokemon_ids: string[];
     coins_offered?: number;
     coins_requested?: number;
   };
 
-  if (!from_pokemon_id || !to_user_id) {
-    res.status(400).json({ error: 'from_pokemon_id and to_user_id are required' });
+  const fromIds = normalizeIds(from_pokemon_ids);
+  const toIds = normalizeIds(to_pokemon_ids);
+
+  if (!fromIds || !toIds || !to_user_id) {
+    res.status(400).json({ error: 'from_pokemon_ids, to_pokemon_ids (arrays) and to_user_id are required' });
     return;
   }
-
-  // Prevent self-trades: a user trading with themselves increments trade_count for
-  // both sides of the same row (two UPDATE calls on the same user inside a single
-  // transaction), resulting in +2 per self-trade and easy badge farming.
+  if (fromIds.length < 1 || fromIds.length > MAX_PER_SIDE || toIds.length < 1 || toIds.length > MAX_PER_SIDE) {
+    res.status(400).json({ error: `Each side must have between 1 and ${MAX_PER_SIDE} Pokémon` });
+    return;
+  }
+  // No duplicates within a side, no overlap between sides.
+  if (new Set(fromIds).size !== fromIds.length || new Set(toIds).size !== toIds.length) {
+    res.status(400).json({ error: 'Duplicate Pokémon in a trade side' });
+    return;
+  }
+  if (fromIds.some(id => toIds.includes(id))) {
+    res.status(400).json({ error: 'A Pokémon cannot be on both sides' });
+    return;
+  }
   if (to_user_id === userId) {
     res.status(400).json({ error: 'Cannot trade with yourself' });
     return;
   }
-
-  // Coin component validation. Both must be non-negative integers, and coins may
-  // only flow ONE way: offering AND requesting coins at once is nonsensical
-  // (and a pure pokemon↔coins swap is the market's job, but that's already
-  // prevented since both from_/to_pokemon are required for a normal trade).
   if (!Number.isInteger(coins_offered) || !Number.isInteger(coins_requested) || coins_offered < 0 || coins_requested < 0) {
     res.status(400).json({ error: 'Coin amounts must be non-negative integers' });
     return;
@@ -131,31 +150,43 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const myPokemon = await prisma.userPokemon.findUnique({ where: { id: from_pokemon_id } });
-  if (!myPokemon || myPokemon.user_id !== userId) {
-    res.status(403).json({ error: 'Pokémon not owned by you' });
-    return;
-  }
+  const allIds = [...fromIds, ...toIds];
+  const now = new Date();
+  const involved = await prisma.userPokemon.findMany({ where: { id: { in: allIds } } });
+  const byId = new Map(involved.map(p => [p.id, p]));
 
-  if (myPokemon.tradeable_at && myPokemon.tradeable_at > new Date()) {
-    res.status(400).json({ error: 'Pokémon not tradeable yet', tradeable_at: myPokemon.tradeable_at });
-    return;
+  // Ownership + cooldown for the proposer's side.
+  for (const id of fromIds) {
+    const p = byId.get(id);
+    if (!p || p.user_id !== userId) {
+      res.status(403).json({ error: 'Pokémon not owned by you' });
+      return;
+    }
+    if (p.tradeable_at && p.tradeable_at > now) {
+      res.status(400).json({ error: 'Pokémon not tradeable yet', tradeable_at: p.tradeable_at });
+      return;
+    }
   }
-
-  const myActiveListing = await prisma.marketListing.findFirst({
-    where: { pokemon_id: from_pokemon_id, status: 'active' },
-  });
-  if (myActiveListing) {
-    res.status(409).json({ error: 'Pokémon is listed on the market' });
-    return;
-  }
-
-  if (to_pokemon_id) {
-    const theirPokemon = await prisma.userPokemon.findUnique({ where: { id: to_pokemon_id } });
-    if (!theirPokemon || theirPokemon.user_id !== to_user_id) {
+  // Ownership + cooldown for the recipient's side.
+  for (const id of toIds) {
+    const p = byId.get(id);
+    if (!p || p.user_id !== to_user_id) {
       res.status(400).json({ error: 'Target Pokémon not valid' });
       return;
     }
+    if (p.tradeable_at && p.tradeable_at > now) {
+      res.status(400).json({ error: 'Target Pokémon not tradeable yet', tradeable_at: p.tradeable_at });
+      return;
+    }
+  }
+
+  // None of the proposer's Pokémon may be actively listed on the market.
+  const listed = await prisma.marketListing.findFirst({
+    where: { pokemon_id: { in: fromIds }, status: 'active' },
+  });
+  if (listed) {
+    res.status(409).json({ error: 'A Pokémon is listed on the market' });
+    return;
   }
 
   if (coins_offered > 0) {
@@ -166,39 +197,40 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     }
   }
 
-  // A UserPokemon may only be tied to ONE pending trade at a time, on either
-  // side. The conflict check and the create run in one Serializable transaction
-  // so two simultaneous proposals can't both slip a pokemon into two pending
-  // trades (TOCTOU).
-  const pokemonIds = [from_pokemon_id, ...(to_pokemon_id ? [to_pokemon_id] : [])];
-
+  // A UserPokemon may only be tied to ONE pending trade at a time (on either
+  // side). The conflict check + create run in one Serializable transaction so
+  // two simultaneous proposals can't slip a Pokémon into two pending trades.
+  // This also subsumes the exact-duplicate-trade case.
   let trade;
   try {
     trade = await prisma.$transaction(async (tx) => {
-      const conflict = await tx.trade.findFirst({
-        where: {
-          status: 'pending',
-          OR: [
-            { from_pokemon_id: { in: pokemonIds } },
-            { to_pokemon_id: { in: pokemonIds } },
-          ],
-        },
+      const conflict = await tx.tradeItem.findFirst({
+        where: { pokemon_id: { in: allIds }, trade: { status: 'pending' } },
       });
-      if (conflict) {
-        throw Object.assign(new Error('POKEMON_ALREADY_IN_TRADE'), { status: 409 });
-      }
+      if (conflict) throw Object.assign(new Error('POKEMON_ALREADY_IN_TRADE'), { status: 409 });
 
-      return tx.trade.create({
+      const created = await tx.trade.create({
         data: {
           from_user_id: userId,
           to_user_id,
-          from_pokemon_id,
-          to_pokemon_id: to_pokemon_id ?? null,
+          // Legacy scalar columns kept in sync (= first of each side) for the
+          // transition; the source of truth is the TradeItem rows below.
+          from_pokemon_id: fromIds[0],
+          to_pokemon_id: toIds[0],
           coins_offered,
           coins_requested,
           status: 'pending',
         },
       });
+
+      await tx.tradeItem.createMany({
+        data: [
+          ...fromIds.map(pid => ({ trade_id: created.id, owner: 'from', pokemon_id: pid })),
+          ...toIds.map(pid => ({ trade_id: created.id, owner: 'to', pokemon_id: pid })),
+        ],
+      });
+
+      return created;
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (err) {
     if ((err as { status?: number }).status === 409) {
@@ -210,25 +242,27 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
 
   res.status(201).json(trade);
 
-  // Fire-and-forget: notify recipient that a trade was proposed
-  const fromUserId = userId;
+  // Fire-and-forget: notify recipient (first Pokémon of each side, like before).
   const fromDisplayName = req.user!.display_name;
-  const fromPokemonId = myPokemon.pokemon_id;
   Promise.all([
-    prisma.pokemon.findUnique({ where: { id: fromPokemonId }, select: { name: true } }),
-    to_pokemon_id
-      ? prisma.userPokemon.findUnique({ where: { id: to_pokemon_id }, include: { pokemon: true } })
+    byId.get(fromIds[0])
+      ? prisma.pokemon.findUnique({ where: { id: byId.get(fromIds[0])!.pokemon_id }, select: { name: true } })
       : Promise.resolve(null),
-  ]).then(([fromPkm, toPkmRaw]) =>
+    byId.get(toIds[0])
+      ? prisma.pokemon.findUnique({ where: { id: byId.get(toIds[0])!.pokemon_id }, select: { name: true } })
+      : Promise.resolve(null),
+  ]).then(([fromPkm, toPkm]) =>
     createNotification(to_user_id, 'TRADE_RECEIVED', {
       tradeId: trade.id,
-      fromUserId,
+      fromUserId: userId,
       fromUserName: fromDisplayName,
       fromPokemonName: fromPkm?.name ?? '?',
-      toPokemonName: toPkmRaw?.pokemon?.name ?? null,
+      toPokemonName: toPkm?.name ?? null,
     })
   ).catch(() => {});
 });
+
+// ── Accept ────────────────────────────────────────────────────────────────────
 
 router.post('/accept/:id', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
@@ -240,22 +274,16 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  // Pre-flight coin checks
+  // Pre-flight coin checks.
   if (trade.coins_offered > 0) {
-    const fromUser = await prisma.user.findUnique({
-      where: { id: trade.from_user_id },
-      select: { coins: true },
-    });
+    const fromUser = await prisma.user.findUnique({ where: { id: trade.from_user_id }, select: { coins: true } });
     if (!fromUser || fromUser.coins < trade.coins_offered) {
       res.status(402).json({ error: 'Offerer no longer has enough coins' });
       return;
     }
   }
   if (trade.coins_requested > 0) {
-    const toUser = await prisma.user.findUnique({
-      where: { id: trade.to_user_id },
-      select: { coins: true },
-    });
+    const toUser = await prisma.user.findUnique({ where: { id: trade.to_user_id }, select: { coins: true } });
     if (!toUser || toUser.coins < trade.coins_requested) {
       res.status(402).json({ error: 'Insufficient coins to accept this trade' });
       return;
@@ -263,84 +291,74 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
   }
 
   const tradeableAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  const pokemonExchanged = !!trade.to_pokemon_id;
+  const now = new Date();
 
-  // Race-condition guard: the outer findUnique check (status === 'pending') runs
-  // outside the transaction. Two simultaneous accepts can both pass that check.
-  // The updateMany at the start of the transaction is a compare-and-swap: only one
-  // concurrent transaction will match status='pending'; the second will get count=0
-  // after PostgreSQL re-evaluates the WHERE against the first's committed state.
   let raceDetected = false;
   let ownershipInvalid = false;
 
-  const { fromUser, toUser } = await prisma.$transaction(async tx => {
+  const { fromUser, toUser, fromCount, toCount } = await prisma.$transaction(async tx => {
+    // Compare-and-swap: only one concurrent accept flips pending -> accepted.
     const { count } = await tx.trade.updateMany({
       where: { id, status: 'pending' },
       data: { status: 'accepted', resolved_at: new Date() },
     });
-
     if (count === 0) {
       raceDetected = true;
-      return { fromUser: null, toUser: null };
+      return { fromUser: null, toUser: null, fromCount: 0, toCount: 0 };
     }
 
-    // Ownership re-verification: a stale duplicate proposal can reference a Pokémon
-    // whose owner changed via another accepted trade since this one was created.
-    // The by-id transfers below would otherwise silently steal it from its current
-    // owner - so cancel this trade instead of transferring.
-    const fromPokemon = await tx.userPokemon.findUnique({ where: { id: trade.from_pokemon_id } });
-    if (!fromPokemon || fromPokemon.user_id !== trade.from_user_id) {
-      await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
-      ownershipInvalid = true;
-      return { fromUser: null, toUser: null };
-    }
-    if (trade.to_pokemon_id) {
-      const toPokemon = await tx.userPokemon.findUnique({ where: { id: trade.to_pokemon_id } });
-      if (!toPokemon || toPokemon.user_id !== trade.to_user_id) {
-        await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
-        ownershipInvalid = true;
-        return { fromUser: null, toUser: null };
-      }
-    }
+    const items = await tx.tradeItem.findMany({ where: { trade_id: id } });
+    const fromIds = items.filter(i => i.owner === 'from').map(i => i.pokemon_id);
+    const toIds = items.filter(i => i.owner === 'to').map(i => i.pokemon_id);
 
-    // Transfer Pokémon
-    await tx.userPokemon.update({
-      where: { id: trade.from_pokemon_id },
-      data: { user_id: trade.to_user_id, tradeable_at: tradeableAt },
+    // TOCTOU re-verification: every item must still be owned by the expected
+    // side and off cooldown. Any failure cancels the trade instead of transferring.
+    const involved = await tx.userPokemon.findMany({ where: { id: { in: [...fromIds, ...toIds] } } });
+    const byId = new Map(involved.map(p => [p.id, p]));
+
+    const valid = (ids: string[], expectedOwner: string) => ids.every(pid => {
+      const p = byId.get(pid);
+      return p && p.user_id === expectedOwner && (!p.tradeable_at || p.tradeable_at <= now);
     });
 
-    if (trade.to_pokemon_id) {
-      await tx.userPokemon.update({
-        where: { id: trade.to_pokemon_id },
-        data: { user_id: trade.from_user_id, tradeable_at: tradeableAt },
+    if (!valid(fromIds, trade.from_user_id) || !valid(toIds, trade.to_user_id)) {
+      await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
+      ownershipInvalid = true;
+      return { fromUser: null, toUser: null, fromCount: 0, toCount: 0 };
+    }
+
+    // Transfer: from side -> recipient, to side -> proposer.
+    await tx.userPokemon.updateMany({
+      where: { id: { in: fromIds } },
+      data: { user_id: trade.to_user_id, tradeable_at: tradeableAt },
+    });
+    await tx.userPokemon.updateMany({
+      where: { id: { in: toIds } },
+      data: { user_id: trade.from_user_id, tradeable_at: tradeableAt },
+    });
+
+    const exchangedIds = [...fromIds, ...toIds];
+
+    // Cancel sibling pending trades that reference any exchanged Pokémon.
+    const siblingItems = await tx.tradeItem.findMany({
+      where: { pokemon_id: { in: exchangedIds }, trade_id: { not: id }, trade: { status: 'pending' } },
+      select: { trade_id: true },
+    });
+    const siblingTradeIds = [...new Set(siblingItems.map(s => s.trade_id))];
+    if (siblingTradeIds.length > 0) {
+      await tx.trade.updateMany({
+        where: { id: { in: siblingTradeIds }, status: 'pending' },
+        data: { status: 'cancelled', resolved_at: new Date() },
       });
     }
 
-    // Invalidate sibling pending trades referencing either Pokémon just exchanged,
-    // so the same Pokémon can't be offered to (and accepted by) several people.
-    const exchangedPokemonIds = [trade.from_pokemon_id];
-    if (trade.to_pokemon_id) exchangedPokemonIds.push(trade.to_pokemon_id);
-    await tx.trade.updateMany({
-      where: {
-        id: { not: id },
-        status: 'pending',
-        OR: [
-          { from_pokemon_id: { in: exchangedPokemonIds } },
-          { to_pokemon_id: { in: exchangedPokemonIds } },
-        ],
-      },
-      data: { status: 'cancelled', resolved_at: new Date() },
-    });
-
-    // Cancel any active market listings for the exchanged Pokémon - their owner
-    // just changed, so a stale 'active' listing would let a buyer rip the Pokémon
-    // out of its new owner (same hazard as the sibling-trade cancel above).
+    // Cancel active market listings for the exchanged Pokémon (owner just changed).
     await tx.marketListing.updateMany({
-      where: { pokemon_id: { in: exchangedPokemonIds }, status: 'active' },
+      where: { pokemon_id: { in: exchangedIds }, status: 'active' },
       data: { status: 'cancelled' },
     });
 
-    // Transfer coins
+    // Coins.
     if (trade.coins_offered > 0) {
       await spendCoins(tx, trade.from_user_id, trade.coins_offered, 'trade');
       await addCoins(tx, trade.to_user_id, trade.coins_offered, 'trade');
@@ -350,32 +368,26 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
       await addCoins(tx, trade.from_user_id, trade.coins_requested, 'trade');
     }
 
-    // Increment trade_count only when at least one pokemon is exchanged
-    let fromUserResult = null;
-    let toUserResult = null;
-
-    if (pokemonExchanged) {
-      fromUserResult = await tx.user.update({
-        where: { id: trade.from_user_id },
-        data: { trade_count: { increment: 1 } },
-      });
-      toUserResult = await tx.user.update({
-        where: { id: trade.to_user_id },
-        data: { trade_count: { increment: 1 } },
-      });
-    }
+    // trade_count: each side gains its number of exchanged Pokémon.
+    const fromUserResult = await tx.user.update({
+      where: { id: trade.from_user_id },
+      data: { trade_count: { increment: fromIds.length } },
+    });
+    const toUserResult = await tx.user.update({
+      where: { id: trade.to_user_id },
+      data: { trade_count: { increment: toIds.length } },
+    });
 
     await recalculateUserPokedexValue(tx, trade.from_user_id);
     await recalculateUserPokedexValue(tx, trade.to_user_id);
 
-    return { fromUser: fromUserResult, toUser: toUserResult };
-  });
+    return { fromUser: fromUserResult, toUser: toUserResult, fromCount: fromIds.length, toCount: toIds.length };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
   if (raceDetected) {
     res.status(409).json({ error: 'Trade already resolved' });
     return;
   }
-
   if (ownershipInvalid) {
     res.status(409).json({ error: 'POKEMON_NO_LONGER_OWNED' });
     return;
@@ -386,28 +398,30 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
     checkBadges(trade.to_user_id),
   ]);
 
+  // Bonus draw every 10 trades. With a multi-Pokémon increment the count can jump
+  // several at once, so award when the side crosses a multiple of 10.
+  const crossedTen = (user: { trade_count: number } | null, added: number) =>
+    !!user && added > 0 && Math.floor(user.trade_count / 10) > Math.floor((user.trade_count - added) / 10);
+
   const bonusDraws: string[] = [];
-  if (pokemonExchanged) {
-    if (fromUser && fromUser.trade_count % 10 === 0) bonusDraws.push(trade.from_user_id);
-    if (toUser && toUser.trade_count % 10 === 0) bonusDraws.push(trade.to_user_id);
-  }
+  if (crossedTen(fromUser, fromCount)) bonusDraws.push(trade.from_user_id);
+  if (crossedTen(toUser, toCount)) bonusDraws.push(trade.to_user_id);
 
   res.json({ success: true, bonusDraws, new_badges: { from: fromBadges, to: toBadges } });
 
-  // Fire-and-forget: notify proposer that their trade was accepted
+  // Fire-and-forget: notify proposer (first Pokémon of each side, like before).
   const accepterName = req.user!.display_name;
-  const fromPokemonId2 = trade.from_pokemon_id;
-  const toPokemonId2 = trade.to_pokemon_id;
-  const fromUserId2 = trade.from_user_id;
   Promise.all([
-    prisma.userPokemon.findUnique({ where: { id: fromPokemonId2 }, include: { pokemon: true } }),
-    toPokemonId2
-      ? prisma.userPokemon.findUnique({ where: { id: toPokemonId2 }, include: { pokemon: true } })
+    trade.from_pokemon_id
+      ? prisma.userPokemon.findUnique({ where: { id: trade.from_pokemon_id }, include: { pokemon: true } })
+      : Promise.resolve(null),
+    trade.to_pokemon_id
+      ? prisma.userPokemon.findUnique({ where: { id: trade.to_pokemon_id }, include: { pokemon: true } })
       : Promise.resolve(null),
   ]).then(([fromUpkm, toUpkm]) => {
     const shinySprite = (up: typeof fromUpkm) =>
       up ? (up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url) : '';
-    return createNotification(fromUserId2, 'TRADE_ACCEPTED', {
+    return createNotification(trade.from_user_id, 'TRADE_ACCEPTED', {
       tradeId: trade.id,
       accepterName,
       givenPokemonName: fromUpkm?.pokemon.name ?? '?',
@@ -420,6 +434,8 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
   }).catch(() => {});
 });
 
+// ── Decline / Cancel (status-only, items kept for history) ─────────────────────
+
 router.post('/decline/:id', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const id = String(req.params.id);
@@ -430,16 +446,10 @@ router.post('/decline/:id', async (req: Request, res: Response): Promise<void> =
     return;
   }
 
-  await prisma.trade.update({
-    where: { id },
-    data: { status: 'declined', resolved_at: new Date() },
-  });
-
+  await prisma.trade.update({ where: { id }, data: { status: 'declined', resolved_at: new Date() } });
   res.json({ success: true });
 });
 
-// Proposer-side cancellation of a still-pending trade. Keeps the row (status
-// 'cancelled') for history rather than deleting it.
 router.post('/cancel/:id', async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const id = String(req.params.id);
@@ -458,11 +468,7 @@ router.post('/cancel/:id', async (req: Request, res: Response): Promise<void> =>
     return;
   }
 
-  await prisma.trade.update({
-    where: { id },
-    data: { status: 'cancelled', resolved_at: new Date() },
-  });
-
+  await prisma.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
   res.json({ ok: true });
 });
 

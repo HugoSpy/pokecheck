@@ -74,6 +74,7 @@ model UserPokemon {
 
   user    User    @relation(fields: [user_id], references: [id])
   pokemon Pokemon @relation(fields: [pokemon_id], references: [id])
+  trade_items TradeItem[]
 }
 
 model Trade {
@@ -90,6 +91,22 @@ model Trade {
 
   from_user User @relation("TradeSent",     fields: [from_user_id], references: [id])
   to_user   User @relation("TradeReceived", fields: [to_user_id],   references: [id])
+  items     TradeItem[]
+}
+
+// Multi-Pokémon trade sides. One row per UserPokemon offered, on either side
+// ('from' or 'to'). Trade.from_pokemon_id/to_pokemon_id are kept for backward
+// compatibility during the transition (Migration 2 will drop them).
+model TradeItem {
+  id         String @id @default(uuid())
+  trade_id   String
+  owner      String // 'from' | 'to'
+  pokemon_id String // UserPokemon.id
+
+  trade   Trade       @relation(fields: [trade_id], references: [id])
+  pokemon UserPokemon @relation(fields: [pokemon_id], references: [id])
+
+  @@index([trade_id])
 }
 
 model OneshotToken {
