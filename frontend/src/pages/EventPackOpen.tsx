@@ -311,7 +311,7 @@ export default function EventPackOpen() {
                 style={{ '--btn-color': rarityGlow } as React.CSSProperties}
                 onClick={() => navigate(isShinyDaily ? '/profile' : '/events')}
               >
-                {isShinyDaily ? 'Retour au profil →' : 'Retour aux événements →'}
+                {isShinyDaily ? 'Retour au profil →' : 'Retour à la boutique →'}
               </button>
               {isDuplicate && !sold && (
                 <button

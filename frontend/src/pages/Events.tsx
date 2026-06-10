@@ -202,7 +202,7 @@ export default function Events() {
     return (
       <div className="loading-screen">
         <div className="spinner" />
-        Chargement des événements…
+        Chargement de la boutique…
       </div>
     );
   }
@@ -213,11 +213,11 @@ export default function Events() {
 
   return (
     <div className="events-page">
-      <h1 className="events-title">Événements</h1>
+      <h1 className="events-title">Boutique</h1>
 
       {visibleEvents.length === 0 ? (
         <div className="events-empty">
-          <div className="events-empty-title">Aucun événement en cours.</div>
+          <div className="events-empty-title">Aucun pack disponible pour le moment.</div>
           <div className="events-empty-sub">Reviens bientôt !</div>
         </div>
       ) : (

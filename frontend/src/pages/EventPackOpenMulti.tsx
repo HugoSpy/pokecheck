@@ -203,7 +203,7 @@ export default function EventPackOpenMulti() {
           </div>
 
           <button className="open-btn" onClick={() => navigate('/events')}>
-            Retour aux événements →
+            Retour à la boutique →
           </button>
         </div>
       )}
