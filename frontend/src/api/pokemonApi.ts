@@ -22,12 +22,14 @@ export async function searchPokemonSpecies(params: {
   name?: string;
   type?: string | null;
   rarity?: string | null;
+  generation?: number | null;
   limit?: number;
 }): Promise<{ pokemons: PokemonSpecies[] }> {
   const qs = new URLSearchParams();
   if (params.name) qs.set('name', params.name);
   if (params.type) qs.set('type', params.type);
   if (params.rarity) qs.set('rarity', params.rarity);
+  if (params.generation != null) qs.set('generation', String(params.generation));
   if (params.limit) qs.set('limit', String(params.limit));
   return apiFetch<{ pokemons: PokemonSpecies[] }>(`/pokemon/search?${qs.toString()}`);
 }

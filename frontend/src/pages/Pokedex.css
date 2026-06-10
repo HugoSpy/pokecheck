@@ -215,6 +215,65 @@
 .shiny-chip:hover { border-color: rgba(212,175,55,0.5); color: #FFD700; }
 .shiny-chip.active { background: rgba(212,175,55,0.12); border-color: #d4af37; color: #FFD700; }
 
+/* ──────────────────────────────────────────────────────────────────────────
+   Readability pass (Pokédex page only - scoped under .pokedex-page so the
+   shared search modal that reuses these classes is left unchanged).
+   Bigger, more tappable chips, larger labels/search, and a strong (filled)
+   active state instead of the previous subtle tint.
+   ────────────────────────────────────────────────────────────────────────── */
+.pokedex-page .pokedex-filters { gap: 22px; padding: 20px 22px; }
+.pokedex-page .filter-row { gap: 12px; }
+
+.pokedex-page .filter-label {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
+}
+
+/* Row 1: search spans the full width and is clearly larger. */
+.pokedex-page .filter-search {
+  max-width: none;
+  width: 100%;
+  padding: 14px 18px;
+  font-size: 17px;
+}
+
+.pokedex-page .filter-group { gap: 10px; }
+
+.pokedex-page .filter-chip {
+  padding: 12px 20px;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+
+/* Brighten the plain chips' text (Toutes / Gén. X / Tous / Shiny / Doublons) -
+   they used the dim secondary colour and were the hardest to read. Rarity/type
+   chips keep their own colours. */
+.pokedex-page .filter-chip:not(.rarity-chip):not(.type-chip):not(.shiny-chip) {
+  color: var(--text-primary);
+}
+
+/* Strong, unmistakable active state: filled background + ring. */
+.pokedex-page .filter-chip.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0c15;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 35%, transparent), 0 2px 12px rgba(0,0,0,0.35);
+}
+.pokedex-page .rarity-chip.rarity-common.active    { background:#9ca3af; border-color:#9ca3af; color:#0a0c15; box-shadow:0 0 0 2px rgba(156,163,175,0.4); }
+.pokedex-page .rarity-chip.rarity-rare.active       { background:#3b82f6; border-color:#3b82f6; color:#fff;     box-shadow:0 0 0 2px rgba(59,130,246,0.45); }
+.pokedex-page .rarity-chip.rarity-epic.active       { background:#a855f7; border-color:#a855f7; color:#fff;     box-shadow:0 0 0 2px rgba(168,85,247,0.45); }
+.pokedex-page .rarity-chip.rarity-legendary.active  { background:var(--gold); border-color:var(--gold); color:#0a0c15; box-shadow:0 0 0 2px rgba(245,166,35,0.45); }
+.pokedex-page .type-chip.active {
+  background: var(--type-color, #9CA3AF);
+  border-color: var(--type-color, #9CA3AF);
+  color: #fff;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--type-color, #9CA3AF) 45%, transparent);
+}
+.pokedex-page .shiny-chip.active { background:#d4af37; border-color:#d4af37; color:#0a0c15; box-shadow:0 0 0 2px rgba(212,175,55,0.45); }
+
 /* ── Count ── */
 .pokedex-count {
   display: flex;

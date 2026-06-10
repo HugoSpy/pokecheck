@@ -3,6 +3,8 @@ import { RARITIES, RARITY_FR, ALL_TYPES, TYPE_FR, TYPE_COLORS } from '../utils/p
 // Reusable Pokémon filter bar (name search + rarity + type) - same markup,
 // CSS classes and constants as the Pokédex filters. Used by the global Pokémon
 // search modal. Rarity/type are single-select toggles (click again to clear).
+const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
+
 interface Props {
   search: string;
   onSearch: (v: string) => void;
@@ -10,9 +12,11 @@ interface Props {
   onRarity: (r: string | null) => void;
   type: string | null;
   onType: (t: string | null) => void;
+  generation: number | null;
+  onGeneration: (g: number | null) => void;
 }
 
-export default function PokemonFilters({ search, onSearch, rarity, onRarity, type, onType }: Props) {
+export default function PokemonFilters({ search, onSearch, rarity, onRarity, type, onType, generation, onGeneration }: Props) {
   return (
     <div className="pokedex-filters">
       <input
@@ -23,6 +27,24 @@ export default function PokemonFilters({ search, onSearch, rarity, onRarity, typ
         onChange={e => onSearch(e.target.value)}
         autoFocus
       />
+
+      {/* Génération */}
+      <div className="filter-row">
+        <div className="filter-label">Génération</div>
+        <div className="filter-group">
+          <button
+            className={`filter-chip ${generation === null ? 'active' : ''}`}
+            onClick={() => onGeneration(null)}
+          >Toutes</button>
+          {GENERATIONS.map(g => (
+            <button
+              key={g}
+              className={`filter-chip ${generation === g ? 'active' : ''}`}
+              onClick={() => onGeneration(generation === g ? null : g)}
+            >Gén. {g}</button>
+          ))}
+        </div>
+      </div>
 
       {/* Rareté */}
       <div className="filter-row">
