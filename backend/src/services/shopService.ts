@@ -26,16 +26,10 @@ export const GENERATION_NAMES: Record<number, string> = {
   7: 'Alola',
 };
 
-// Pack texture URL per gen (served from frontend/public). Most follow the
-// texture_pack_gen_<n>.png pattern, but gen 4 and gen 5 shipped under different
-// filenames - override those explicitly so the cards don't 404.
-const GENERATION_TEXTURES: Record<number, string> = {
-  4: '/booster-gen-4.png',
-  5: '/pack_texture_unys.png',
-};
-
+// Pack texture URL per gen (served from frontend/public). All 7 textures follow
+// the texture_pack_gen_<n>.png naming convention.
 function textureUrl(gen: number): string {
-  return GENERATION_TEXTURES[gen] ?? `/texture_pack_gen_${gen}.png`;
+  return `/texture_pack_gen_${gen}.png`;
 }
 
 const ALL_GENERATIONS = [1, 2, 3, 4, 5, 6, 7];

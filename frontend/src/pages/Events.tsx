@@ -62,7 +62,7 @@ export const EVENT_PACK_CONFIG: Record<string, ComponentProps<typeof BoosterPack
     transparentMeshName: 'Object_6',
   },
   'Édition Unys': {
-    textureUrl: '/pack_texture_unys.png',
+    textureUrl: '/texture_pack_gen_5.png',
     textureFlipY: true,
     textureMaterialName: null,
     textureMeshName: 'Object_4',

@@ -54,13 +54,11 @@
   margin-bottom: 16px;
 }
 
-/* ── Grid (3 centered packs) ── */
+/* ── Grid: always 3 packs on one row, each as big as the row allows ── */
 .shop-grid {
   --pack-gap: 32px;
   display: grid;
-  /* Big 3D booster cards: each up to 400px wide, 3 packs centered on the row. */
-  grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
-  justify-content: center;
+  grid-template-columns: repeat(3, 1fr);
   gap: var(--pack-gap);
   align-items: start;
 }
@@ -171,14 +169,18 @@
   text-align: center;
 }
 
-/* ── Mobile ── */
-@media (max-width: 480px) {
+/* ── Mobile: keep the 3 packs on one row, just tighten spacing ── */
+@media (max-width: 640px) {
   .shop-grid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-    gap: 16px;
+    --pack-gap: 10px;
   }
 
   .shop-card {
-    padding: 12px;
+    padding: 10px;
+    gap: 10px;
+  }
+
+  .shop-qty-btn {
+    padding: 6px 0;
   }
 }
