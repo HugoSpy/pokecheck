@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { getTradeOffers, getSentTrades, cancelTrade, proposeTrade, acceptTrade, declineTrade } from '../api/tradeApi';
 import { getMyPokedex, getPublicPokedex } from '../api/pokemonApi';
 import { searchUsers } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
-import type { TradeOffer, SentTrade, UserPokemonInstance } from '../api/types';
+import type { TradeOffer, SentTrade, UserPokemonInstance, TradeItemView } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
+import RarityBadge from '../components/RarityBadge';
 import TradeAnimation3D from '../components/TradeAnimation3D';
 import { Swap, Trash } from '../components/icons';
 import './Trades.css';
@@ -15,8 +16,11 @@ interface LocationState {
   targetUserName?: string;
 }
 
+const MAX_PER_SIDE = 10;
+
 export default function Trades() {
   const location = useLocation();
+  const navigate = useNavigate();
   const state = location.state as LocationState | null;
 
   const [offers, setOffers] = useState<TradeOffer[]>([]);
@@ -26,8 +30,8 @@ export default function Trades() {
 
   const [targetUserId, setTargetUserId] = useState(state?.targetUserId ?? '');
   const [targetUserName, setTargetUserName] = useState(state?.targetUserName ?? '');
-  const [selectedMine, setSelectedMine] = useState<UserPokemonInstance | null>(null);
-  const [selectedTheirs, setSelectedTheirs] = useState<UserPokemonInstance | null>(null);
+  const [selectedMineIds, setSelectedMineIds] = useState<string[]>([]);
+  const [selectedTheirsIds, setSelectedTheirsIds] = useState<string[]>([]);
   const [coinsOffered, setCoinsOffered] = useState(0);
   const [coinsRequested, setCoinsRequested] = useState(0);
 
@@ -50,7 +54,10 @@ export default function Trades() {
     received:   { sprite_url: string; name: string };
     shinyProc:  boolean;
     shinyName?: string;
+    receivedItems: TradeItemView[];
   } | null>(null);
+  // Post-animation results grid: every Pokémon received in the accepted trade.
+  const [results, setResults] = useState<TradeItemView[] | null>(null);
 
   useEffect(() => {
     getTradeOffers()
@@ -110,12 +117,29 @@ export default function Trades() {
       setTheirPokemons(data.pokemons);
       setTargetUserId(userId);
       setTargetUserName(data.user.display_name);
-      setSelectedTheirs(null);
+      setSelectedTheirsIds([]);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setLoadingTheirs(false);
     }
+  }
+
+  // Toggle a Pokémon in/out of a side, enforcing the 6-per-side cap.
+  function toggleSelection(
+    instanceId: string,
+    current: string[],
+    setter: (next: string[]) => void,
+  ) {
+    if (current.includes(instanceId)) {
+      setter(current.filter(id => id !== instanceId));
+      return;
+    }
+    if (current.length >= MAX_PER_SIDE) {
+      setError(`Maximum ${MAX_PER_SIDE} Pokémon par côté.`);
+      return;
+    }
+    setter([...current, instanceId]);
   }
 
   async function handleAccept(offer: TradeOffer) {
@@ -124,6 +148,8 @@ export default function Trades() {
       setOffers(prev => prev.filter(o => o.id !== offer.id));
       refreshProfile();
 
+      // The recipient receives the proposer's ('from') Pokémon.
+      const receivedItems = offer.items.filter(i => i.owner === 'from');
       const given    = offer.toPokemon?.pokemon;
       const received = offer.fromPokemon?.pokemon;
 
@@ -133,7 +159,10 @@ export default function Trades() {
           received,
           shinyProc: res.shiny_proc ?? false,
           shinyName: res.shiny_pokemon_name,
+          receivedItems,
         });
+      } else if (receivedItems.length > 0) {
+        setResults(receivedItems);
       } else {
         setSuccess('Échange accepté !');
       }
@@ -152,20 +181,20 @@ export default function Trades() {
   }
 
   async function handlePropose() {
-    if (!selectedMine || !selectedTheirs || !targetUserId) return;
+    if (selectedMineIds.length === 0 || selectedTheirsIds.length === 0 || !targetUserId) return;
     setSubmitting(true);
     setError(null);
     try {
       await proposeTrade({
-        from_pokemon_id: selectedMine.instanceId,
+        from_pokemon_ids: selectedMineIds,
         to_user_id: targetUserId,
-        to_pokemon_id: selectedTheirs.instanceId,
+        to_pokemon_ids: selectedTheirsIds,
         coins_offered: coinsOffered,
         coins_requested: coinsRequested,
       });
       setSuccess('Offre envoyée !');
-      setSelectedMine(null);
-      setSelectedTheirs(null);
+      setSelectedMineIds([]);
+      setSelectedTheirsIds([]);
       setCoinsOffered(0);
       setCoinsRequested(0);
       getSentTrades().then(setSent).catch(() => null);
@@ -185,8 +214,15 @@ export default function Trades() {
     p => !p.tradeable_at || new Date(p.tradeable_at) <= new Date()
   );
 
+  const mineById = new Map(tradeableMine.map(p => [p.instanceId, p]));
+  const theirsById = new Map(theirPokemons.map(p => [p.instanceId, p]));
+  const selectedMinePokes = selectedMineIds.map(id => mineById.get(id)).filter((p): p is UserPokemonInstance => !!p);
+  const selectedTheirsPokes = selectedTheirsIds.map(id => theirsById.get(id)).filter((p): p is UserPokemonInstance => !!p);
+
   function handleAnimationComplete() {
+    const items = animation?.receivedItems ?? [];
     setAnimation(null);
+    if (items.length > 0) setResults(items);
     getTradeOffers().then(setOffers).catch(() => null);
   }
 
@@ -199,6 +235,14 @@ export default function Trades() {
           shinyProc={animation.shinyProc}
           shinyPokemonName={animation.shinyName}
           onComplete={handleAnimationComplete}
+        />
+      )}
+
+      {results && (
+        <TradeResults
+          items={results}
+          onClose={() => setResults(null)}
+          onPokedex={() => { setResults(null); navigate('/pokedex'); }}
         />
       )}
 
@@ -306,8 +350,8 @@ export default function Trades() {
           {/* My tradeable Pokémon */}
           <div className="propose-col">
             <div className="propose-col-header">
-              Mes Pokémon échangeables
-              <span className="propose-col-count">{tradeableMine.length}</span>
+              Mes Pokémon à offrir
+              <span className="propose-col-count">{selectedMineIds.length}/{MAX_PER_SIDE}</span>
             </div>
             {loadingMine ? (
               <div style={{ padding: '24px 0', display: 'flex', justifyContent: 'center' }}>
@@ -322,8 +366,8 @@ export default function Trades() {
                     key={p.instanceId}
                     pokemon={p}
                     selectable
-                    selected={selectedMine?.instanceId === p.instanceId}
-                    onSelect={setSelectedMine}
+                    selected={selectedMineIds.includes(p.instanceId)}
+                    onSelect={() => toggleSelection(p.instanceId, selectedMineIds, setSelectedMineIds)}
                   />
                 ))}
               </div>
@@ -333,13 +377,11 @@ export default function Trades() {
           {/* Their Pokémon */}
           <div className="propose-col">
             <div className="propose-col-header">
-              Collection de {targetUserName || '…'}
-              {theirPokemons.length > 0 && (
-                <span className="propose-col-count">{theirPokemons.length}</span>
-              )}
+              Pokémon demandés à {targetUserName || '…'}
+              <span className="propose-col-count">{selectedTheirsIds.length}/{MAX_PER_SIDE}</span>
             </div>
             {!targetUserId ? (
-              <div className="trades-empty">Saisir un ID élève pour voir sa collection.</div>
+              <div className="trades-empty">Saisir un élève pour voir sa collection.</div>
             ) : loadingTheirs ? (
               <div style={{ padding: '24px 0', display: 'flex', justifyContent: 'center' }}>
                 <div className="spinner" />
@@ -353,8 +395,8 @@ export default function Trades() {
                     key={p.instanceId}
                     pokemon={p}
                     selectable
-                    selected={selectedTheirs?.instanceId === p.instanceId}
-                    onSelect={setSelectedTheirs}
+                    selected={selectedTheirsIds.includes(p.instanceId)}
+                    onSelect={() => toggleSelection(p.instanceId, selectedTheirsIds, setSelectedTheirsIds)}
                   />
                 ))}
               </div>
@@ -363,16 +405,20 @@ export default function Trades() {
         </div>
 
         {/* Proposal summary */}
-        {(selectedMine || selectedTheirs) && (
+        {(selectedMinePokes.length > 0 || selectedTheirsPokes.length > 0) && (
           <div className="proposal-summary">
             <div className="proposal-side">
-              {selectedMine ? (
-                <div className="proposal-poke">
-                  <img src={selectedMine.sprite_url} alt={selectedMine.name} />
-                  <span>{selectedMine.name}</span>
+              {selectedMinePokes.length > 0 ? (
+                <div className="proposal-pokes">
+                  {selectedMinePokes.map(p => (
+                    <div key={p.instanceId} className="proposal-poke">
+                      <img src={p.sprite_url} alt={p.name} />
+                      <span>{p.name}</span>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="proposal-placeholder">Sélectionne ton Pokémon</div>
+                <div className="proposal-placeholder">Sélectionne tes Pokémon</div>
               )}
               <div className="proposal-coins">
                 <label>Ajouter des coins</label>
@@ -394,13 +440,17 @@ export default function Trades() {
             <div className="proposal-arrow"><Swap size={20} /></div>
 
             <div className="proposal-side">
-              {selectedTheirs ? (
-                <div className="proposal-poke">
-                  <img src={selectedTheirs.sprite_url} alt={selectedTheirs.name} />
-                  <span>{selectedTheirs.name}</span>
+              {selectedTheirsPokes.length > 0 ? (
+                <div className="proposal-pokes">
+                  {selectedTheirsPokes.map(p => (
+                    <div key={p.instanceId} className="proposal-poke">
+                      <img src={p.sprite_url} alt={p.name} />
+                      <span>{p.name}</span>
+                    </div>
+                  ))}
                 </div>
               ) : (
-                <div className="proposal-placeholder">Sélectionne leur Pokémon</div>
+                <div className="proposal-placeholder">Sélectionne leurs Pokémon</div>
               )}
               <div className="proposal-coins">
                 <label>Demander des coins</label>
@@ -417,7 +467,7 @@ export default function Trades() {
 
             <button
               className="btn btn-primary"
-              disabled={!selectedMine || !selectedTheirs || submitting || coinsOffered > coins}
+              disabled={selectedMineIds.length === 0 || selectedTheirsIds.length === 0 || submitting || coinsOffered > coins}
               onClick={handlePropose}
             >
               {submitting ? '…' : 'Proposer'}
@@ -429,29 +479,42 @@ export default function Trades() {
   );
 }
 
+// A side's Pokémon as a row of thumbnails (max 3 shown, then "+N").
+function ItemsRow({ items }: { items: TradeItemView[] }) {
+  const shown = items.slice(0, 3);
+  const extra = items.length - shown.length;
+  return (
+    <div className="offer-items">
+      {shown.map(it => (
+        <img
+          key={it.id}
+          src={it.pokemon.sprite_url}
+          alt={it.pokemon.name}
+          title={it.pokemon.name + (it.is_shiny ? ' ✨' : '')}
+          className={`offer-item-thumb${it.is_shiny ? ' shiny' : ''}`}
+        />
+      ))}
+      {extra > 0 && <span className="offer-items-more">+{extra}</span>}
+      {items.length === 0 && <span className="offer-items-empty">—</span>}
+    </div>
+  );
+}
+
 function OfferCard({ offer, onAccept, onDecline }: {
   offer: TradeOffer;
   onAccept: () => void;
   onDecline: () => void;
 }) {
-  const give = offer.fromPokemon?.pokemon;
-  const recv = offer.toPokemon?.pokemon;
+  const fromItems = offer.items.filter(i => i.owner === 'from');
+  const toItems = offer.items.filter(i => i.owner === 'to');
 
   return (
     <div className="offer-card">
       <div className="offer-from">De {offer.from_user.display_name}</div>
       <div className="offer-exchange">
-        <div className="offer-pokemon">
-          {give && <img src={give.sprite_url} alt={give.name} />}
-          <span>{give?.name ?? '?'}{give?.is_shiny ? ' ✨' : ''}</span>
-          <span className="offer-poke-pts">{give?.points ?? 0} pts</span>
-        </div>
+        <ItemsRow items={fromItems} />
         <span className="offer-arrow"><Swap size={16} /></span>
-        <div className="offer-pokemon">
-          {recv && <img src={recv.sprite_url} alt={recv.name} />}
-          <span>{recv?.name ?? '?'}{recv?.is_shiny ? ' ✨' : ''}</span>
-          <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
-        </div>
+        <ItemsRow items={toItems} />
       </div>
       {offer.coins_offered > 0 && (
         <div className="offer-coins gain">Vous recevrez {offer.coins_offered.toLocaleString()} coins</div>
@@ -468,8 +531,8 @@ function OfferCard({ offer, onAccept, onDecline }: {
 }
 
 function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void }) {
-  const give = trade.fromPokemon?.pokemon;
-  const recv = trade.toPokemon?.pokemon;
+  const fromItems = trade.items.filter(i => i.owner === 'from');
+  const toItems = trade.items.filter(i => i.owner === 'to');
 
   return (
     <div className="offer-card">
@@ -478,17 +541,9 @@ function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void 
       </button>
       <div className="offer-from">À {trade.to_user.display_name}</div>
       <div className="offer-exchange">
-        <div className="offer-pokemon">
-          {give && <img src={give.sprite_url} alt={give.name} />}
-          <span>{give?.name ?? '?'}{give?.is_shiny ? ' ✨' : ''}</span>
-          <span className="offer-poke-pts">{give?.points ?? 0} pts</span>
-        </div>
+        <ItemsRow items={fromItems} />
         <span className="offer-arrow"><Swap size={16} /></span>
-        <div className="offer-pokemon">
-          {recv && <img src={recv.sprite_url} alt={recv.name} />}
-          <span>{recv?.name ?? '?'}{recv?.is_shiny ? ' ✨' : ''}</span>
-          <span className="offer-poke-pts">{recv?.points ?? 0} pts</span>
-        </div>
+        <ItemsRow items={toItems} />
       </div>
       {trade.coins_offered > 0 && (
         <div className="offer-coins cost">Vous envoyez {trade.coins_offered.toLocaleString()} coins</div>
@@ -498,6 +553,37 @@ function SentCard({ trade, onCancel }: { trade: SentTrade; onCancel: () => void 
       )}
       <div className="offer-actions">
         <button className="btn btn-danger" onClick={onCancel}>Annuler l'offre</button>
+      </div>
+    </div>
+  );
+}
+
+// Post-accept results: grid of every Pokémon received.
+function TradeResults({ items, onClose, onPokedex }: {
+  items: TradeItemView[];
+  onClose: () => void;
+  onPokedex: () => void;
+}) {
+  return (
+    <div className="trade-results-overlay" onClick={onClose}>
+      <div className="trade-results" onClick={e => e.stopPropagation()}>
+        <h2 className="trade-results-title">
+          {items.length > 1 ? `${items.length} Pokémon reçus !` : 'Pokémon reçu !'}
+        </h2>
+        <div className="trade-results-grid">
+          {items.map(it => (
+            <div key={it.id} className={`trade-result-card${it.is_shiny ? ' shiny' : ''}`}>
+              {it.is_shiny && <span className="trade-result-shiny">✨</span>}
+              <img src={it.pokemon.sprite_url} alt={it.pokemon.name} className="trade-result-img" />
+              <div className="trade-result-name">{it.pokemon.name}</div>
+              <RarityBadge rarity={it.pokemon.rarity} size="sm" />
+            </div>
+          ))}
+        </div>
+        <div className="trade-results-actions">
+          <button className="btn btn-primary" onClick={onPokedex}>Voir mon Pokédex</button>
+          <button className="btn btn-ghost" onClick={onClose}>Fermer</button>
+        </div>
       </div>
     </div>
   );

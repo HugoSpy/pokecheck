@@ -11,7 +11,7 @@ const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
-const MAX_PER_SIDE = 6;
+const MAX_PER_SIDE = 10;
 
 // ── Enrichment ────────────────────────────────────────────────────────────────
 
