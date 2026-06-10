@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// simulate-drop-rates.js — Simulation pure, zéro HTTP / DB / JWT.
+// simulate-drop-rates.js - Simulation pure, zéro HTTP / DB / JWT.
 // Réplique exactement la logique de tirage des routes draw.ts et event.ts.
 // Usage : node scripts/simulate-drop-rates.js
 
@@ -61,8 +61,8 @@ function printStats(label, counts) {
 const pickEvent   = makePicker({ COMMON: 1.0, RARE: 1.0, EPIC: 1.0, LEGENDARY: 1.0 });
 const pickEventX2 = makePicker({ COMMON: 1.0, RARE: 1.5, EPIC: 2.0, LEGENDARY: 3.0 });
 
-printStats('Tirage normal — /draw',                         simulate(pickNormal,   N));
-printStats('Tirage event — multipliers ×1.0 (neutre)',      simulate(pickEvent,    N));
-printStats('Tirage event — ×1.5 RARE / ×2 EPIC / ×3 LEGY', simulate(pickEventX2, N));
+printStats('Tirage normal - /draw',                         simulate(pickNormal,   N));
+printStats('Tirage event - multipliers ×1.0 (neutre)',      simulate(pickEvent,    N));
+printStats('Tirage event - ×1.5 RARE / ×2 EPIC / ×3 LEGY', simulate(pickEventX2, N));
 
 console.log();

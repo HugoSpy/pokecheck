@@ -1,13 +1,13 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { RollCardData } from '../api/types';
 
-// Phase 2 — the CSGO-style pack-opening animation, extracted verbatim from
+// Phase 2 - the CSGO-style pack-opening animation, extracted verbatim from
 // EventPackOpen.tsx so the battle arena is a pixel-for-pixel copy of the solo
 // reveal (same constants, same timing, same OpenPack.css classes). The only
 // difference: instead of a button kicking off the roll, it begins at a shared
 // `startAt` epoch timestamp so every player in a battle animates in lockstep.
 //
-// Markup/class parity with OpenPack.css is intentional — do not restyle here.
+// Markup/class parity with OpenPack.css is intentional - do not restyle here.
 
 const CARD_WIDTH = 155;
 const CARD_GAP = 12;
@@ -75,7 +75,7 @@ export default function PackRoll({ strip: cards, winner, startAt, flash = false,
   const rarityGlow = RARITY_GLOW[winner.rarity] ?? '#9ca3af';
 
   // Park the strip off-screen right before first paint (avoids a flash of the
-  // unscrolled strip) — identical to the solo useLayoutEffect.
+  // unscrolled strip) - identical to the solo useLayoutEffect.
   useLayoutEffect(() => {
     if (!stripRef.current) return;
     const strip = stripRef.current;

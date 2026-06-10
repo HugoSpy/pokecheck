@@ -9,7 +9,7 @@ export interface BattlePlayer {
   joinedAt: number;
 }
 
-// Phase 2 — a single Pokémon as it travels through the battle pipeline. Mirrors
+// Phase 2 - a single Pokémon as it travels through the battle pipeline. Mirrors
 // the shape returned by the event-draw route (id/name/sprite/rarity/points/shiny),
 // minus persistence: battle draws are NOT written to any Pokédex (decided later).
 export interface BattlePokemon {
@@ -21,7 +21,7 @@ export interface BattlePokemon {
   is_shiny: boolean;
 }
 
-// Phase 2 — the resolved outcome of a battle, computed once when every player is
+// Phase 2 - the resolved outcome of a battle, computed once when every player is
 // ready. `strips` drives each player's CSGO-style roll animation; `results` is
 // the winning card (the 22nd element of each strip) used for score comparison.
 export interface BattleResult {
@@ -38,7 +38,7 @@ export interface BattleRoom {
   maxPlayers: number;
   status: 'waiting' | 'in_progress';
   players: BattlePlayer[];
-  // Phase 2 — populated by startBattle() when the room fills and all players
+  // Phase 2 - populated by startBattle() when the room fills and all players
   // ready. `starting` guards against the ready-handler launching twice;
   // `persisted` ensures the BattleRecord is written only once across N acks.
   // `rosterSnapshot` freezes who was in the battle at launch so the record stays
@@ -48,7 +48,7 @@ export interface BattleRoom {
   starting?: boolean;
   persisted?: boolean;
   rosterSnapshot?: { userId: string; displayName: string }[];
-  // Phase 2.1 — synchronized loading screen. After battle:animation_start each
+  // Phase 2.1 - synchronized loading screen. After battle:animation_start each
   // client preloads its sprites and emits battle:client_ready; `readyClients`
   // counts them (deduped via `readyClientIds`). When every client is ready (or
   // `beginTimeout` fires after 15s) the server emits battle:begin and the rolls
@@ -222,7 +222,7 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
 
   // Once a battle is in progress the outcome is locked in. A player leaving
   // (e.g. closing their tab mid-animation) must NOT wipe the strips/result or
-  // reset the room — that would cancel a BattleRecord the others are still about
+  // reset the room - that would cancel a BattleRecord the others are still about
   // to ack. Just drop them from the live roster; `rosterSnapshot` keeps the
   // record complete. The room is only torn down once everyone has left.
   if (room.status === 'in_progress') {
@@ -232,7 +232,7 @@ export function removePlayer(roomId: string, userId: string): { room: BattleRoom
       return { room: undefined, deleted: true };
     }
     // A player leaving while everyone is still on the synchronized loading screen
-    // invalidates the ready count — reset it so a stale tally can't trigger
+    // invalidates the ready count - reset it so a stale tally can't trigger
     // battle:begin early. The 15s safety timeout still guarantees the battle
     // begins for the remaining players.
     if (!room.begun) {

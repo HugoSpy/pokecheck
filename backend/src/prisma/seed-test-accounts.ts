@@ -1,4 +1,4 @@
-// [DEV ONLY - NEVER MERGE] — seeds two fixed test accounts (full Pokédex,
+// [DEV ONLY - NEVER MERGE] - seeds two fixed test accounts (full Pokédex,
 // 99999 coins) so multi-player features (e.g. Battle lobby) can be tested
 // locally without real EPITA accounts. Idempotent: safe to re-run.
 import { PrismaClient } from '@prisma/client';

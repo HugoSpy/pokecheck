@@ -72,7 +72,7 @@ export default function BadgeDetailModal({ badge, progress, claiming, onClaim, o
             <div className="bdm-unlocked-at">
               Débloqué le {badge.unlocked_at ? new Date(badge.unlocked_at).toLocaleString('fr-FR', {
                 day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
-              }) : '—'}
+              }) : '-'}
             </div>
             {badge.claimed ? (
               <div className="bdm-claimed">Récompense réclamée ✓</div>

@@ -13,7 +13,7 @@ import {
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /users/search?q=prénom+nom  — recherche élève par nom (min 2 chars)
+// GET /users/search?q=prénom+nom  - recherche élève par nom (min 2 chars)
 router.get('/search', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const q = String(req.query.q ?? '').trim();
   if (q.length < 2) {
@@ -37,7 +37,7 @@ router.get('/search', authMiddleware, async (req: Request, res: Response): Promi
   res.json({ users: users.map(u => ({ id: u.id, display_name: u.nickname ?? u.display_name })) });
 });
 
-// GET /users/badges/me — liste complète des badges de l'utilisateur connecté
+// GET /users/badges/me - liste complète des badges de l'utilisateur connecté
 router.get('/badges/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
 
@@ -50,7 +50,7 @@ router.get('/badges/me', authMiddleware, async (req: Request, res: Response): Pr
   res.json(badges);
 });
 
-// GET /users/badges/unnotified — badges débloqués mais pas encore affichés
+// GET /users/badges/unnotified - badges débloqués mais pas encore affichés
 router.get('/badges/unnotified', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
 
@@ -63,7 +63,7 @@ router.get('/badges/unnotified', authMiddleware, async (req: Request, res: Respo
   res.json(badges);
 });
 
-// POST /users/badges/notified — marquer des badges comme vus { badgeIds: string[] }
+// POST /users/badges/notified - marquer des badges comme vus { badgeIds: string[] }
 router.post('/badges/notified', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const { badgeIds } = req.body as { badgeIds: string[] };
@@ -81,7 +81,7 @@ router.post('/badges/notified', authMiddleware, async (req: Request, res: Respon
   res.json({ success: true });
 });
 
-// PATCH /users/username — mettre à jour son nom d'utilisateur
+// PATCH /users/username - mettre à jour son nom d'utilisateur
 router.patch('/username', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const displayName = String((req.body as { display_name?: unknown }).display_name ?? '').trim();
@@ -96,7 +96,7 @@ router.patch('/username', authMiddleware, async (req: Request, res: Response): P
     return;
   }
 
-  // Write the chosen name to `nickname`, NOT `display_name` — display_name is
+  // Write the chosen name to `nickname`, NOT `display_name` - display_name is
   // re-synced from Azure AD at every login and would overwrite a rename. The
   // effective name (nickname ?? display_name) is what every display surface returns.
   const updated = await prisma.user.update({
@@ -108,7 +108,7 @@ router.patch('/username', authMiddleware, async (req: Request, res: Response): P
   res.json({ display_name: updated.nickname ?? updated.display_name });
 });
 
-// PATCH /users/featured-badges — mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
+// PATCH /users/featured-badges - mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
 router.patch('/featured-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const { badgeIds } = req.body as { badgeIds: string[] };
@@ -139,7 +139,7 @@ router.patch('/featured-badges', authMiddleware, async (req: Request, res: Respo
   res.json({ success: true });
 });
 
-// GET /users/me — profil complet de l'utilisateur connecté
+// GET /users/me - profil complet de l'utilisateur connecté
 router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const user = await prisma.user.findUnique({
@@ -169,7 +169,7 @@ const SHINY_EVENT_NAME = 'Shiny Surge';
 // The DB stores timestamps in UTC. The pack resets at midnight Paris time, and
 // Paris is UTC+2 in summer (CEST), so midnight Paris == 22:00 UTC. The last reset
 // boundary is therefore: floor((now - 22h) / 24h) * 24h + 22h.
-// NOTE: hardcoded to UTC+2 (summer) per spec — would be 23:00 UTC in winter (CET).
+// NOTE: hardcoded to UTC+2 (summer) per spec - would be 23:00 UTC in winter (CET).
 const PARIS_OFFSET_MS = 22 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -234,7 +234,7 @@ router.post('/daily-shiny-pack', authMiddleware, async (req: Request, res: Respo
   res.json({ ...result, new_badges: newBadges, availableAt });
 });
 
-// GET /users/all-badges — tous les badges avec statut débloqué pour l'user connecté
+// GET /users/all-badges - tous les badges avec statut débloqué pour l'user connecté
 router.get('/all-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const [allBadges, userBadges] = await Promise.all([
@@ -257,7 +257,7 @@ router.get('/all-badges', authMiddleware, async (req: Request, res: Response): P
   }));
 });
 
-// GET /users/badges/progress — every badge with unlock/claim status, plus a
+// GET /users/badges/progress - every badge with unlock/claim status, plus a
 // progress breakdown (current/required, and missingPokemon for collection
 // badges) for locked ones. Mirrors the thresholds used by checkBadges.
 router.get('/badges/progress', authMiddleware, async (req: Request, res: Response): Promise<void> => {
@@ -375,14 +375,14 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
       return { current: Math.min(ownedByGen.get(gen)?.size ?? 0, total), required: total };
     }
 
-    // Rarity collection — distinct species owned of a rarity.
+    // Rarity collection - distinct species owned of a rarity.
     const rarMatch = badgeId.match(/^rarity_(common|rare|epic|legendary)_(\d+)$/);
     if (rarMatch) {
       const cur = speciesByRarity.get(rarMatch[1].toUpperCase())?.size ?? 0;
       return { current: Math.min(cur, Number(rarMatch[2])), required: Number(rarMatch[2]) };
     }
 
-    // Generation collection — distinct species owned of a generation (gen{N}_{tier}).
+    // Generation collection - distinct species owned of a generation (gen{N}_{tier}).
     const genColl = badgeId.match(/^gen(\d+)_(\d+)$/);
     if (genColl) {
       const cur = ownedByGen.get(Number(genColl[1]))?.size ?? 0;
@@ -401,7 +401,7 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
   }));
 });
 
-// POST /users/badges/:badgeId/claim — réclamer les coins d'un badge débloqué
+// POST /users/badges/:badgeId/claim - réclamer les coins d'un badge débloqué
 router.post('/badges/:badgeId/claim', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const badgeId = String(req.params.badgeId);

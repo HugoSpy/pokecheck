@@ -147,7 +147,7 @@ async function main() {
     process.exit(1);
   }
 
-  // Starter evolution lineage badges (21) — named after the base starter using
+  // Starter evolution lineage badges (21) - named after the base starter using
   // the FR name from the Pokemon table, e.g. "Lignée Salamèche".
   const evoBaseIds = Object.values(STARTER_EVO).map(ids => ids[0]);
   const evoBaseNames = new Map(
@@ -165,7 +165,7 @@ async function main() {
     });
   }
 
-  // Generation collection badges — distinct species per region. Tier 100 is
+  // Generation collection badges - distinct species per region. Tier 100 is
   // gated on the real per-gen species count read from the DB (gens 6/7 < 100).
   const REGIONS: Record<number, string> = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unys', 6: 'Kalos', 7: 'Alola' };
   const GEN_TIER_PREFIX: Record<number, string> = { 10: 'Explorateur', 25: 'Voyageur', 50: 'Habitué', 100: 'Expert' };
@@ -196,7 +196,7 @@ async function main() {
     });
     process.stdout.write('.');
   }
-  console.log(`\nDone — ${BADGES.length} badges upserted.`);
+  console.log(`\nDone - ${BADGES.length} badges upserted.`);
 }
 
 main()

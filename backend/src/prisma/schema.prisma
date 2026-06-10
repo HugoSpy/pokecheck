@@ -128,7 +128,7 @@ model Event {
   created_at        DateTime @default(now())
 }
 
-// Phase 2 "Battle de caisse" — persisted outcome of a finished battle. Loosely
+// Phase 2 "Battle de caisse" - persisted outcome of a finished battle. Loosely
 // coupled (no FK relations, like Event) since players/results are a point-in-time
 // snapshot. `players` is a JSON array of { userId, displayName, pokemonId, name,
 // points, rarity, is_shiny }. Pokémon are NOT added to any Pokédex.

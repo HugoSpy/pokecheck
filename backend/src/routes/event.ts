@@ -99,7 +99,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
-  // Build a full 30-card strip with the given winner baked in at WINNER_INDEX —
+  // Build a full 30-card strip with the given winner baked in at WINNER_INDEX -
   // the exact shape PackRoll renders (used by the multi-open path).
   function buildFullStrip(winnerCard: typeof commons[number] & { is_shiny: boolean; points: number }) {
     const strip = Array.from({ length: FULL_STRIP_SIZE }, () => {
@@ -194,7 +194,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
-  // Single draw — shared with the free daily Shiny pack (services/eventDraw.ts).
+  // Single draw - shared with the free daily Shiny pack (services/eventDraw.ts).
   let result;
   try {
     result = await drawFromEvent(userId, event, { spendPrice: true, source: 'event' });

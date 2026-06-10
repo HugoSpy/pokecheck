@@ -9,7 +9,7 @@ import { checkBadges } from '../services/badgeService';
 const router = Router();
 const prisma = new PrismaClient();
 
-// 5 sells/s per user — keyed by JWT user id, not IP, because students share a
+// 5 sells/s per user - keyed by JWT user id, not IP, because students share a
 // Cloudflare egress IP. Selling is a routine, legitimate action, so the limiter
 // is generous (raised from 1/s) and exists only to blunt runaway scripts.
 const sellLimiter = rateLimit({
@@ -33,7 +33,7 @@ const bulkSellLimiter = rateLimit({
 
 const MAX_BULK_SELL = 50;
 
-// POST /sell/bulk — sell up to 50 owned Pokémon in one Serializable transaction.
+// POST /sell/bulk - sell up to 50 owned Pokémon in one Serializable transaction.
 // Declared BEFORE '/:userPokemonId' so Express doesn't treat "bulk" as an id.
 // total_score is recomputed from scratch afterwards (recalculateUserPokedexValue
 // is the source of truth), so a duplicate with a surviving copy keeps its points
@@ -101,7 +101,7 @@ router.post('/bulk', authMiddleware, bulkSellLimiter, async (req: Request, res: 
     const e = err as { status?: number; code?: string; message?: string };
     if (e.status === 403) { res.status(403).json({ error: e.message }); return; }
     if (e.status === 409) { res.status(409).json({ error: e.message }); return; }
-    // P2034 = serialization failure from a concurrent write — caller can retry.
+    // P2034 = serialization failure from a concurrent write - caller can retry.
     if (e.code === 'P2034') { res.status(429).json({ error: 'Too many requests, please slow down.' }); return; }
     throw err;
   }
@@ -130,7 +130,7 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
   }
 
   // Only the seller's OWN pending offer (this Pokémon as from_pokemon_id) blocks
-  // the sale — they'd be selling something they're actively offering. A proposal
+  // the sale - they'd be selling something they're actively offering. A proposal
   // that merely REQUESTS this Pokémon (to_pokemon_id, an incoming offer the owner
   // never accepted) must NOT block them; it's cancelled in cascade below.
   const ownPendingOffer = await prisma.trade.findFirst({
@@ -144,7 +144,7 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
   const sellPrice = getSellPrice(userPokemon);
 
   await prisma.$transaction(async tx => {
-    // Cancel any incoming pending proposals targeting this Pokémon — selling it
+    // Cancel any incoming pending proposals targeting this Pokémon - selling it
     // frees the owner, and the proposers' offers simply fall through.
     await tx.trade.updateMany({
       where: { status: 'pending', to_pokemon_id: userPokemonId },

@@ -2,8 +2,8 @@ const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
 
 // [DEV ONLY - NEVER MERGE] sessionStorage key for the test-account backdoor JWT
 // (see Login.tsx loginAsTest / backend routes/devAuth.ts). sessionStorage is
-// scoped per-tab — unlike localStorage and cookies, which are shared across
-// every tab of the same origin — so two tabs can independently be Test 1/Test 2.
+// scoped per-tab - unlike localStorage and cookies, which are shared across
+// every tab of the same origin - so two tabs can independently be Test 1/Test 2.
 export const DEV_TOKEN_STORAGE_KEY = 'pokecheck_dev_token';
 
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {

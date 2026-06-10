@@ -268,7 +268,7 @@
   box-shadow: 0 0 8px #f5a62322;
 }
 
-/* ── Clickable badge cards (open detail modal) — lively hover ── */
+/* ── Clickable badge cards (open detail modal) - lively hover ── */
 .badge-card--clickable {
   cursor: pointer;
   font-family: inherit;

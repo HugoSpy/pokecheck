@@ -21,16 +21,16 @@ async function main() {
           where: { id: pokemon.id },
           data: { name: frName }
         });
-        if (pokemon.id % 50 === 0) console.log(`Progress: ${pokemon.id}/809 — ${frName}`);
+        if (pokemon.id % 50 === 0) console.log(`Progress: ${pokemon.id}/809 - ${frName}`);
         updated++;
       } else {
-        console.log(`⚠️  ${pokemon.id}: ${pokemon.name} — pas de nom FR`);
+        console.log(`⚠️  ${pokemon.id}: ${pokemon.name} - pas de nom FR`);
         failed++;
       }
 
       await new Promise(r => setTimeout(r, 300));
     } catch (e) {
-      console.error(`❌ ${pokemon.id}: ${pokemon.name} — erreur:`, e);
+      console.error(`❌ ${pokemon.id}: ${pokemon.name} - erreur:`, e);
       failed++;
     }
   }

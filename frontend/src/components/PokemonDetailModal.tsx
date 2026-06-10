@@ -138,7 +138,7 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
                 className="pdm-sell-btn"
                 onClick={() => setConfirmSell(true)}
               >
-                Vendre — {sellPrice} coins
+                Vendre - {sellPrice} coins
               </button>
             ) : (
               <div className="pdm-sell-confirm">

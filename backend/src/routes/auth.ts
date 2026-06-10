@@ -10,7 +10,7 @@ import { checkBadges } from '../services/badgeService';
 const router = Router();
 const prisma = new PrismaClient();
 
-// M2 — JWT duration is now driven by SESSION_DURATION (default 1h) for both
+// M2 - JWT duration is now driven by SESSION_DURATION (default 1h) for both
 // Microsoft OAuth and one-shot tokens. The previous 24h hardcoded default meant
 // a compromised admin token stayed valid for a full day; 1h limits the blast
 // radius if a token is stolen or the JWT_SECRET is briefly leaked.
@@ -26,8 +26,8 @@ export function signSessionToken(
       userId: user.id,
       ms_id: user.ms_id,
       // The JWT carries the EFFECTIVE display name (nickname overrides the
-      // Azure-synced display_name), so req.user.display_name — used for trade
-      // notifications and the battle socket — reflects the chosen nickname.
+      // Azure-synced display_name), so req.user.display_name - used for trade
+      // notifications and the battle socket - reflects the chosen nickname.
       display_name: user.nickname ?? user.display_name,
       isAdmin: user.is_admin === true,
       ...(opts.drawGrant ? { drawGrant: opts.drawGrant } : {}),
@@ -187,10 +187,10 @@ if (process.env.MICROSOFT_CLIENT_ID) {
 );
 }
 
-// ── GET /auth/microsoft — démarre le flow ────────────────────────────────────
+// ── GET /auth/microsoft - démarre le flow ────────────────────────────────────
 router.get('/microsoft', (req: Request, res: Response, next: NextFunction) => {
   if (!process.env.MICROSOFT_CLIENT_ID) {
-    res.status(503).json({ error: 'Microsoft OAuth non configuré — voir README' });
+    res.status(503).json({ error: 'Microsoft OAuth non configuré - voir README' });
     return;
   }
   const state = issueState(res);

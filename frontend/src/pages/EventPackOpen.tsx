@@ -60,7 +60,7 @@ export default function EventPackOpen() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const eventId = params.get('event_id') ?? '';
-  // Free daily Shiny pack mode (opened from the profile page) — claims the
+  // Free daily Shiny pack mode (opened from the profile page) - claims the
   // /users/daily-shiny-pack endpoint instead of a paid event draw.
   const isShinyDaily = params.get('shiny') === '1';
 
@@ -163,7 +163,7 @@ export default function EventPackOpen() {
       const result = await sellPokemon(drawInstanceId);
       setSold(true);
       await refreshProfile();
-      setToast({ msg: `Doublon revendu — +${result.coins_earned} coins`, type: 'success' });
+      setToast({ msg: `Doublon revendu - +${result.coins_earned} coins`, type: 'success' });
     } catch {
       setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
     } finally {

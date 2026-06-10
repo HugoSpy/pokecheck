@@ -34,7 +34,7 @@ export async function spendCoins(
   amount: number,
   reason: string
 ): Promise<void> {
-  // M7 — Atomic compare-and-swap: the previous implementation read coins then
+  // M7 - Atomic compare-and-swap: the previous implementation read coins then
   // decremented in two separate statements. Under PostgreSQL READ COMMITTED two
   // concurrent spend calls could both pass the balance check before either
   // committed, resulting in a negative balance (e.g. event-draw raced with a

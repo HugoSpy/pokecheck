@@ -11,7 +11,7 @@
   --text-primary: #e6e8f2;
   --text-secondary: #9aa3be;  /* WCAG AA: ~6:1 on --bg-card (was #6e7590 ~4.2:1) */
   --text-muted: #6f7791;      /* WCAG AA: ~4.5:1 on --bg-card (was #3d4058 ~1.9:1) */
-  --text-faint: #4a4f68;      /* decorative only — never load-bearing text */
+  --text-faint: #4a4f68;      /* decorative only - never load-bearing text */
 
   --accent: #00d4ff;
   --accent-dim: rgba(0, 212, 255, 0.15);

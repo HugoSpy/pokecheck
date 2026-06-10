@@ -105,7 +105,7 @@
   font-weight: 700;
   letter-spacing: 0.04em;
   font-size: var(--text-base);
-  color: #000; /* on-accent button text — project convention (btn-primary, open-btn) */
+  color: #000; /* on-accent button text - project convention (btn-primary, open-btn) */
   background: var(--gold);
   border: none;
   border-radius: var(--radius);

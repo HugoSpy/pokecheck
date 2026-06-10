@@ -56,7 +56,7 @@ export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie
   // A tie is active if the hook says so, or a tie landed before this mounted.
   const tieActive = isTie || getPendingTie() !== null;
 
-  // Fall back to the module-level store if the prop hasn't propagated yet — the
+  // Fall back to the module-level store if the prop hasn't propagated yet - the
   // arena can mount in the same tick the event arrives, before useBattle's React
   // state updates. Guard by roomId so a stale payload from a prior battle is
   // never used. startAt still keeps every client's animation in sync.
@@ -117,7 +117,7 @@ export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie
 
   // Reveal the outcome banner once all rolls have finished, and ack the result
   // so the backend persists the BattleRecord (only the first ack writes). Timed
-  // from battle:begin's startAt — the shared, real start instant.
+  // from battle:begin's startAt - the shared, real start instant.
   useEffect(() => {
     if (!begin) return;
     const doneIn = Math.max(0, begin.startAt - Date.now()) + ROLL_DURATION + REVEAL_TAIL;
@@ -142,7 +142,7 @@ export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie
     return id;
   }, [anim]);
 
-  // Tie overlay — the server pre-resolves ties before sending the final
+  // Tie overlay - the server pre-resolves ties before sending the final
   // animation_start, so this shows while the client waits between draws.
   const tieOverlay = tieActive ? (
     <div className="battle-tie-overlay">
@@ -192,7 +192,7 @@ export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie
   return (
     <div className="battle-arena-stage">
       {tieOverlay}
-      {/* Local player — big, with glow */}
+      {/* Local player - big, with glow */}
       {me && (
         <div className="battle-roll-block battle-roll-block-me">
           <div className="battle-roll-label">
@@ -212,7 +212,7 @@ export default function BattleArena({ lobby, battleAnimation, battleBegin, isTie
         </div>
       )}
 
-      {/* Other players — smaller, side by side, glow attenuated via CSS */}
+      {/* Other players - smaller, side by side, glow attenuated via CSS */}
       {others.length > 0 && (
         <div className="battle-roll-others">
           {others.map(uid => (

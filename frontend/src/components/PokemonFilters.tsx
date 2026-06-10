@@ -1,6 +1,6 @@
 import { RARITIES, RARITY_FR, ALL_TYPES, TYPE_FR, TYPE_COLORS } from '../utils/pokemon';
 
-// Reusable Pokémon filter bar (name search + rarity + type) — same markup,
+// Reusable Pokémon filter bar (name search + rarity + type) - same markup,
 // CSS classes and constants as the Pokédex filters. Used by the global Pokémon
 // search modal. Rarity/type are single-select toggles (click again to clear).
 interface Props {

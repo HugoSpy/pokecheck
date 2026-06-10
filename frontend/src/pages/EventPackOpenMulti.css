@@ -1,4 +1,4 @@
-/* Multi-pack opening — N PackRoll animations side by side, then a result grid.
+/* Multi-pack opening - N PackRoll animations side by side, then a result grid.
    Reuses OpenPack.css for the roll internals; only layout/scaling lives here. */
 
 .multi-pack-page {

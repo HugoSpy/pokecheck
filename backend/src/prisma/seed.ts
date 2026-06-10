@@ -77,7 +77,7 @@ async function main() {
 
   console.log(`DB: ${existingIds.size} already seeded, ${toFetch.length} to fetch.`);
   if (toFetch.length === 0) {
-    console.log('All 809 Pokémon already in DB — nothing to do.');
+    console.log('All 809 Pokémon already in DB - nothing to do.');
     return;
   }
 

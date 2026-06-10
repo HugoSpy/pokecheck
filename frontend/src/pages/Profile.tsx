@@ -60,7 +60,7 @@ function shinyPackAvailable(claimedAt: string | null): boolean {
 }
 
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -331,7 +331,7 @@ export default function Profile() {
               Ouvrir le pack Shiny ✨
             </Link>
           ) : (
-            <span className="claim-done">Pack Shiny — Disponible à 00h00</span>
+            <span className="claim-done">Pack Shiny - Disponible à 00h00</span>
           )}
         </div>
       </section>

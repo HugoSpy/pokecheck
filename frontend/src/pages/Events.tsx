@@ -171,7 +171,7 @@ function EventCard({ event }: { event: GameEvent }) {
           >
             {opening
               ? 'Ouverture…'
-              : `${count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} — ${totalPrice} coins`}
+              : `${count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} - ${totalPrice} coins`}
           </button>
           {error && <div className="event-error">{error}</div>}
         </div>

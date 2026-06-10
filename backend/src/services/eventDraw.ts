@@ -1,4 +1,4 @@
-// Shared single-pack event draw — the exact probability logic used by
+// Shared single-pack event draw - the exact probability logic used by
 // POST /event/draw, extracted so the free daily Shiny pack can reuse it without
 // duplicating the rarity weighting. Probabilities come from the event's
 // rarity_multiplier (not hardcoded); `spendPrice` toggles the coin cost so the

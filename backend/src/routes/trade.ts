@@ -287,7 +287,7 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
     // Ownership re-verification: a stale duplicate proposal can reference a Pokémon
     // whose owner changed via another accepted trade since this one was created.
     // The by-id transfers below would otherwise silently steal it from its current
-    // owner — so cancel this trade instead of transferring.
+    // owner - so cancel this trade instead of transferring.
     const fromPokemon = await tx.userPokemon.findUnique({ where: { id: trade.from_pokemon_id } });
     if (!fromPokemon || fromPokemon.user_id !== trade.from_user_id) {
       await tx.trade.update({ where: { id }, data: { status: 'cancelled', resolved_at: new Date() } });
@@ -332,7 +332,7 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
       data: { status: 'cancelled', resolved_at: new Date() },
     });
 
-    // Cancel any active market listings for the exchanged Pokémon — their owner
+    // Cancel any active market listings for the exchanged Pokémon - their owner
     // just changed, so a stale 'active' listing would let a buyer rip the Pokémon
     // out of its new owner (same hazard as the sibling-trade cancel above).
     await tx.marketListing.updateMany({

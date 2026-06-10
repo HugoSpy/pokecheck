@@ -237,7 +237,7 @@ export default function Battle() {
     if (lobby?.status === 'in_progress') setView('arena');
   }, [lobby?.status]);
 
-  // A battle that just started charged the entry cost — refresh the coin balance.
+  // A battle that just started charged the entry cost - refresh the coin balance.
   useEffect(() => {
     if (battleAnimation) void refreshProfile();
   }, [battleAnimation, refreshProfile]);

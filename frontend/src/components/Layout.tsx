@@ -78,7 +78,7 @@ export default function Layout() {
     <div className={`layout${isDevEnv ? ' layout--dev' : ''}`}>
       {isDevEnv && (
         <div className="dev-banner">
-          ⚠️ Environnement de développement — api-dev.pokecheck.fr
+          ⚠️ Environnement de développement - api-dev.pokecheck.fr
         </div>
       )}
       <nav className="nav">

@@ -110,7 +110,7 @@ async function main(): Promise<void> {
       });
     });
 
-    console.log(`✓ ${u.display_name} — wipe terminé`);
+    console.log(`✓ ${u.display_name} - wipe terminé`);
   }
 
   console.log('\n=== Vérification finale ===\n');

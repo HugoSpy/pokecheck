@@ -12,7 +12,7 @@ export const STARTERS: Record<string, number[]> = {
   starters_gen7: [722, 725, 728],
 };
 
-// Full starter evolution lineages — own all 3 stages. base = first id (used for
+// Full starter evolution lineages - own all 3 stages. base = first id (used for
 // the badge's French name in seedBadges.ts). id format: starter_evo_{type}_gen{n}.
 export const STARTER_EVO: Record<string, number[]> = {
   starter_evo_fire_gen1:  [4, 5, 6],     starter_evo_water_gen1: [7, 8, 9],     starter_evo_grass_gen1: [1, 2, 3],
@@ -183,7 +183,7 @@ export async function checkBadges(userId: string): Promise<string[]> {
     if (battleWins >= threshold) await unlock(id);
   }
 
-  // Market badges — completed sales (as seller) / purchases (as buyer)
+  // Market badges - completed sales (as seller) / purchases (as buyer)
   for (const { id, threshold } of MARKET_SELL_BADGES) {
     if (marketSold >= threshold) await unlock(id);
   }
@@ -195,13 +195,13 @@ export async function checkBadges(userId: string): Promise<string[]> {
   const ownedPokemonIds = new Set(ownedPokemons.map(p => p.pokemon_id));
   const distinctPokemonCount = ownedPokemonIds.size;
 
-  // Shiny badges — distinct shiny species owned
+  // Shiny badges - distinct shiny species owned
   const shinySpecies = new Set(ownedPokemons.filter(p => p.is_shiny).map(p => p.pokemon_id));
   for (const { id, threshold } of SHINY_BADGES) {
     if (shinySpecies.size >= threshold) await unlock(id);
   }
 
-  // Rarity collection badges — distinct species owned per rarity
+  // Rarity collection badges - distinct species owned per rarity
   const speciesByRarity = new Map<string, Set<number>>();
   for (const p of ownedPokemons) {
     const r = p.pokemon.rarity;
@@ -233,7 +233,7 @@ export async function checkBadges(userId: string): Promise<string[]> {
   const ownedTypes = new Set(ownedPokemons.flatMap(p => p.pokemon.types));
   if (ALL_TYPES.every(t => ownedTypes.has(t))) await unlock('all_types');
 
-  // Type collection badges — distinct species owned per type, 5/10/25 tiers.
+  // Type collection badges - distinct species owned per type, 5/10/25 tiers.
   // Grouped in-memory from ownedPokemons (which already includes types), so all
   // 18 types × 3 tiers are checked without any extra DB query.
   const speciesByType = new Map<string, Set<number>>();
@@ -295,7 +295,7 @@ export async function checkBadges(userId: string): Promise<string[]> {
     if (totalInGen > 0 && ownedInGen >= totalInGen) {
       await unlock(`gen${gen}_complete`);
     }
-    // Generation collection tiers — distinct species in the gen. Tier 100 only
+    // Generation collection tiers - distinct species in the gen. Tier 100 only
     // exists for gens that actually have ≥100 species.
     for (const tier of GENERATION_COLLECTION_TIERS) {
       if (tier === 100 && totalInGen < 100) continue;
