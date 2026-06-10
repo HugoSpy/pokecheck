@@ -221,30 +221,37 @@
    Bigger, more tappable chips, larger labels/search, and a strong (filled)
    active state instead of the previous subtle tint.
    ────────────────────────────────────────────────────────────────────────── */
-.pokedex-page .pokedex-filters { gap: 18px; padding: 18px 20px; }
-.pokedex-page .filter-row { gap: 9px; }
+.pokedex-page .pokedex-filters { gap: 22px; padding: 20px 22px; }
+.pokedex-page .filter-row { gap: 12px; }
 
 .pokedex-page .filter-label {
-  font-size: 12px;
-  letter-spacing: 0.14em;
-  color: var(--text-secondary);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--text-primary);
 }
 
 /* Row 1: search spans the full width and is clearly larger. */
 .pokedex-page .filter-search {
   max-width: none;
   width: 100%;
-  padding: 12px 16px;
-  font-size: 15px;
+  padding: 14px 18px;
+  font-size: 17px;
 }
 
-.pokedex-page .filter-group { gap: 8px; }
+.pokedex-page .filter-group { gap: 10px; }
 
 .pokedex-page .filter-chip {
-  padding: 9px 16px;
-  font-size: var(--text-sm);
-  letter-spacing: 0.06em;
-  line-height: 1.2;
+  padding: 12px 20px;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  line-height: 1.15;
+}
+
+/* Brighten the plain chips' text (Toutes / Gén. X / Tous / Shiny / Doublons) -
+   they used the dim secondary colour and were the hardest to read. Rarity/type
+   chips keep their own colours. */
+.pokedex-page .filter-chip:not(.rarity-chip):not(.type-chip):not(.shiny-chip) {
+  color: var(--text-primary);
 }
 
 /* Strong, unmistakable active state: filled background + ring. */
