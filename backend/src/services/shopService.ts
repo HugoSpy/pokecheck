@@ -23,6 +23,18 @@ export const GENERATION_NAMES: Record<number, string> = {
   7: 'Alola',
 };
 
+// Pack texture URL per gen (served from frontend/public). Most follow the
+// texture_pack_gen_<n>.png pattern, but gen 4 and gen 5 shipped under different
+// filenames - override those explicitly so the cards don't 404.
+const GENERATION_TEXTURES: Record<number, string> = {
+  4: '/booster-gen-4.png',
+  5: '/pack_texture_unys.png',
+};
+
+function textureUrl(gen: number): string {
+  return GENERATION_TEXTURES[gen] ?? `/texture_pack_gen_${gen}.png`;
+}
+
 const ALL_GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
 const PACKS_PER_DAY = 3;
 
@@ -96,10 +108,9 @@ export function dailyGenerations(dayKey: string = parisDayKey()): number[] {
   return pool.slice(0, PACKS_PER_DAY).sort((a, b) => a - b);
 }
 
-/** Source tag stored on the UserPokemon - also the per-day/per-gen replay key. */
-export function shopSource(gen: number, dayKey: string = parisDayKey()): string {
-  return `shop_${dayKey}_gen${gen}`;
-}
+// All shop-drawn Pokémon share a single flat source tag - per-day/per-gen
+// replay is enforced by the ShopPurchase unique constraint, not by the source.
+const SHOP_SOURCE = 'shop';
 
 // ── Shop reads ────────────────────────────────────────────────────────────────
 
@@ -121,20 +132,19 @@ export async function getDailyShop(userId: string): Promise<DailyShop> {
   const gens = dailyGenerations(dayKey);
   const price = getPackPrice();
 
-  const sources = gens.map(g => shopSource(g, dayKey));
-  const bought = await prisma.userPokemon.findMany({
-    where: { user_id: userId, source: { in: sources } },
-    select: { source: true },
+  const purchases = await prisma.shopPurchase.findMany({
+    where: { user_id: userId, day: dayKey, gen: { in: gens } },
+    select: { gen: true },
   });
-  const boughtSources = new Set(bought.map(b => b.source));
+  const boughtGens = new Set(purchases.map(p => p.gen));
 
   return {
     packs: gens.map(gen => ({
       generation: gen,
       name: GENERATION_NAMES[gen],
-      texture_url: `/texture_pack_gen_${gen}.png`,
+      texture_url: textureUrl(gen),
       price,
-      bought: boughtSources.has(shopSource(gen, dayKey)),
+      bought: boughtGens.has(gen),
     })),
     rotates_at: nextRotationAt().toISOString(),
   };
@@ -165,21 +175,27 @@ export async function buyShopPack(userId: string, gen: number): Promise<ShopBuyR
   }
 
   const price = getPackPrice();
-  const source = shopSource(gen, dayKey);
 
-  const draw = await prisma.$transaction(async tx => {
-    // One purchase per pack per Paris day - the source tag doubles as a replay
-    // guard (same pattern as one-shot draws in POST /draw).
-    const already = await tx.userPokemon.count({ where: { user_id: userId, source } });
-    if (already > 0) {
+  let draw;
+  try {
+    draw = await prisma.$transaction(async tx => {
+      // One purchase per pack per Paris day - enforced by the ShopPurchase
+      // @@unique([user_id, gen, day]) constraint. Inserting first means a replay
+      // hits the constraint before any coins are spent (the whole tx rolls back).
+      await tx.shopPurchase.create({ data: { user_id: userId, gen, day: dayKey } });
+
+      // TOCTOU-safe: spendCoins is an atomic compare-and-swap (gte amount).
+      await spendCoins(tx, userId, price, `shop_pack_gen${gen}`);
+
+      return drawAndCreate(tx, userId, { source: SHOP_SOURCE, generation: gen });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (err: any) {
+    // P2002 = unique violation on (user_id, gen, day) -> already bought today.
+    if (err.code === 'P2002') {
       throw Object.assign(new Error('Pack déjà acheté aujourd\'hui.'), { status: 409 });
     }
-
-    // TOCTOU-safe: spendCoins is an atomic compare-and-swap (gte amount).
-    await spendCoins(tx, userId, price, `shop_pack_gen${gen}`);
-
-    return drawAndCreate(tx, userId, { source, generation: gen });
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+    throw err;
+  }
 
   // Decoration strip - cosmetic only, drawn from the same gen pool.
   const strip = await buildStrip(gen);
