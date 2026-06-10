@@ -107,18 +107,24 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     from_pokemon_ids,
     to_user_id,
     to_pokemon_ids,
+    // Back-compat: the pre-multi frontend still sends singular ids. Accept both
+    // shapes until the multi-select UI ships (then it sends the *_ids arrays).
+    from_pokemon_id,
+    to_pokemon_id,
     coins_offered = 0,
     coins_requested = 0,
   } = req.body as {
-    from_pokemon_ids: string[];
+    from_pokemon_ids?: string[];
     to_user_id: string;
-    to_pokemon_ids: string[];
+    to_pokemon_ids?: string[];
+    from_pokemon_id?: string;
+    to_pokemon_id?: string;
     coins_offered?: number;
     coins_requested?: number;
   };
 
-  const fromIds = normalizeIds(from_pokemon_ids);
-  const toIds = normalizeIds(to_pokemon_ids);
+  const fromIds = normalizeIds(from_pokemon_ids ?? (from_pokemon_id ? [from_pokemon_id] : undefined));
+  const toIds = normalizeIds(to_pokemon_ids ?? (to_pokemon_id ? [to_pokemon_id] : undefined));
 
   if (!fromIds || !toIds || !to_user_id) {
     res.status(400).json({ error: 'from_pokemon_ids, to_pokemon_ids (arrays) and to_user_id are required' });
