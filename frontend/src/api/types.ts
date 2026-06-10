@@ -50,9 +50,21 @@ export interface LeaderboardEntry {
   legendary_count: number;
 }
 
+// One Pokémon on a trade side. owner 'from' = proposer's, 'to' = recipient's.
+export interface TradeItemView {
+  owner: 'from' | 'to';
+  id: string;
+  tradeable_at: string | null;
+  is_shiny: boolean;
+  pokemon: PokemonInfo;
+}
+
 export interface TradeOffer {
   id: string;
   from_user: { id: string; display_name: string };
+  // Full multi-Pokémon sides.
+  items: TradeItemView[];
+  // Legacy first-of-each-side (kept for the accept animation).
   fromPokemon: { pokemon: PokemonInfo; id: string; tradeable_at: string | null; is_shiny: boolean } | null;
   toPokemon: { pokemon: PokemonInfo; id: string; is_shiny: boolean } | null;
   coins_offered: number;
@@ -64,6 +76,7 @@ export interface TradeOffer {
 export interface SentTrade {
   id: string;
   to_user: { id: string; display_name: string };
+  items: TradeItemView[];
   fromPokemon: TradeOffer['fromPokemon'];
   toPokemon: TradeOffer['toPokemon'];
   coins_offered: number;
@@ -73,9 +86,9 @@ export interface SentTrade {
 }
 
 export interface ProposeTradePayload {
-  from_pokemon_id: string;
+  from_pokemon_ids: string[];
   to_user_id: string;
-  to_pokemon_id: string;
+  to_pokemon_ids: string[];
   coins_offered?: number;
   coins_requested?: number;
 }

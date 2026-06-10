@@ -350,3 +350,129 @@
   color: var(--text-secondary);
   flex-shrink: 0;
 }
+
+/* ── Multi-Pokémon thumbnails on offer/sent cards ── */
+.offer-items {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.offer-item-thumb {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+.offer-item-thumb.shiny {
+  border-color: #d4af37aa;
+  box-shadow: 0 0 8px #d4af3755;
+}
+
+.offer-items-more {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+}
+.offer-items-empty { color: var(--text-muted); }
+
+/* ── Multi-select proposal summary ── */
+.proposal-pokes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.proposal-pokes .proposal-poke img { width: 44px; height: 44px; }
+.proposal-pokes .proposal-poke span { font-size: var(--text-sm); }
+
+/* ── Accept results screen ── */
+.trade-results-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(5, 6, 12, 0.82);
+  backdrop-filter: blur(6px);
+  animation: bdm-fade 200ms ease-out;
+}
+
+.trade-results {
+  width: min(640px, 100%);
+  max-height: 88vh;
+  overflow-y: auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  box-shadow: var(--shadow-elevated);
+  animation: fadeUp 250ms ease-out;
+}
+
+.trade-results-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  text-align: center;
+  color: var(--text-primary);
+}
+
+.trade-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 12px;
+}
+
+.trade-result-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+.trade-result-card.shiny {
+  border-color: #d4af37aa;
+  box-shadow: 0 0 12px #d4af3744;
+}
+.trade-result-shiny { position: absolute; top: 6px; right: 8px; font-size: 14px; }
+.trade-result-img {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.trade-result-name {
+  font-family: var(--font-condensed);
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text-primary);
+  text-align: center;
+}
+
+.trade-results-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
