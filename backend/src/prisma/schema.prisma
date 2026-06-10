@@ -104,7 +104,9 @@ model TradeItem {
   pokemon_id String // UserPokemon.id
 
   trade   Trade       @relation(fields: [trade_id], references: [id])
-  pokemon UserPokemon @relation(fields: [pokemon_id], references: [id])
+  // onDelete: Cascade so selling a UserPokemon (which deletes the row) also
+  // removes its historical TradeItem rows instead of hitting the FK constraint.
+  pokemon UserPokemon @relation(fields: [pokemon_id], references: [id], onDelete: Cascade)
 
   @@index([trade_id])
 }
