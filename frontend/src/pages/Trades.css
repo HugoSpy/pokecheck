@@ -57,13 +57,13 @@
 .offer-card {
   position: relative;
   display: flex;
-  align-items: center;
-  gap: 16px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 14px 16px;
-  flex-wrap: wrap;
 }
 
 .offer-cancel-btn {
@@ -145,7 +145,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  flex: 1;
+  flex-wrap: wrap;
 }
 
 .offer-pokemon {
@@ -184,7 +184,7 @@
 .offer-actions {
   display: flex;
   gap: 8px;
-  margin-left: auto;
+  justify-content: flex-end;
 }
 
 /* ── User search ── */
@@ -351,40 +351,56 @@
   flex-shrink: 0;
 }
 
-/* ── Multi-Pokémon thumbnails on offer/sent cards ── */
-.offer-items {
+/* ── Full multi-Pokémon sides on offer/sent cards (no truncation) ── */
+.trade-side {
   display: flex;
-  align-items: center;
-  gap: 6px;
   flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  align-content: flex-start;
+}
+.trade-side-empty {
+  color: var(--text-muted);
+  align-items: center;
 }
 
-.offer-item-thumb {
-  width: 36px;
-  height: 36px;
+.trade-side-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 64px;
+  padding: 6px 4px 5px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--rc, var(--border));
+  border-radius: var(--radius-sm);
+}
+.trade-side-item.shiny {
+  box-shadow: 0 0 8px #d4af3744;
+}
+
+.trade-side-sprite {
+  width: 44px;
+  height: 44px;
   object-fit: contain;
   image-rendering: pixelated;
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 2px;
-}
-.offer-item-thumb.shiny {
-  border-color: #d4af37aa;
-  box-shadow: 0 0 8px #d4af3755;
 }
 
-.offer-items-more {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
+.trade-side-name {
+  font-family: var(--font-condensed);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.1;
+  text-align: center;
+  text-transform: capitalize;
   color: var(--text-secondary);
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  padding: 4px 8px;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.offer-items-empty { color: var(--text-muted); }
 
 /* ── Multi-select proposal summary ── */
 .proposal-pokes {
