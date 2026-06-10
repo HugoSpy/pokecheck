@@ -20,7 +20,10 @@
 /* ── Grid of portrait booster cards ── */
 .events-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  /* Cap each pack's width so cards stay small instead of stretching to fill
+     the row when only a few packs are available; center the leftover space. */
+  grid-template-columns: repeat(auto-fill, minmax(140px, 180px));
+  justify-content: center;
   gap: 20px;
   align-items: start;
 }
