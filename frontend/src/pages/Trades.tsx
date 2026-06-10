@@ -16,7 +16,7 @@ interface LocationState {
   targetUserName?: string;
 }
 
-const MAX_PER_SIDE = 6;
+const MAX_PER_SIDE = 10;
 
 export default function Trades() {
   const location = useLocation();
