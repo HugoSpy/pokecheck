@@ -56,9 +56,10 @@
 
 /* ── Grid (3 centered packs) ── */
 .shop-grid {
-  --pack-gap: 20px;
+  --pack-gap: 32px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 240px));
+  /* Big 3D booster cards: each up to 400px wide, 3 packs centered on the row. */
+  grid-template-columns: repeat(auto-fit, minmax(300px, 400px));
   justify-content: center;
   gap: var(--pack-gap);
   align-items: start;
@@ -69,20 +70,15 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: 18px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  transition: border-color var(--transition), transform var(--transition);
+  gap: 14px;
+  transition: border-color var(--transition);
 }
 
-.shop-card:not(.shop-card-bought):hover {
+.shop-card:hover {
   border-color: var(--border-bright);
-  transform: translateY(-3px);
-}
-
-.shop-card-bought {
-  opacity: 0.7;
 }
 
 .shop-pack-art {
@@ -94,46 +90,14 @@
   align-items: center;
 }
 
-.shop-pack-art img {
+/* The 3D booster canvas fills the art area (idle float + hover tilt live in
+   BoosterPack3D itself). */
+.shop-pack-art .booster-pack-3d {
+  display: block;
   width: 100%;
   height: 100%;
-  object-fit: contain;
-  filter: drop-shadow(0 8px 18px rgba(0, 0, 0, 0.45));
-  user-select: none;
-}
-
-.shop-pack-fallback {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 12px;
-  border-radius: var(--radius-md);
-  background: linear-gradient(160deg, var(--accent-dim), rgba(255, 255, 255, 0.04));
-  border: 1px dashed var(--border-bright);
-  font-family: var(--font-display);
-  font-size: clamp(18px, 3vw, 26px);
-  font-weight: 700;
-  color: var(--text-secondary);
-  letter-spacing: -0.02em;
-}
-
-.shop-bought-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(8, 10, 16, 0.55);
-  border-radius: var(--radius-md);
-  font-family: var(--font-condensed);
-  font-size: var(--text-base);
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-primary);
+  cursor: grab;
+  touch-action: none;
 }
 
 .shop-card-name {
@@ -156,17 +120,62 @@
   color: var(--gold, #f5a623);
 }
 
+/* ── Actions (quantity selector + buy button) ── */
+.shop-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+}
+
+.shop-qty {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.shop-qty-btn {
+  padding: 8px 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--font-condensed);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition), color var(--transition), background var(--transition);
+}
+
+.shop-qty-btn:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.shop-qty-btn.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
 .shop-buy-btn {
   width: 100%;
   justify-content: center;
-  margin-top: auto;
+  white-space: nowrap;
+}
+
+.shop-error {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  color: var(--danger, #ef4444);
+  text-align: center;
 }
 
 /* ── Mobile ── */
 @media (max-width: 480px) {
   .shop-grid {
-    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
   }
 
   .shop-card {

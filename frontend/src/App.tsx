@@ -15,6 +15,7 @@ import Market from './pages/Market';
 import Events from './pages/Events';
 import Shop from './pages/Shop';
 import ShopPackOpen from './pages/ShopPackOpen';
+import ShopPackOpenMulti from './pages/ShopPackOpenMulti';
 import Battle from './pages/Battle';
 import Profile from './pages/Profile';
 import AdminAttendance from './pages/AdminAttendance';
@@ -40,6 +41,7 @@ function AppRoutes() {
       <Route path="/events/pack" element={<EventPackOpen />} />
       <Route path="/events/pack-multi" element={<EventPackOpenMulti />} />
       <Route path="/shop/pack" element={<ShopPackOpen />} />
+      <Route path="/shop/pack-multi" element={<ShopPackOpenMulti />} />
       <Route element={<Layout />}>
         <Route path="/pokedex"     element={<Pokedex />} />
         <Route path="/trades"      element={<Trades />} />

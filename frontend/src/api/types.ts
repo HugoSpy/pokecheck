@@ -155,7 +155,6 @@ export interface ShopPack {
   name: string;
   texture_url: string;
   price: number;
-  bought: boolean;
 }
 
 export interface DailyShop {

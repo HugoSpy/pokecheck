@@ -1,10 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDailyShop } from '../api/shopApi';
+import { getDailyShop, buyShopPackMulti } from '../api/shopApi';
 import { useUserCtx } from '../context/UserContext';
 import { Coins } from '../components/icons';
+import BoosterPack3D from '../components/BoosterPack3D';
 import type { DailyShop, ShopPack } from '../api/types';
 import './Shop.css';
+
+// Quantities offered by the multi-open selector (same as the Événements page).
+const QUANTITIES = [1, 2, 5, 10] as const;
 
 // ── Countdown to next rotation (Paris midnight) ───────────────────────────────
 
@@ -34,43 +38,73 @@ function computeRemaining(target: string | null): string {
 
 function PackCard({ pack }: { pack: ShopPack }) {
   const navigate = useNavigate();
-  const { coins } = useUserCtx();
-  const canAfford = coins >= pack.price;
-  const disabled = pack.bought || !canAfford;
-  // Some gen textures may not be shipped yet - fall back to a labelled placeholder
-  // instead of a broken image.
-  const [imgError, setImgError] = useState(false);
+  const { coins, setCoins } = useUserCtx();
+
+  const [count, setCount] = useState<number>(1);
+  const [opening, setOpening] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const totalPrice = pack.price * count;
+  const canAfford = coins >= totalPrice;
+
+  async function handleBuy() {
+    // Single open keeps the solo flow (the draw runs during the CSGO animation).
+    if (count === 1) {
+      navigate(`/shop/pack?gen=${pack.generation}`);
+      return;
+    }
+    // Multi-open: draw N packs server-side, then animate them in parallel.
+    if (opening) return;
+    setOpening(true);
+    setError(null);
+    try {
+      const draw = await buyShopPackMulti(pack.generation, count);
+      setCoins(draw.coins_remaining);
+      navigate('/shop/pack-multi', { state: { draw, packName: pack.name } });
+    } catch (e) {
+      const err = e as Error & { status?: number };
+      setError(err.status === 402 ? 'Coins insuffisants.' : (err.message || 'Erreur, réessaie.'));
+      setOpening(false);
+    }
+  }
 
   return (
-    <div className={`shop-card${pack.bought ? ' shop-card-bought' : ''}`}>
+    <div className="shop-card">
       <div className="shop-pack-art">
-        {imgError ? (
-          <div className="shop-pack-fallback">{pack.name}</div>
-        ) : (
-          <img
-            src={pack.texture_url}
-            alt={`Pack ${pack.name}`}
-            draggable={false}
-            onError={() => setImgError(true)}
-          />
-        )}
-        {pack.bought && <div className="shop-bought-overlay">Déjà acheté</div>}
+        {/* 3D booster: idle float + tilt that follows the cursor on hover. */}
+        <BoosterPack3D textureUrl={pack.texture_url} />
       </div>
 
       <div className="shop-card-name">{pack.name}</div>
 
       <div className="shop-card-price">
-        <Coins size={15} /> {pack.price.toLocaleString()}
+        <Coins size={15} /> {pack.price.toLocaleString()} / pack
       </div>
 
-      <button
-        className={`btn ${disabled ? 'btn-ghost' : 'btn-primary'} shop-buy-btn`}
-        disabled={disabled}
-        title={!canAfford && !pack.bought ? 'Coins insuffisants' : undefined}
-        onClick={() => navigate(`/shop/pack?gen=${pack.generation}`)}
-      >
-        {pack.bought ? 'Déjà acheté' : 'Acheter'}
-      </button>
+      <div className="shop-actions">
+        <div className="shop-qty" role="group" aria-label="Quantité de packs">
+          {QUANTITIES.map(q => (
+            <button
+              key={q}
+              type="button"
+              className={`shop-qty-btn${count === q ? ' active' : ''}`}
+              onClick={() => setCount(q)}
+              aria-pressed={count === q}
+            >
+              ×{q}
+            </button>
+          ))}
+        </div>
+
+        <button
+          className={`btn ${canAfford ? 'btn-primary' : 'btn-ghost'} shop-buy-btn`}
+          disabled={!canAfford || opening}
+          title={!canAfford ? 'Coins insuffisants' : undefined}
+          onClick={handleBuy}
+        >
+          {opening ? 'Ouverture…' : `${count === 1 ? 'Acheter' : `Acheter ×${count}`} - ${totalPrice.toLocaleString()}`}
+        </button>
+        {error && <div className="shop-error">{error}</div>}
+      </div>
     </div>
   );
 }
@@ -114,7 +148,7 @@ export default function Shop() {
       </div>
 
       <p className="shop-subtitle">
-        3 packs tirés au sort chaque jour. Un achat par pack et par jour.
+        3 packs tirés au sort chaque jour. Achats illimités.
       </p>
 
       <div className="shop-grid">

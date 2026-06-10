@@ -109,8 +109,7 @@ export default function ShopPackOpen() {
       setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      if (e.status === 409) setError('Pack déjà acheté aujourd\'hui.');
-      else if (e.status === 402) setError('Coins insuffisants.');
+      if (e.status === 402) setError('Coins insuffisants.');
       else if (e.status === 400) setError('Ce pack n\'est plus disponible.');
       else setError((err as Error).message);
       setPhase('idle');

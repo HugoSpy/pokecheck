@@ -9,7 +9,10 @@ import { drawAndCreate } from './drawService';
 const prisma = new PrismaClient();
 
 // Decoration cards flanking the winner in the CSGO-style roll animation.
-const STRIP_SIZE = 29;
+const STRIP_SIZE = 29;       // single-open: winner is inserted client-side at index 22
+const FULL_STRIP_SIZE = 30;  // multi-open: winner is baked into the strip server-side
+const WINNER_INDEX = 22;     // matches PackRoll's TARGET_INDEX
+const MAX_COUNT = 10;
 const BASE_SHINY_RATE = 1 / 4096;
 
 // Gen number -> region name shown on the pack card.
@@ -108,8 +111,7 @@ export function dailyGenerations(dayKey: string = parisDayKey()): number[] {
   return pool.slice(0, PACKS_PER_DAY).sort((a, b) => a - b);
 }
 
-// All shop-drawn Pokémon share a single flat source tag - per-day/per-gen
-// replay is enforced by the ShopPurchase unique constraint, not by the source.
+// All shop-drawn Pokémon share a single flat source tag.
 const SHOP_SOURCE = 'shop';
 
 // ── Shop reads ────────────────────────────────────────────────────────────────
@@ -119,7 +121,6 @@ export interface ShopPack {
   name: string;
   texture_url: string;
   price: number;
-  bought: boolean;
 }
 
 export interface DailyShop {
@@ -127,16 +128,10 @@ export interface DailyShop {
   rotates_at: string;
 }
 
-export async function getDailyShop(userId: string): Promise<DailyShop> {
-  const dayKey = parisDayKey();
-  const gens = dailyGenerations(dayKey);
+// Purchases are unlimited, so the shop is the same for everyone - no per-user state.
+export async function getDailyShop(): Promise<DailyShop> {
+  const gens = dailyGenerations(parisDayKey());
   const price = getPackPrice();
-
-  const purchases = await prisma.shopPurchase.findMany({
-    where: { user_id: userId, day: dayKey, gen: { in: gens } },
-    select: { gen: true },
-  });
-  const boughtGens = new Set(purchases.map(p => p.gen));
 
   return {
     packs: gens.map(gen => ({
@@ -144,7 +139,6 @@ export async function getDailyShop(userId: string): Promise<DailyShop> {
       name: GENERATION_NAMES[gen],
       texture_url: textureUrl(gen),
       price,
-      bought: boughtGens.has(gen),
     })),
     rotates_at: nextRotationAt().toISOString(),
   };
@@ -166,44 +160,35 @@ export interface ShopBuyResult {
   coins_remaining: number;
 }
 
+export interface ShopMultiResult {
+  results: Array<{
+    pokemon: ShopBuyResult['pokemon'];
+    user_pokemon_id: string;
+    is_duplicate: boolean;
+    sell_price: number;
+    strip: ShopBuyResult['strip'];
+  }>;
+  coins_remaining: number;
+}
+
+/** Single pack: draw is performed during the client-side opening animation. */
 export async function buyShopPack(userId: string, gen: number): Promise<ShopBuyResult> {
-  const dayKey = parisDayKey();
-
-  // Server-authoritative: the gen must be one of today's deterministic offers.
-  if (!dailyGenerations(dayKey).includes(gen)) {
-    throw Object.assign(new Error("Ce pack n'est pas disponible aujourd'hui."), { status: 400 });
-  }
-
+  assertGenOnOffer(gen);
   const price = getPackPrice();
 
-  let draw;
-  try {
-    draw = await prisma.$transaction(async tx => {
-      // One purchase per pack per Paris day - enforced by the ShopPurchase
-      // @@unique([user_id, gen, day]) constraint. Inserting first means a replay
-      // hits the constraint before any coins are spent (the whole tx rolls back).
-      await tx.shopPurchase.create({ data: { user_id: userId, gen, day: dayKey } });
+  // TOCTOU-safe: spendCoins is an atomic compare-and-swap (gte amount).
+  // Purchases are unlimited - no daily gating (the ShopPurchase table is kept
+  // in the schema but no longer written to or checked).
+  const draw = await prisma.$transaction(async tx => {
+    await spendCoins(tx, userId, price, `shop_pack_gen${gen}`);
+    return drawAndCreate(tx, userId, { source: SHOP_SOURCE, generation: gen });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-      // TOCTOU-safe: spendCoins is an atomic compare-and-swap (gte amount).
-      await spendCoins(tx, userId, price, `shop_pack_gen${gen}`);
+  // Decoration strip - cosmetic only, winner is inserted client-side.
+  const pools = await getGenPools(gen);
+  const strip = buildStrip(pools);
 
-      return drawAndCreate(tx, userId, { source: SHOP_SOURCE, generation: gen });
-    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
-  } catch (err: any) {
-    // P2002 = unique violation on (user_id, gen, day) -> already bought today.
-    if (err.code === 'P2002') {
-      throw Object.assign(new Error('Pack déjà acheté aujourd\'hui.'), { status: 409 });
-    }
-    throw err;
-  }
-
-  // Decoration strip - cosmetic only, drawn from the same gen pool.
-  const strip = await buildStrip(gen);
-
-  const updatedUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { coins: true },
-  });
+  const updatedUser = await prisma.user.findUnique({ where: { id: userId }, select: { coins: true } });
 
   return {
     pokemon: draw.pokemon,
@@ -215,9 +200,60 @@ export async function buyShopPack(userId: string, gen: number): Promise<ShopBuyR
   };
 }
 
-// Cosmetic roll strip: STRIP_SIZE random cards from the gen's pool, weighted by
-// the same rarity distribution as a real draw.
-async function buildStrip(gen: number): Promise<ShopBuyResult['strip']> {
+/** Multi pack (count > 1): N gen-filtered draws in one Serializable tx, each
+ *  returned with a full 30-card strip (winner baked in) for the parallel anim. */
+export async function buyShopPackMulti(userId: string, gen: number, count: number): Promise<ShopMultiResult> {
+  assertGenOnOffer(gen);
+  if (!Number.isInteger(count) || count < 1 || count > MAX_COUNT) {
+    throw Object.assign(new Error(`count must be an integer between 1 and ${MAX_COUNT}`), { status: 400 });
+  }
+
+  const totalPrice = getPackPrice() * count;
+
+  const draws = await prisma.$transaction(async tx => {
+    await spendCoins(tx, userId, totalPrice, `shop_pack_gen${gen}_x${count}`);
+    const out = [];
+    for (let i = 0; i < count; i++) {
+      out.push(await drawAndCreate(tx, userId, { source: SHOP_SOURCE, generation: gen }));
+    }
+    return out;
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+
+  const pools = await getGenPools(gen);
+  const results = draws.map(d => ({
+    pokemon: d.pokemon,
+    user_pokemon_id: d.userPokemonId,
+    is_duplicate: d.isDuplicate,
+    sell_price: d.sellPrice,
+    strip: buildFullStrip(pools, {
+      id: d.pokemon.id,
+      name: d.pokemon.name,
+      sprite_url: d.pokemon.sprite_url,
+      rarity: d.pokemon.rarity,
+      points: d.pokemon.points,
+      is_shiny: d.pokemon.is_shiny,
+    }),
+  }));
+
+  const updatedUser = await prisma.user.findUnique({ where: { id: userId }, select: { coins: true } });
+  return { results, coins_remaining: updatedUser?.coins ?? 0 };
+}
+
+function assertGenOnOffer(gen: number): void {
+  // Server-authoritative: the gen must be one of today's deterministic offers.
+  if (!dailyGenerations(parisDayKey()).includes(gen)) {
+    throw Object.assign(new Error("Ce pack n'est pas disponible aujourd'hui."), { status: 400 });
+  }
+}
+
+type StripCard = ShopBuyResult['strip'][number];
+interface GenPools {
+  pools: Record<string, Array<{ id: number; name: string; sprite_url: string; rarity: string; points: number }>>;
+  allPool: Array<{ id: number; name: string; sprite_url: string; rarity: string; points: number }>;
+}
+
+// Fetch the gen's Pokémon once, grouped by rarity (shared by both strip builders).
+async function getGenPools(gen: number): Promise<GenPools> {
   const select = { id: true, name: true, sprite_url: true, rarity: true, points: true } as const;
   const [commons, rares, epics, legendaries] = await Promise.all([
     prisma.pokemon.findMany({ where: { generation: gen, rarity: 'COMMON' }, select }),
@@ -225,29 +261,41 @@ async function buildStrip(gen: number): Promise<ShopBuyResult['strip']> {
     prisma.pokemon.findMany({ where: { generation: gen, rarity: 'EPIC' }, select }),
     prisma.pokemon.findMany({ where: { generation: gen, rarity: 'LEGENDARY' }, select }),
   ]);
-  const pools: Record<string, typeof commons> = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
-  const allPool = [...commons, ...rares, ...epics, ...legendaries];
+  const pools = { COMMON: commons, RARE: rares, EPIC: epics, LEGENDARY: legendaries };
+  return { pools, allPool: [...commons, ...rares, ...epics, ...legendaries] };
+}
 
-  function pickRarity(): string {
-    const roll = Math.random();
-    if (roll < 0.798) return 'COMMON';
-    if (roll < 0.948) return 'RARE';
-    if (roll < 0.998) return 'EPIC';
-    return 'LEGENDARY';
-  }
+function pickStripRarity(): string {
+  const roll = Math.random();
+  if (roll < 0.798) return 'COMMON';
+  if (roll < 0.948) return 'RARE';
+  if (roll < 0.998) return 'EPIC';
+  return 'LEGENDARY';
+}
 
-  return Array.from({ length: STRIP_SIZE }, () => {
-    const rarity = pickRarity();
-    const pool = pools[rarity].length > 0 ? pools[rarity] : allPool;
-    const p = pool[Math.floor(Math.random() * pool.length)];
-    const shiny = Math.random() < BASE_SHINY_RATE;
-    return {
-      id: p.id,
-      name: p.name,
-      sprite_url: shiny ? p.sprite_url.replace('/normal/', '/shiny/') : p.sprite_url,
-      rarity: p.rarity,
-      points: p.points,
-      is_shiny: shiny,
-    };
-  });
+function randomStripCard({ pools, allPool }: GenPools): StripCard {
+  const rarity = pickStripRarity();
+  const pool = pools[rarity].length > 0 ? pools[rarity] : allPool;
+  const p = pool[Math.floor(Math.random() * pool.length)];
+  const shiny = Math.random() < BASE_SHINY_RATE;
+  return {
+    id: p.id,
+    name: p.name,
+    sprite_url: shiny ? p.sprite_url.replace('/normal/', '/shiny/') : p.sprite_url,
+    rarity: p.rarity,
+    points: p.points,
+    is_shiny: shiny,
+  };
+}
+
+// Cosmetic roll strip (winner inserted client-side at index 22).
+function buildStrip(pools: GenPools): StripCard[] {
+  return Array.from({ length: STRIP_SIZE }, () => randomStripCard(pools));
+}
+
+// Full 30-card strip with the winner baked in at WINNER_INDEX (multi-open shape).
+function buildFullStrip(pools: GenPools, winner: StripCard): StripCard[] {
+  const strip = Array.from({ length: FULL_STRIP_SIZE }, () => randomStripCard(pools));
+  strip[WINNER_INDEX] = winner;
+  return strip;
 }
