@@ -186,6 +186,7 @@ export interface MyProfile {
   coins: number;
   streak_days: number;
   last_login: string | null;
+  last_shiny_pack_claimed_at: string | null;
   total_score: number;
   trade_count: number;
   featured_badges: string[];

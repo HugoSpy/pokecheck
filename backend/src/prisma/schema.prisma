@@ -19,6 +19,7 @@ model User {
   coins_earned_total Int       @default(0)
   streak_days        Int       @default(0)
   last_login         DateTime?
+  last_shiny_pack_claimed_at DateTime?
   featured_badges    String[]
   created_at         DateTime  @default(now())
 

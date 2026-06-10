@@ -19,3 +19,10 @@ export async function drawEventPackMulti(eventId: string, count: number): Promis
     body: JSON.stringify({ event_id: eventId, count }),
   });
 }
+
+/** Free daily Shiny Surge pack (claimable once per Paris day). */
+export async function claimDailyShinyPack(): Promise<EventDrawResult & { availableAt: string }> {
+  return apiFetch<EventDrawResult & { availableAt: string }>('/users/daily-shiny-pack', {
+    method: 'POST',
+  });
+}

@@ -194,6 +194,10 @@ export default function Events() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Shiny Surge stays in the DB (its pool/multipliers power the free daily
+  // Shiny pack on the profile) but is no longer a purchasable pack here.
+  const visibleEvents = events.filter(e => e.name !== 'Shiny Surge');
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -211,14 +215,14 @@ export default function Events() {
     <div className="events-page">
       <h1 className="events-title">Événements</h1>
 
-      {events.length === 0 ? (
+      {visibleEvents.length === 0 ? (
         <div className="events-empty">
           <div className="events-empty-title">Aucun événement en cours.</div>
           <div className="events-empty-sub">Reviens bientôt !</div>
         </div>
       ) : (
         <div className="events-grid">
-          {events.map(event => <EventCard key={event.id} event={event} />)}
+          {visibleEvents.map(event => <EventCard key={event.id} event={event} />)}
         </div>
       )}
     </div>

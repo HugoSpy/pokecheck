@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, claimBadge } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry, BadgeProgressEntry } from '../api/types';
@@ -46,6 +47,16 @@ function loadCollapsed(): Record<string, boolean> {
   } catch {
     return {};
   }
+}
+
+// Free daily Shiny pack resets at Paris midnight = 22:00 UTC (CEST/summer),
+// mirroring the backend boundary in routes/users.ts.
+function shinyPackAvailable(claimedAt: string | null): boolean {
+  if (!claimedAt) return true;
+  const PARIS_OFFSET_MS = 22 * 60 * 60 * 1000;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const lastReset = Math.floor((Date.now() - PARIS_OFFSET_MS) / DAY_MS) * DAY_MS + PARIS_OFFSET_MS;
+  return new Date(claimedAt).getTime() < lastReset;
 }
 
 function formatDate(iso: string | null): string {
@@ -313,6 +324,14 @@ export default function Profile() {
               {claimLoading ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
               Récupérer mes coins du jour
             </button>
+          )}
+
+          {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
+            <Link to="/events/pack?shiny=1" className="btn btn-primary">
+              Ouvrir le pack Shiny ✨
+            </Link>
+          ) : (
+            <span className="claim-done">Pack Shiny — Disponible à 00h00</span>
           )}
         </div>
       </section>

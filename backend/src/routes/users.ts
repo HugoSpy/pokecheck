@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { addCoins } from '../services/coinService';
+import { drawFromEvent } from '../services/eventDraw';
+import { checkBadges } from '../services/badgeService';
 import {
   STARTERS, STARTER_EVO, STREAK_BADGES, TRADE_BADGES, POKEDEX_BADGES,
   BATTLE_BADGES, MARKET_SELL_BADGES, MARKET_BUY_BADGES, SHINY_BADGES,
@@ -149,6 +151,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       coins: true,
       streak_days: true,
       last_login: true,
+      last_shiny_pack_claimed_at: true,
       total_score: true,
       trade_count: true,
       featured_badges: true,
@@ -158,6 +161,77 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }
   const { nickname, ...rest } = user;
   res.json({ ...rest, display_name: nickname ?? rest.display_name });
+});
+
+// ── Free daily Shiny pack (reset at Paris midnight) ──────────────────────────
+const SHINY_EVENT_NAME = 'Shiny Surge';
+
+// The DB stores timestamps in UTC. The pack resets at midnight Paris time, and
+// Paris is UTC+2 in summer (CEST), so midnight Paris == 22:00 UTC. The last reset
+// boundary is therefore: floor((now - 22h) / 24h) * 24h + 22h.
+// NOTE: hardcoded to UTC+2 (summer) per spec — would be 23:00 UTC in winter (CET).
+const PARIS_OFFSET_MS = 22 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+function lastShinyReset(now: Date): Date {
+  return new Date(Math.floor((now.getTime() - PARIS_OFFSET_MS) / DAY_MS) * DAY_MS + PARIS_OFFSET_MS);
+}
+function nextShinyReset(now: Date): Date {
+  return new Date(lastShinyReset(now).getTime() + DAY_MS);
+}
+
+router.post('/daily-shiny-pack', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const now = new Date();
+  const resetBoundary = lastShinyReset(now);
+  const availableAt = nextShinyReset(now).toISOString();
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { last_shiny_pack_claimed_at: true },
+  });
+  if (user?.last_shiny_pack_claimed_at && user.last_shiny_pack_claimed_at >= resetBoundary) {
+    res.status(429).json({ error: 'ALREADY_CLAIMED_TODAY', availableAt });
+    return;
+  }
+
+  const event = await prisma.event.findFirst({ where: { name: SHINY_EVENT_NAME } });
+  if (!event || event.pokemon_pool.length === 0) {
+    res.status(500).json({ error: 'Shiny pack unavailable' });
+    return;
+  }
+
+  // Atomic claim (compare-and-swap) so two concurrent requests can't both pass
+  // the check above and double-draw. Only the first to flip the timestamp wins.
+  const { count } = await prisma.user.updateMany({
+    where: {
+      id: userId,
+      OR: [
+        { last_shiny_pack_claimed_at: null },
+        { last_shiny_pack_claimed_at: { lt: resetBoundary } },
+      ],
+    },
+    data: { last_shiny_pack_claimed_at: now },
+  });
+  if (count === 0) {
+    res.status(429).json({ error: 'ALREADY_CLAIMED_TODAY', availableAt });
+    return;
+  }
+
+  let result;
+  try {
+    result = await drawFromEvent(userId, event, { spendPrice: false, source: 'shiny_daily' });
+  } catch (err) {
+    // Roll the claim back so the user can retry if the draw itself failed.
+    await prisma.user.update({
+      where: { id: userId },
+      data: { last_shiny_pack_claimed_at: user?.last_shiny_pack_claimed_at ?? null },
+    }).catch(() => {});
+    throw err;
+  }
+
+  const newBadges = await checkBadges(userId);
+  res.json({ ...result, new_badges: newBadges, availableAt });
 });
 
 // GET /users/all-badges — tous les badges avec statut débloqué pour l'user connecté

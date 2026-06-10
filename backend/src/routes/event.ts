@@ -4,11 +4,11 @@ import { authMiddleware } from '../middleware/authMiddleware';
 import { spendCoins, getSellPrice } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
+import { drawFromEvent } from '../services/eventDraw';
 
 const router = Router();
 const prisma = new PrismaClient();
 
-const STRIP_SIZE = 29;
 const FULL_STRIP_SIZE = 30; // multi-open returns full strips with the winner baked in
 const WINNER_INDEX = 22;    // matches PackRoll's TARGET_INDEX
 const MAX_COUNT = 10;
@@ -194,81 +194,17 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
-  // Draw winner
-  const pickedRarity = pickRarity();
-  const candidates = pools[pickedRarity].length > 0 ? pools[pickedRarity] : allPool;
-  const pokemon = candidates[Math.floor(Math.random() * candidates.length)];
-
-  const isShiny = rollShiny(multipliers.SHINY);
-  const winnerSpriteUrl = isShiny
-    ? pokemon.sprite_url.replace('/normal/', '/shiny/')
-    : pokemon.sprite_url;
-  const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
-
-  const { userPokemonId, isDuplicate } = await prisma.$transaction(async tx => {
-    await spendCoins(tx, userId, event.price, 'event_pack');
-    const created = await tx.userPokemon.create({
-      data: {
-        user_id: userId,
-        pokemon_id: pokemon.id,
-        source: 'event',
-        tradeable_at: null,
-        is_shiny: isShiny,
-      },
-    });
-    await recalculateUserPokedexValue(tx, userId);
-    // Duplicate = another instance of this exact variant (species + shiny state).
-    const duplicateCount = await tx.userPokemon.count({
-      where: { user_id: userId, pokemon_id: pokemon.id, is_shiny: isShiny, id: { not: created.id } },
-    });
-    return { userPokemonId: created.id, isDuplicate: duplicateCount > 0 };
-  });
-
-  const sellPrice = getSellPrice({
-    is_shiny: isShiny,
-    pokemon: { id: pokemon.id, points: pokemon.points, rarity: pokemon.rarity },
-  });
+  // Single draw — shared with the free daily Shiny pack (services/eventDraw.ts).
+  let result;
+  try {
+    result = await drawFromEvent(userId, event, { spendPrice: true, source: 'event' });
+  } catch (err) {
+    if ((err as { status?: number }).status === 402) { res.status(402).json({ error: 'Insufficient coins' }); return; }
+    throw err;
+  }
 
   const newBadges = await checkBadges(userId);
-
-  const updatedUser = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { coins: true },
-  });
-
-  // Generate decoration strip from same pool
-  const strip = Array.from({ length: STRIP_SIZE }, () => {
-    const rarity = pickRarity();
-    const pool = pools[rarity].length > 0 ? pools[rarity] : allPool;
-    const p = pool[Math.floor(Math.random() * pool.length)];
-    const shiny = rollShiny(multipliers.SHINY);
-    return {
-      id: p.id,
-      name: p.name,
-      sprite_url: shiny ? p.sprite_url.replace('/normal/', '/shiny/') : p.sprite_url,
-      rarity: p.rarity,
-      points: p.points,
-      is_shiny: shiny,
-    };
-  });
-
-  res.json({
-    pokemon: {
-      id: pokemon.id,
-      name: pokemon.name,
-      sprite_url: winnerSpriteUrl,
-      rarity: pokemon.rarity,
-      points: finalPoints,
-      types: pokemon.types,
-      is_shiny: isShiny,
-    },
-    user_pokemon_id: userPokemonId,
-    is_duplicate: isDuplicate,
-    sell_price: sellPrice,
-    strip,
-    coins_remaining: updatedUser?.coins ?? 0,
-    new_badges: newBadges,
-  });
+  res.json({ ...result, new_badges: newBadges });
 });
 
 export default router;
