@@ -65,18 +65,15 @@ router.post('/bulk', authMiddleware, bulkSellLimiter, async (req: Request, res: 
         throw Object.assign(new Error('One or more Pokémon are not yours or no longer exist'), { status: 403 });
       }
 
-      // Refuse only if one of these Pokémon is in the caller's OWN pending offer
-      // (from_pokemon_id). Incoming proposals that request them (to_pokemon_id)
-      // are cancelled in cascade below, not blocking.
-      const ownPendingOffer = await tx.trade.findFirst({
-        where: {
-          status: 'pending',
-          from_user_id: userId,
-          from_pokemon_id: { in: uniqueIds },
-        },
+      // Refuse if any of these Pokémon is tied to a pending trade (on either
+      // side, any item - TradeItem covers multi-Pokémon trades that the legacy
+      // from_pokemon_id/to_pokemon_id columns would miss). Selling here would
+      // otherwise cascade-delete a live trade's items and corrupt it.
+      const pendingTradeItem = await tx.tradeItem.findFirst({
+        where: { pokemon_id: { in: uniqueIds }, trade: { status: 'pending' } },
       });
-      if (ownPendingOffer) {
-        throw Object.assign(new Error('One or more Pokémon are in your own pending trade offer'), { status: 409 });
+      if (pendingTradeItem) {
+        throw Object.assign(new Error('Un Pokémon est engagé dans un échange en attente'), { status: 400 });
       }
 
       const coinsEarned = owned.reduce((sum, up) => sum + getSellPrice(up), 0);
@@ -99,6 +96,7 @@ router.post('/bulk', authMiddleware, bulkSellLimiter, async (req: Request, res: 
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (err) {
     const e = err as { status?: number; code?: string; message?: string };
+    if (e.status === 400) { res.status(400).json({ error: e.message }); return; }
     if (e.status === 403) { res.status(403).json({ error: e.message }); return; }
     if (e.status === 409) { res.status(409).json({ error: e.message }); return; }
     // P2034 = serialization failure from a concurrent write - caller can retry.
@@ -129,36 +127,38 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
     return;
   }
 
-  // Only the seller's OWN pending offer (this Pokémon as from_pokemon_id) blocks
-  // the sale - they'd be selling something they're actively offering. A proposal
-  // that merely REQUESTS this Pokémon (to_pokemon_id, an incoming offer the owner
-  // never accepted) must NOT block them; it's cancelled in cascade below.
-  const ownPendingOffer = await prisma.trade.findFirst({
-    where: { status: 'pending', from_pokemon_id: userPokemonId, from_user_id: userId },
-  });
-  if (ownPendingOffer) {
-    res.status(409).json({ error: 'Pokémon is in a pending trade offer' });
-    return;
-  }
-
   const sellPrice = getSellPrice(userPokemon);
 
-  await prisma.$transaction(async tx => {
-    // Cancel any incoming pending proposals targeting this Pokémon - selling it
-    // frees the owner, and the proposers' offers simply fall through.
-    await tx.trade.updateMany({
-      where: { status: 'pending', to_pokemon_id: userPokemonId },
-      data: { status: 'cancelled', resolved_at: new Date() },
+  try {
+    await prisma.$transaction(async tx => {
+      // Block if this Pokémon is tied to a pending trade (either side, any item -
+      // TradeItem covers multi-Pokémon trades the legacy columns would miss).
+      const pendingTradeItem = await tx.tradeItem.findFirst({
+        where: { pokemon_id: userPokemonId, trade: { status: 'pending' } },
+      });
+      if (pendingTradeItem) {
+        throw Object.assign(new Error('Un Pokémon est engagé dans un échange en attente'), { status: 400 });
+      }
+      // Cancel any incoming pending proposals targeting this Pokémon (legacy
+      // scalar path; subsumed by the guard above, kept as a no-op safety net).
+      await tx.trade.updateMany({
+        where: { status: 'pending', to_pokemon_id: userPokemonId },
+        data: { status: 'cancelled', resolved_at: new Date() },
+      });
+      // Auto-cancel any active market listing so the user can sell directly.
+      await tx.marketListing.updateMany({
+        where: { pokemon_id: userPokemonId, status: 'active' },
+        data: { status: 'cancelled' },
+      });
+      await tx.userPokemon.delete({ where: { id: userPokemonId } });
+      await addCoins(tx, userId, sellPrice, 'sell');
+      await recalculateUserPokedexValue(tx, userId);
     });
-    // Auto-cancel any active market listing so the user can sell directly
-    await tx.marketListing.updateMany({
-      where: { pokemon_id: userPokemonId, status: 'active' },
-      data: { status: 'cancelled' },
-    });
-    await tx.userPokemon.delete({ where: { id: userPokemonId } });
-    await addCoins(tx, userId, sellPrice, 'sell');
-    await recalculateUserPokedexValue(tx, userId);
-  });
+  } catch (err) {
+    const e = err as { status?: number; message?: string };
+    if (e.status === 400) { res.status(400).json({ error: e.message }); return; }
+    throw err;
+  }
 
   const newBadges = await checkBadges(userId);
 
