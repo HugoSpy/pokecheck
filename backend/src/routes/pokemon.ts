@@ -4,12 +4,13 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /pokemon/search?name=&type=&rarity=&limit= - search the global Pokémon
-// species table (NOT a user's collection). Public, like /pokedex and /leaderboard.
+// GET /pokemon/search?name=&type=&rarity=&generation=&limit= - search the global
+// Pokémon species table (NOT a user's collection). Public, like /pokedex.
 router.get('/search', async (req: Request, res: Response): Promise<void> => {
   const name = String(req.query.name ?? '').trim();
   const type = String(req.query.type ?? '').trim();
   const rarity = String(req.query.rarity ?? '').trim();
+  const generation = parseInt(String(req.query.generation ?? ''), 10);
   const limit = Math.min(Math.max(parseInt(String(req.query.limit ?? '50'), 10) || 50, 1), 200);
 
   const pokemons = await prisma.pokemon.findMany({
@@ -17,6 +18,7 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
       ...(name ? { name: { contains: name, mode: 'insensitive' } } : {}),
       ...(rarity ? { rarity } : {}),
       ...(type ? { types: { has: type } } : {}),
+      ...(Number.isInteger(generation) && generation >= 1 && generation <= 7 ? { generation } : {}),
     },
     orderBy: { id: 'asc' },
     take: limit,

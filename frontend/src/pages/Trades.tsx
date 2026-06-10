@@ -9,7 +9,7 @@ import PokemonCard from '../components/PokemonCard';
 import RarityBadge from '../components/RarityBadge';
 import TradeAnimation3D from '../components/TradeAnimation3D';
 import { Swap, Trash } from '../components/icons';
-import { RARITIES, RARITY_FR } from '../utils/pokemon';
+import { RARITIES, RARITY_FR, TYPE_FR, TYPE_COLORS } from '../utils/pokemon';
 import './Trades.css';
 
 interface LocationState {
@@ -25,18 +25,27 @@ interface GridFilter {
   search: string;
   gen: number | null;
   rarity: string | null;
+  type: string | null;
   shiny: boolean;
 }
-const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, shiny: false };
+const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, type: null, shiny: false };
 
 function applyGridFilter(list: UserPokemonInstance[], f: GridFilter): UserPokemonInstance[] {
   return list.filter(p => {
     if (f.search && !p.name.toLowerCase().includes(f.search.toLowerCase())) return false;
     if (f.gen !== null && p.generation !== f.gen) return false;
     if (f.rarity !== null && p.rarity !== f.rarity) return false;
+    if (f.type !== null && !p.types.includes(f.type)) return false;
     if (f.shiny && !p.is_shiny) return false;
     return true;
   });
+}
+
+// Distinct types present in a list, sorted - drives the per-grid Type chips.
+function typesOf(list: UserPokemonInstance[]): string[] {
+  const s = new Set<string>();
+  list.forEach(p => p.types.forEach(t => s.add(t)));
+  return [...s].sort();
 }
 
 const MAX_PER_SIDE = 10;
@@ -241,6 +250,8 @@ export default function Trades() {
 
   const displayedMine = applyGridFilter(tradeableMine, mineFilter);
   const displayedTheirs = applyGridFilter(theirPokemons, theirsFilter);
+  const mineTypes = typesOf(tradeableMine);
+  const theirsTypes = typesOf(theirPokemons);
 
   const mineById = new Map(tradeableMine.map(p => [p.instanceId, p]));
   const theirsById = new Map(theirPokemons.map(p => [p.instanceId, p]));
@@ -389,7 +400,7 @@ export default function Trades() {
               <div className="trades-empty">Aucun Pokémon échangeable.</div>
             ) : (
               <>
-                <GridFilters filter={mineFilter} onChange={setMineFilter} />
+                <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} />
                 <div className="mini-grid">
                   {displayedMine.map(p => (
                     <PokemonCard
@@ -422,7 +433,7 @@ export default function Trades() {
               <div className="trades-empty">Cet élève n'a aucun Pokémon.</div>
             ) : (
               <>
-                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} />
+                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} types={theirsTypes} />
                 <div className="mini-grid">
                   {displayedTheirs.map(p => (
                     <PokemonCard
@@ -639,7 +650,7 @@ function TradeResults({ items, onClose, onPokedex }: {
 
 // Independent display filter bar for one propose-trade grid (reuses the Pokédex
 // filter classes for visual consistency). Filters apply instantly.
-function GridFilters({ filter, onChange }: { filter: GridFilter; onChange: (f: GridFilter) => void }) {
+function GridFilters({ filter, onChange, types }: { filter: GridFilter; onChange: (f: GridFilter) => void; types: string[] }) {
   const set = (patch: Partial<GridFilter>) => onChange({ ...filter, ...patch });
   return (
     <div className="pokedex-filters trade-grid-filters">
@@ -676,6 +687,23 @@ function GridFilters({ filter, onChange }: { filter: GridFilter; onChange: (f: G
           ))}
         </div>
       </div>
+      {types.length > 0 && (
+        <div className="filter-row">
+          <div className="filter-label">Type</div>
+          <div className="filter-group filter-types">
+            <button className={`filter-chip ${filter.type === null ? 'active' : ''}`} onClick={() => set({ type: null })}>Tous</button>
+            {types.map(t => (
+              <button
+                key={t}
+                className={`filter-chip type-chip ${filter.type === t ? 'active' : ''}`}
+                style={{ '--type-color': TYPE_COLORS[t] ?? '#9CA3AF' } as React.CSSProperties}
+                onClick={() => set({ type: filter.type === t ? null : t })}
+              >{TYPE_FR[t] ?? t}</button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="filter-row">
         <div className="filter-label">Divers</div>
         <div className="filter-group">

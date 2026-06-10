@@ -20,6 +20,7 @@ export default function PokemonSearchModal({ onClose }: Props) {
   const [search, setSearch] = useState('');
   const [rarity, setRarity] = useState<string | null>(null);
   const [type, setType] = useState<string | null>(null);
+  const [generation, setGeneration] = useState<number | null>(null);
   const [results, setResults] = useState<PokemonSpecies[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -41,13 +42,13 @@ export default function PokemonSearchModal({ onClose }: Props) {
     let cancelled = false;
     setLoading(true);
     const t = setTimeout(() => {
-      searchPokemonSpecies({ name: search, rarity, type, limit: 60 })
+      searchPokemonSpecies({ name: search, rarity, type, generation, limit: 60 })
         .then(data => { if (!cancelled) setResults(data.pokemons); })
         .catch(() => { if (!cancelled) setResults([]); })
         .finally(() => { if (!cancelled) setLoading(false); });
     }, 250);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [search, rarity, type, selected]);
+  }, [search, rarity, type, generation, selected]);
 
   const openOwners = useCallback((p: PokemonSpecies) => {
     setSelected(p);
@@ -81,6 +82,7 @@ export default function PokemonSearchModal({ onClose }: Props) {
               search={search} onSearch={setSearch}
               rarity={rarity} onRarity={setRarity}
               type={type} onType={setType}
+              generation={generation} onGeneration={setGeneration}
             />
 
             {loading ? (
