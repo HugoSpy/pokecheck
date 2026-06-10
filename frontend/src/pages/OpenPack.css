@@ -1,4 +1,4 @@
-/* ── Home button — below the logo, left-aligned ── */
+/* ── Home button - below the logo, left-aligned ── */
 .pack-home-btn {
   position: fixed;
   top: 48px;
@@ -290,7 +290,7 @@
 /* Viewport clips the strip */
 .roll-viewport {
   width: 100%;
-  height: 280px; /* 200px carte × 1.32 scale = 264px — 280px évite tout clip */
+  height: 280px; /* 200px carte × 1.32 scale = 264px - 280px évite tout clip */
   overflow-x: clip;
   overflow-y: visible;
   mask-image: linear-gradient(
@@ -627,7 +627,7 @@
   letter-spacing: 0.02em;
 }
 
-/* ── HIDDEN FEATURE — Ditto reveal ── */
+/* ── HIDDEN FEATURE - Ditto reveal ── */
 @keyframes ditto-reveal-shake {
   0%, 100% { transform: translateX(0) rotate(0deg); }
   15%       { transform: translateX(-6px) rotate(-0.8deg); }
@@ -655,7 +655,7 @@
 }
 /* ── END HIDDEN FEATURE ── */
 
-/* ── Change 3 — Drumroll screen shake during strip scroll ── */
+/* ── Change 3 - Drumroll screen shake during strip scroll ── */
 @keyframes drumroll-shake {
   0%   { transform: translateX(-3px); }
   50%  { transform: translateX(3px); }

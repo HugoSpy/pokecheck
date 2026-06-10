@@ -101,7 +101,7 @@ function genStars(count: number): StarDot[] {
 
 // ── Fallback pokéball (sphère) ─────────────────────────────────────────────
 function buildFallbackPokeball(group: THREE.Group): void {
-  console.warn('pokeball.glb manquant — fallback sphère utilisée');
+  console.warn('pokeball.glb manquant - fallback sphère utilisée');
 
   const top = new THREE.Mesh(
     new THREE.SphereGeometry(0.5, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),

@@ -15,7 +15,7 @@ const NAV_LINKS = [
   { to: '/pokedex',     label: 'Pokédex'    },
   { to: '/trades',      label: 'Échanges'   },
   { to: '/market',      label: 'Marché'     },
-  { to: '/events',      label: 'Événements' },
+  { to: '/events',      label: 'Boutique' },
   { to: '/battle',      label: 'Battle'     },
   { to: '/leaderboard', label: 'Classement' },
   { to: '/profile',     label: 'Profil'     },
@@ -26,7 +26,7 @@ const BOTTOM_NAV = [
   { to: '/trades',  label: 'Échanges', Icon: Swap        },
   { to: '/open',    label: 'Ouvrir',   Icon: Pokeball    },
   { to: '/market',  label: 'Marché',   Icon: ShoppingBag },
-  { to: '/events',  label: 'Events',   Icon: Calendar    },
+  { to: '/events',  label: 'Boutique',   Icon: Calendar    },
   { to: '/battle',  label: 'Battle',   Icon: Swords      },
   { to: '/profile', label: 'Profil',   Icon: User        },
 ];
@@ -75,7 +75,7 @@ export default function Layout() {
     <div className={`layout${isDevEnv ? ' layout--dev' : ''}`}>
       {isDevEnv && (
         <div className="dev-banner">
-          ⚠️ Environnement de développement — api-dev.pokecheck.fr
+          ⚠️ Environnement de développement - api-dev.pokecheck.fr
         </div>
       )}
       <nav className="nav">

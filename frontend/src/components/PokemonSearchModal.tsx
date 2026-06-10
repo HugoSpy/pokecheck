@@ -69,7 +69,7 @@ export default function PokemonSearchModal({ onClose }: Props) {
       <div className="psm-modal" onClick={e => e.stopPropagation()} role="dialog" aria-modal="true">
         <div className="psm-header">
           <h2 className="psm-title">
-            {selected ? `Dresseurs — ${selected.name}` : 'Rechercher un Pokémon'}
+            {selected ? `Dresseurs - ${selected.name}` : 'Rechercher un Pokémon'}
           </h2>
           <button className="psm-close" onClick={onClose} aria-label="Fermer">✕</button>
         </div>

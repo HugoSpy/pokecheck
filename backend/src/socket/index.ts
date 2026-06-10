@@ -64,7 +64,7 @@ function emitLobby(io: BattleServer, room: BattleRoom): void {
   io.to(room.id).emit('battle:lobby', toLobbyView(room));
 }
 
-// Phase 2 — aborts a battle that can't launch (missing pack / insufficient
+// Phase 2 - aborts a battle that can't launch (missing pack / insufficient
 // coins / DB error): resets the room to a fresh waiting lobby and tells every
 // client to drop back out of the arena.
 function failBattle(io: BattleServer, room: BattleRoom, message: string): void {
@@ -79,7 +79,7 @@ function failBattle(io: BattleServer, room: BattleRoom, message: string): void {
   emitList(io);
 }
 
-// Phase 2 — runs once when a room fills and everyone is ready. Charges all
+// Phase 2 - runs once when a room fills and everyone is ready. Charges all
 // players atomically, rolls every player's strip in one pass, stores the result
 // on the room and broadcasts a single shared `startAt` so all clients animate in
 // lockstep. Any failure rolls the coin transaction back and aborts the battle.
@@ -92,7 +92,7 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
     }
 
     // Entry cost is the chosen event pack's price (e.g. Sinnoh = 50 coins).
-    // Deduct it from every player in a single Serializable transaction —
+    // Deduct it from every player in a single Serializable transaction -
     // spendCoins is an atomic compare-and-swap, so if any player is short the
     // whole transaction rolls back and nobody is charged.
     const entryCost = ep.price;
@@ -113,7 +113,7 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
     // Roll every player's strip. If the top score is tied, the whole battle is
     // re-rolled (NO extra coins charged) and a battle:tie is broadcast so clients
     // can show an "Égalité" overlay before the new draw. Capped at 10 attempts so
-    // a pathological repeated tie can never loop forever — after that we just take
+    // a pathological repeated tie can never loop forever - after that we just take
     // the result and let the deterministic max-points tiebreak in persistBattle
     // pick a winner.
     let strips: Record<string, BattlePokemon[]> = {};
@@ -160,7 +160,7 @@ async function startBattle(io: BattleServer, room: BattleRoom): Promise<void> {
   }
 }
 
-// Phase 2.1 — emits battle:begin (the real start signal) exactly once, either
+// Phase 2.1 - emits battle:begin (the real start signal) exactly once, either
 // when every client has finished preloading or when the safety timeout fires.
 // startAt is +300ms so all clients schedule their roll for the same instant.
 function beginBattle(io: BattleServer, room: BattleRoom): void {
@@ -171,7 +171,7 @@ function beginBattle(io: BattleServer, room: BattleRoom): void {
   io.to(room.id).emit('battle:begin', { roomId: room.id, startAt: room.startAt });
 }
 
-// Phase 2 — persists the finished battle exactly once AND awards the prize:
+// Phase 2 - persists the finished battle exactly once AND awards the prize:
 // winner-takes-all on Pokémon. The player who drew the highest-value Pokémon
 // gets EVERY player's result Pokémon added to their Pokédex (no coin payout).
 //
@@ -235,7 +235,7 @@ async function persistBattle(room: BattleRoom): Promise<void> {
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
   } catch (err) {
     // P2002 = the room_id UNIQUE constraint fired: another ack already wrote the
-    // record (and granted the prize), so this is a success — keep `persisted`.
+    // record (and granted the prize), so this is a success - keep `persisted`.
     if ((err as { code?: string }).code === 'P2002') return;
     // Any other error: allow a later ack to retry the write.
     room.persisted = false;
@@ -261,9 +261,9 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
   io.use((socket: BattleSocket, next) => {
     const cookieHeader = socket.handshake.headers.cookie;
     const cookieToken = cookieHeader ? cookie.parse(cookieHeader).session : undefined;
-    // [DEV ONLY - NEVER MERGE] fall back to handshake.auth.token — the
+    // [DEV ONLY - NEVER MERGE] fall back to handshake.auth.token - the
     // per-tab JWT stored by the test-account backdoor login (localStorage,
-    // see frontend battleSocket.ts) — when no session cookie is present.
+    // see frontend battleSocket.ts) - when no session cookie is present.
     // Mirrors the cookie ?? Bearer fallback in authMiddleware.ts:25-26.
     const authToken = (socket.handshake.auth as { token?: string } | undefined)?.token;
     const token = cookieToken ?? authToken ?? undefined;
@@ -337,7 +337,7 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
       emitLobby(io, room);
       emitList(io);
 
-      // Phase 2 — full + everyone ready: launch the battle once. `starting`
+      // Phase 2 - full + everyone ready: launch the battle once. `starting`
       // guards re-entrancy if two ready events land back-to-back.
       if (room.status === 'in_progress' && !room.starting && !room.result) {
         room.starting = true;
@@ -345,7 +345,7 @@ export function initBattleSocket(httpServer: HttpServer): BattleServer {
       }
     });
 
-    // Phase 2.1 — a client finished preloading its strip sprites. Count it
+    // Phase 2.1 - a client finished preloading its strip sprites. Count it
     // (deduped per user) and, once every client in the room is ready, fire the
     // real start signal so all rolls begin in lockstep.
     socket.on('battle:client_ready', (payload: { roomId: string }) => {

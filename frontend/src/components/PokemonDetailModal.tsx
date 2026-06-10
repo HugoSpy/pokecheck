@@ -121,12 +121,14 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
             <span className="pdm-stat-label">Génération</span>
             <span className="pdm-stat-value">{pokemon.generation}</span>
           </div>
-          <div className="pdm-stat">
-            <span className="pdm-stat-label">Obtenu</span>
-            <span className="pdm-stat-value">
-              {new Date(pokemon.obtainedAt).toLocaleDateString('fr-FR')}
-            </span>
-          </div>
+          {pokemon.obtainedAt && (
+            <div className="pdm-stat">
+              <span className="pdm-stat-label">Obtenu</span>
+              <span className="pdm-stat-value">
+                {new Date(pokemon.obtainedAt).toLocaleDateString('fr-FR')}
+              </span>
+            </div>
+          )}
         </div>
 
         {onSell && (
@@ -136,7 +138,7 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
                 className="pdm-sell-btn"
                 onClick={() => setConfirmSell(true)}
               >
-                Vendre — {sellPrice} coins
+                Vendre - {sellPrice} coins
               </button>
             ) : (
               <div className="pdm-sell-confirm">

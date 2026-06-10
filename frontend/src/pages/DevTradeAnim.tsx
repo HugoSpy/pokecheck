@@ -58,7 +58,7 @@ export default function DevTradeAnim() {
           color: 'var(--text-primary, #e6e8f2)',
         }}>
           <h1 style={{ fontSize: '1.3rem', letterSpacing: '0.1em', marginBottom: 8 }}>
-            🎬 Test — cinématique d'échange
+            🎬 Test - cinématique d'échange
           </h1>
           {(Object.keys(PRESETS) as PresetKey[]).map(p => (
             <button

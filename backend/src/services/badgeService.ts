@@ -2,7 +2,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const STARTERS: Record<string, number[]> = {
+export const STARTERS: Record<string, number[]> = {
   starters_gen1: [1, 4, 7],
   starters_gen2: [152, 155, 158],
   starters_gen3: [252, 255, 258],
@@ -12,7 +12,44 @@ const STARTERS: Record<string, number[]> = {
   starters_gen7: [722, 725, 728],
 };
 
-const STREAK_BADGES: Array<{ id: string; threshold: number }> = [
+// Full starter evolution lineages - own all 3 stages. base = first id (used for
+// the badge's French name in seedBadges.ts). id format: starter_evo_{type}_gen{n}.
+export const STARTER_EVO: Record<string, number[]> = {
+  starter_evo_fire_gen1:  [4, 5, 6],     starter_evo_water_gen1: [7, 8, 9],     starter_evo_grass_gen1: [1, 2, 3],
+  starter_evo_fire_gen2:  [155, 156, 157], starter_evo_water_gen2: [158, 159, 160], starter_evo_grass_gen2: [152, 153, 154],
+  starter_evo_fire_gen3:  [255, 256, 257], starter_evo_water_gen3: [258, 259, 260], starter_evo_grass_gen3: [252, 253, 254],
+  starter_evo_fire_gen4:  [390, 391, 392], starter_evo_water_gen4: [393, 394, 395], starter_evo_grass_gen4: [387, 388, 389],
+  starter_evo_fire_gen5:  [498, 499, 500], starter_evo_water_gen5: [501, 502, 503], starter_evo_grass_gen5: [495, 496, 497],
+  starter_evo_fire_gen6:  [653, 654, 655], starter_evo_water_gen6: [656, 657, 658], starter_evo_grass_gen6: [650, 651, 652],
+  starter_evo_fire_gen7:  [725, 726, 727], starter_evo_water_gen7: [728, 729, 730], starter_evo_grass_gen7: [722, 723, 724],
+};
+
+export const BATTLE_BADGES: Array<{ id: string; threshold: number }> = [
+  { id: 'battle_first_win', threshold: 1  },
+  { id: 'battle_5_wins',    threshold: 5  },
+  { id: 'battle_10_wins',   threshold: 10 },
+  { id: 'battle_25_wins',   threshold: 25 },
+  { id: 'battle_50_wins',   threshold: 50 },
+];
+
+export const MARKET_SELL_BADGES: Array<{ id: string; threshold: number }> = [
+  { id: 'market_sell_1',  threshold: 1  },
+  { id: 'market_sell_10', threshold: 10 },
+  { id: 'market_sell_50', threshold: 50 },
+];
+
+export const MARKET_BUY_BADGES: Array<{ id: string; threshold: number }> = [
+  { id: 'market_buy_1',  threshold: 1  },
+  { id: 'market_buy_10', threshold: 10 },
+];
+
+export const SHINY_BADGES: Array<{ id: string; threshold: number }> = [
+  { id: 'shiny_1',  threshold: 1  },
+  { id: 'shiny_5',  threshold: 5  },
+  { id: 'shiny_10', threshold: 10 },
+];
+
+export const STREAK_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'streak_1',   threshold: 1   },
   { id: 'streak_7',   threshold: 7   },
   { id: 'streak_14',  threshold: 14  },
@@ -21,7 +58,7 @@ const STREAK_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'streak_100', threshold: 100 },
 ];
 
-const TRADE_BADGES: Array<{ id: string; threshold: number }> = [
+export const TRADE_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'trade_1',   threshold: 1   },
   { id: 'trade_5',   threshold: 5   },
   { id: 'trade_15',  threshold: 15  },
@@ -29,7 +66,7 @@ const TRADE_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'trade_100', threshold: 100 },
 ];
 
-const POKEDEX_BADGES: Array<{ id: string; threshold: number }> = [
+export const POKEDEX_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'pokedex_10',  threshold: 10  },
   { id: 'pokedex_50',  threshold: 50  },
   { id: 'pokedex_150', threshold: 150 },
@@ -38,9 +75,30 @@ const POKEDEX_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'pokedex_809', threshold: 809 },
 ];
 
-const GEN_COUNT: Record<number, number> = {
+export const GEN_COUNT: Record<number, number> = {
   1: 151, 2: 100, 3: 135, 4: 107, 5: 156, 6: 72, 7: 88,
 };
+
+export const ALL_TYPES = [
+  'normal','fire','water','electric','grass','ice',
+  'fighting','poison','ground','flying','psychic','bug',
+  'rock','ghost','dragon','dark','steel','fairy',
+];
+
+export const TYPE_BADGE_TIERS = [5, 10, 25];
+
+// Distinct-species-per-rarity tiers. Commun has no tier-5 badge (too easy).
+// id format: rarity_{rarity-lowercase}_{tier}.
+export const RARITY_COLLECTION: Record<string, number[]> = {
+  COMMON:    [10, 25, 50],
+  RARE:      [5, 10, 25, 50],
+  EPIC:      [5, 10, 25, 50],
+  LEGENDARY: [5, 10, 25, 50],
+};
+
+// Distinct-species-per-generation tiers. Tier 100 only applies to generations
+// that actually have ≥100 species (gens 6/7 don't). id format: gen{N}_{tier}.
+export const GENERATION_COLLECTION_TIERS = [10, 25, 50, 100];
 
 async function unlockBadge(
   userId: string,
@@ -75,7 +133,7 @@ async function unlockBadge(
 }
 
 export async function checkBadges(userId: string): Promise<string[]> {
-  const [user, existingBadges, ownedPokemons] = await Promise.all([
+  const [user, existingBadges, ownedPokemons, battleWins, marketSold, marketBought] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { streak_days: true, trade_count: true },
@@ -88,9 +146,13 @@ export async function checkBadges(userId: string): Promise<string[]> {
       where: { user_id: userId },
       select: {
         pokemon_id: true,
+        is_shiny: true,
         pokemon: { select: { generation: true, rarity: true, types: true } },
       },
     }),
+    prisma.battleRecord.count({ where: { winner_id: userId } }),
+    prisma.marketListing.count({ where: { seller_id: userId, status: 'sold' } }),
+    prisma.marketListing.count({ where: { buyer_id: userId, status: 'sold' } }),
   ]);
 
   if (!user) return [];
@@ -116,9 +178,41 @@ export async function checkBadges(userId: string): Promise<string[]> {
     if (user.trade_count >= threshold) await unlock(id);
   }
 
+  // Battle win badges (BattleRecord.winner_id === userId)
+  for (const { id, threshold } of BATTLE_BADGES) {
+    if (battleWins >= threshold) await unlock(id);
+  }
+
+  // Market badges - completed sales (as seller) / purchases (as buyer)
+  for (const { id, threshold } of MARKET_SELL_BADGES) {
+    if (marketSold >= threshold) await unlock(id);
+  }
+  for (const { id, threshold } of MARKET_BUY_BADGES) {
+    if (marketBought >= threshold) await unlock(id);
+  }
+
   // Build helper sets
   const ownedPokemonIds = new Set(ownedPokemons.map(p => p.pokemon_id));
   const distinctPokemonCount = ownedPokemonIds.size;
+
+  // Shiny badges - distinct shiny species owned
+  const shinySpecies = new Set(ownedPokemons.filter(p => p.is_shiny).map(p => p.pokemon_id));
+  for (const { id, threshold } of SHINY_BADGES) {
+    if (shinySpecies.size >= threshold) await unlock(id);
+  }
+
+  // Rarity collection badges - distinct species owned per rarity
+  const speciesByRarity = new Map<string, Set<number>>();
+  for (const p of ownedPokemons) {
+    const r = p.pokemon.rarity;
+    (speciesByRarity.get(r) ?? speciesByRarity.set(r, new Set()).get(r)!).add(p.pokemon_id);
+  }
+  for (const [rarity, tiers] of Object.entries(RARITY_COLLECTION)) {
+    const count = speciesByRarity.get(rarity)?.size ?? 0;
+    for (const tier of tiers) {
+      if (count >= tier) await unlock(`rarity_${rarity.toLowerCase()}_${tier}`);
+    }
+  }
 
   // Pokédex size badges
   for (const { id, threshold } of POKEDEX_BADGES) {
@@ -130,16 +224,16 @@ export async function checkBadges(userId: string): Promise<string[]> {
     if (ids.every(id => ownedPokemonIds.has(id))) await unlock(badgeId);
   }
 
+  // Starter evolution lineage badges (own all 3 stages)
+  for (const [badgeId, ids] of Object.entries(STARTER_EVO)) {
+    if (ids.every(id => ownedPokemonIds.has(id))) await unlock(badgeId);
+  }
+
   // All 18 types badge
   const ownedTypes = new Set(ownedPokemons.flatMap(p => p.pokemon.types));
-  const ALL_TYPES = [
-    'normal','fire','water','electric','grass','ice',
-    'fighting','poison','ground','flying','psychic','bug',
-    'rock','ghost','dragon','dark','steel','fairy',
-  ];
   if (ALL_TYPES.every(t => ownedTypes.has(t))) await unlock('all_types');
 
-  // Type collection badges — distinct species owned per type, 5/10/25 tiers.
+  // Type collection badges - distinct species owned per type, 5/10/25 tiers.
   // Grouped in-memory from ownedPokemons (which already includes types), so all
   // 18 types × 3 tiers are checked without any extra DB query.
   const speciesByType = new Map<string, Set<number>>();
@@ -150,7 +244,6 @@ export async function checkBadges(userId: string): Promise<string[]> {
       set.add(p.pokemon_id);
     }
   }
-  const TYPE_BADGE_TIERS = [5, 10, 25];
   for (const type of ALL_TYPES) {
     const distinctCount = speciesByType.get(type)?.size ?? 0;
     for (const threshold of TYPE_BADGE_TIERS) {
@@ -201,6 +294,12 @@ export async function checkBadges(userId: string): Promise<string[]> {
     const ownedInGen = ownedByGen.get(gen)?.size ?? 0;
     if (totalInGen > 0 && ownedInGen >= totalInGen) {
       await unlock(`gen${gen}_complete`);
+    }
+    // Generation collection tiers - distinct species in the gen. Tier 100 only
+    // exists for gens that actually have ≥100 species.
+    for (const tier of GENERATION_COLLECTION_TIERS) {
+      if (tier === 100 && totalInGen < 100) continue;
+      if (ownedInGen >= tier) await unlock(`gen${gen}_${tier}`);
     }
   }
 

@@ -206,7 +206,7 @@ export default function Trades() {
 
       {error && (
         <div className="error-banner" onClick={() => setError(null)} style={{ cursor: 'pointer' }}>
-          {error} — cliquer pour fermer
+          {error} - cliquer pour fermer
         </div>
       )}
       {success && (

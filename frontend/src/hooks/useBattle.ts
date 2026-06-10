@@ -136,13 +136,13 @@ export function useBattle() {
     clearPendingBegin();
   }, [setLobby]);
 
-  // Phase 2.1 — the arena calls this once its strip sprites are preloaded; the
+  // Phase 2.1 - the arena calls this once its strip sprites are preloaded; the
   // backend starts the rolls only when every client has signalled ready.
   const clientReady = useCallback((roomId: string) => {
     socketRef.current.emit('battle:client_ready', { roomId });
   }, []);
 
-  // Phase 2 — fired by the arena once a player's animation finishes; the backend
+  // Phase 2 - fired by the arena once a player's animation finishes; the backend
   // persists the BattleRecord on the first ack it receives.
   const resultAck = useCallback((roomId: string) => {
     socketRef.current.emit('battle:result_ack', { roomId });

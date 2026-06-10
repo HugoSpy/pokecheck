@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// test-drop-rates.js — Simule N tirages HTTP réels et compare avec les taux théoriques.
+// test-drop-rates.js - Simule N tirages HTTP réels et compare avec les taux théoriques.
 // Usage : depuis ~/pokecheck-dev/backend/  →  node scripts/test-drop-rates.js
 //
 // Ce script modifie temporairement les coins du premier user trouvé en DB,
@@ -95,7 +95,7 @@ async function main() {
   if (!event.published) { console.error('Event non publié.'); process.exit(1); }
 
   console.log(`\nUser     : ${user.display_name} (${user.id})`);
-  console.log(`Event    : ${event.name} — ${event.price} coins/tirage`);
+  console.log(`Event    : ${event.name} - ${event.price} coins/tirage`);
   console.log(`API      : ${API_BASE}`);
   console.log(`Tirages  : ${N} par endpoint, concurrence ${CONCURRENCY}`);
 
@@ -113,10 +113,10 @@ async function main() {
 
   const testStart = new Date();
 
-  // ── Tirage normal (POST /draw) — limite 100/jour ──────────────────────────
+  // ── Tirage normal (POST /draw) - limite 100/jour ──────────────────────────
   // On tourne par tranches de 100 en remettant le compteur à zéro entre chaque.
   console.log(`\n── Tirage normal (POST /draw) ──`);
-  console.log(`  Limite 100/jour — ${N} tentatives en ${Math.ceil(N / 100)} tranches de 100.`);
+  console.log(`  Limite 100/jour - ${N} tentatives en ${Math.ceil(N / 100)} tranches de 100.`);
 
   const statsNormal = makeStats();
 
@@ -140,7 +140,7 @@ async function main() {
     }, statsNormal, batchSize);
   }
 
-  printStats('POST /draw — tirage normal', statsNormal);
+  printStats('POST /draw - tirage normal', statsNormal);
 
   // ── Tirage event (POST /event/draw) ──────────────────────────────────────
   console.log(`\n── Tirage event (POST /event/draw, ${event.name}) ──`);
@@ -155,7 +155,7 @@ async function main() {
     stats.total++;
   }, statsEvent, N);
 
-  printStats(`POST /event/draw — ${event.name}`, statsEvent);
+  printStats(`POST /event/draw - ${event.name}`, statsEvent);
 
   // ── Nettoyage ────────────────────────────────────────────────────────────
   console.log('\nNettoyage...');

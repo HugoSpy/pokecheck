@@ -54,7 +54,7 @@ router.post('/list', authMiddleware, async (req: Request, res: Response): Promis
     price_coins: number;
   };
 
-  // M3 — Cap price to prevent griefing: a user could list a pokemon at INT_MAX
+  // M3 - Cap price to prevent griefing: a user could list a pokemon at INT_MAX
   // to effectively remove it from the market forever (no one can afford it).
   // 1 000 000 coins is well above any achievable balance in normal play.
   const MAX_PRICE = 1_000_000;
@@ -153,7 +153,7 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
 
     // Ownership re-verification: the listed Pokémon may have left the seller (via
     // a trade) while the listing stayed 'active'. Don't charge the buyer or rip
-    // the Pokémon out of its current owner — cancel the stale listing instead.
+    // the Pokémon out of its current owner - cancel the stale listing instead.
     // (Same principle as the ownership re-check in /trade/accept, hotfix 963d83b.)
     const pokemon = await tx.userPokemon.findUnique({ where: { id: listing.pokemon_id } });
     if (!pokemon || pokemon.user_id !== listing.seller_id) {
@@ -182,7 +182,10 @@ router.post('/buy/:listingId', authMiddleware, async (req: Request, res: Respons
     return;
   }
 
+  // The buyer earns buy badges; the seller just completed a sale, so re-check
+  // their market-sell badges too (fire-and-forget - not part of the response).
   const newBadges = await checkBadges(buyerId);
+  checkBadges(listing.seller_id).catch(() => {});
 
   const updatedBuyer = await prisma.user.findUnique({
     where: { id: buyerId },

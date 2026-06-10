@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-// ms_id is the unique Microsoft identifier — safer than display_name.
+// ms_id is the unique Microsoft identifier - safer than display_name.
 const TARGET_MS_IDS = [
   '139346e1-d975-4667-b56f-32a47daf7394', // Alexandre Girold
   'c30f8657-0546-420d-9913-66c117d2aecb', // Léandro Tolaini
@@ -23,7 +23,7 @@ async function main(): Promise<void> {
   for (const u of before) console.log(`  ${u.display_name} (${u.id}) trade_count=${u.trade_count}`);
 
   if (before.length !== TARGET_MS_IDS.length) {
-    throw new Error(`Expected ${TARGET_MS_IDS.length} users, found ${before.length} — aborting.`);
+    throw new Error(`Expected ${TARGET_MS_IDS.length} users, found ${before.length} - aborting.`);
   }
 
   await prisma.$transaction(async (tx) => {

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { drawEventPack } from '../api/eventApi';
+import { drawEventPack, claimDailyShinyPack } from '../api/eventApi';
 import { sellPokemon } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
 import type { RollCardData, PokemonInfo } from '../api/types';
@@ -60,6 +60,9 @@ export default function EventPackOpen() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const eventId = params.get('event_id') ?? '';
+  // Free daily Shiny pack mode (opened from the profile page) - claims the
+  // /users/daily-shiny-pack endpoint instead of a paid event draw.
+  const isShinyDaily = params.get('shiny') === '1';
 
   const { setCoins, refreshProfile } = useUserCtx();
 
@@ -81,11 +84,11 @@ export default function EventPackOpen() {
   const stripRef = useRef<HTMLDivElement>(null);
 
   async function handleOpen() {
-    if (!eventId) { setError('Paramètres manquants.'); return; }
+    if (!eventId && !isShinyDaily) { setError('Paramètres manquants.'); return; }
     setPhase('loading');
     setError(null);
     try {
-      const drawResult = await drawEventPack(eventId);
+      const drawResult = isShinyDaily ? await claimDailyShinyPack() : await drawEventPack(eventId);
       setCoins(drawResult.coins_remaining);
       setDrawInstanceId(drawResult.user_pokemon_id);
       setIsDuplicate(drawResult.is_duplicate);
@@ -110,7 +113,8 @@ export default function EventPackOpen() {
       setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      setError(e.status === 402 ? 'Coins insuffisants.' : (err as Error).message);
+      if (e.status === 429) setError('Pack Shiny déjà récupéré aujourd\'hui.');
+      else setError(e.status === 402 ? 'Coins insuffisants.' : (err as Error).message);
       setPhase('idle');
     }
   }
@@ -159,7 +163,7 @@ export default function EventPackOpen() {
       const result = await sellPokemon(drawInstanceId);
       setSold(true);
       await refreshProfile();
-      setToast({ msg: `Doublon revendu — +${result.coins_earned} coins`, type: 'success' });
+      setToast({ msg: `Doublon revendu - +${result.coins_earned} coins`, type: 'success' });
     } catch {
       setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
     } finally {
@@ -305,9 +309,9 @@ export default function EventPackOpen() {
               <button
                 className="open-btn"
                 style={{ '--btn-color': rarityGlow } as React.CSSProperties}
-                onClick={() => navigate('/events')}
+                onClick={() => navigate(isShinyDaily ? '/profile' : '/events')}
               >
-                Retour aux événements →
+                {isShinyDaily ? 'Retour au profil →' : 'Retour à la boutique →'}
               </button>
               {isDuplicate && !sold && (
                 <button

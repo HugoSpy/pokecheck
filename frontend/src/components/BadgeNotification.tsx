@@ -80,7 +80,7 @@ export default function BadgeNotification() {
       const result = await claimBadge(current.badge_id);
       setCoins(result.total_coins);
     } catch {
-      // 409 = already claimed elsewhere — just dismiss silently
+      // 409 = already claimed elsewhere - just dismiss silently
     }
     dismiss();
   }

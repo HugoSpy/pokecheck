@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 const router = Router();
 const prisma = new PrismaClient();
 
-// GET /pokemon/search?name=&type=&rarity=&limit= — search the global Pokémon
+// GET /pokemon/search?name=&type=&rarity=&limit= - search the global Pokémon
 // species table (NOT a user's collection). Public, like /pokedex and /leaderboard.
 router.get('/search', async (req: Request, res: Response): Promise<void> => {
   const name = String(req.query.name ?? '').trim();
@@ -26,7 +26,7 @@ router.get('/search', async (req: Request, res: Response): Promise<void> => {
   res.json({ pokemons });
 });
 
-// GET /pokemon/:pokemonId/owners — users currently holding ≥1 instance of this
+// GET /pokemon/:pokemonId/owners - users currently holding ≥1 instance of this
 // species, with how many each owns. Sorted by count DESC then displayName ASC.
 router.get('/:pokemonId/owners', async (req: Request, res: Response): Promise<void> => {
   const pokemonId = parseInt(String(req.params.pokemonId), 10);

@@ -36,7 +36,7 @@ export async function getPokemonOwners(pokemonId: number): Promise<{ owners: Pok
   return apiFetch<{ owners: PokemonOwner[] }>(`/pokemon/${pokemonId}/owners`);
 }
 
-// HIDDEN FEATURE — force_ditto param added
+// HIDDEN FEATURE - force_ditto param added
 export async function draw(force_shiny?: boolean, force_ditto?: boolean): Promise<{ pokemon: PokemonInfo } & DrawDuplicateInfo> {
   return apiFetch<{ pokemon: PokemonInfo } & DrawDuplicateInfo>('/draw', {
     method: 'POST',

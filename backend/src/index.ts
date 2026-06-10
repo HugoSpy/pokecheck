@@ -30,13 +30,13 @@ const app = express();
 // requests share one rate-limit bucket (the tunnel IP) rather than one per client.
 app.set('trust proxy', 1);
 
-// M4 — Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
+// M4 - Security headers (X-Content-Type-Options, X-Frame-Options, HSTS, etc.).
 // Applied before everything else so no response escapes without the headers.
 // crossOriginResourcePolicy is set to 'cross-origin' because the frontend
 // (a separate Vite SPA on a different origin) fetches all API responses.
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
-// M1 — Strict CORS: only explicitly listed origins are allowed.
+// M1 - Strict CORS: only explicitly listed origins are allowed.
 // Previously the wildcard /.*\.vercel\.app$/ let any attacker-controlled
 // Vercel deployment make credentialed cross-origin requests on a victim's behalf.
 // FRONTEND_URL may be a comma-separated list for multi-domain setups.
@@ -82,7 +82,7 @@ app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 // client IP is used instead of the proxy's IP.
 // Note: if many students share a single NAT/VPN, increase `max` accordingly.
 //
-// Each route gets its OWN rateLimit() instance — express-rate-limit uses a
+// Each route gets its OWN rateLimit() instance - express-rate-limit uses a
 // per-instance in-memory store, so a shared instance would merge all routes into
 // a single counter per IP (5 /draw + 5 /sell = limit hit on /daily-login).
 const rl = (max: number) => rateLimit({
@@ -102,7 +102,7 @@ app.use('/draw',          rl(10));
 app.use('/market/buy',    rl(10));
 app.use('/trade/accept',  rl(10));
 app.use('/event/draw',    rl(10));
-// /auth/one-shot is a login endpoint — more generous to avoid blocking a whole
+// /auth/one-shot is a login endpoint - more generous to avoid blocking a whole
 // class behind the same school NAT during a simultaneous login session.
 app.use('/auth/one-shot', rl(30));
 

@@ -48,7 +48,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
     refreshProfile();
 
     // Poll every 30s so the seller's balance updates when someone buys their
-    // listing — the buyer's balance is updated immediately client-side but the
+    // listing - the buyer's balance is updated immediately client-side but the
     // seller has no push mechanism.
     const interval = setInterval(refreshProfile, 30_000);
 

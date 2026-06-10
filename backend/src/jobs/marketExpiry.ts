@@ -12,7 +12,7 @@ async function main() {
   });
 
   if (expired.length === 0) {
-    console.log(`[marketExpiry] ${now.toISOString()} — no expired listings`);
+    console.log(`[marketExpiry] ${now.toISOString()} - no expired listings`);
     return;
   }
 
@@ -21,7 +21,7 @@ async function main() {
     data: { status: 'cancelled' },
   });
 
-  console.log(`[marketExpiry] ${now.toISOString()} — ${expired.length} listing(s) expired and cancelled`);
+  console.log(`[marketExpiry] ${now.toISOString()} - ${expired.length} listing(s) expired and cancelled`);
 }
 
 main()

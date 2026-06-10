@@ -7,8 +7,8 @@ let socket: Socket | null = null;
 
 // battle:animation_start can land before the React tree has swapped to the arena
 // view (the switch is driven by the battle:lobby status change, which may arrive
-// in the same tick). Holding the payload at module scope — next to the socket
-// singleton — means a re-mount or navigation can't drop it: useBattle seeds from
+// in the same tick). Holding the payload at module scope - next to the socket
+// singleton - means a re-mount or navigation can't drop it: useBattle seeds from
 // here and BattleArena reads it directly on mount. startAt keeps everyone synced.
 let _pendingAnimation: BattleAnimationPayload | null = null;
 
@@ -57,7 +57,7 @@ export function getBattleSocket(): Socket {
 
     // Capture the animation payload at module scope the moment it arrives,
     // independent of which component is currently mounted. A resolved draw also
-    // clears any pending tie — the tie is over once the real animation starts.
+    // clears any pending tie - the tie is over once the real animation starts.
     socket.on('battle:animation_start', (payload: BattleAnimationPayload) => {
       _pendingAnimation = payload;
       _pendingTie = null;

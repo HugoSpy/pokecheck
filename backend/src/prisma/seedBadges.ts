@@ -1,5 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
+import { STARTER_EVO, RARITY_COLLECTION, GENERATION_COLLECTION_TIERS } from '../services/badgeService';
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,7 @@ const BADGES = [
   { id: 'starters_gen2', name: 'Trio Johto',   description: 'Possède Germignon, Héricendre et Totodile',   category: 'starters', coin_reward: 500 },
   { id: 'starters_gen3', name: 'Trio Hoenn',   description: 'Possède Arcko, Poussifeu et Gobou',           category: 'starters', coin_reward: 500 },
   { id: 'starters_gen4', name: 'Trio Sinnoh',  description: 'Possède Tortipouss, Ouisticram et Tiplouf',   category: 'starters', coin_reward: 500 },
-  { id: 'starters_gen5', name: 'Trio Unova',   description: 'Possède Vipélierre, Gruikui et Moustillon',   category: 'starters', coin_reward: 500 },
+  { id: 'starters_gen5', name: 'Trio Unys',   description: 'Possède Vipélierre, Gruikui et Moustillon',   category: 'starters', coin_reward: 500 },
   { id: 'starters_gen6', name: 'Trio Kalos',   description: 'Possède Marisson, Feunnec et Grenousse',      category: 'starters', coin_reward: 500 },
   { id: 'starters_gen7', name: 'Trio Alola',   description: 'Possède Brindibou, Flamiaou et Otaquin',      category: 'starters', coin_reward: 500 },
   // Types
@@ -33,7 +34,7 @@ const BADGES = [
   { id: 'legendary_gen2',   name: 'Maître Johto',          description: 'Possède tous les légendaires Gen 2',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen3',   name: 'Maître Hoenn',          description: 'Possède tous les légendaires Gen 3',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen4',   name: 'Maître Sinnoh',         description: 'Possède tous les légendaires Gen 4',                 category: 'legendary', coin_reward: 2000 },
-  { id: 'legendary_gen5',   name: 'Maître Unova',          description: 'Possède tous les légendaires Gen 5',                 category: 'legendary', coin_reward: 2000 },
+  { id: 'legendary_gen5',   name: 'Maître Unys',          description: 'Possède tous les légendaires Gen 5',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen6',   name: 'Maître Kalos',          description: 'Possède tous les légendaires Gen 6',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen7',   name: 'Maître Alola',          description: 'Possède tous les légendaires Gen 7',                 category: 'legendary', coin_reward: 2000 },
   // Pokédex
@@ -48,9 +49,25 @@ const BADGES = [
   { id: 'gen2_complete', name: 'Complétion Johto',  description: 'Possède les 100 Pokémon de Johto',  category: 'generation', coin_reward: 5000 },
   { id: 'gen3_complete', name: 'Complétion Hoenn',  description: 'Possède les 135 Pokémon de Hoenn',  category: 'generation', coin_reward: 5000 },
   { id: 'gen4_complete', name: 'Complétion Sinnoh', description: 'Possède les 107 Pokémon de Sinnoh', category: 'generation', coin_reward: 5000 },
-  { id: 'gen5_complete', name: 'Complétion Unova',  description: 'Possède les 156 Pokémon de Unova',  category: 'generation', coin_reward: 5000 },
+  { id: 'gen5_complete', name: 'Complétion Unys',  description: "Possède les 156 Pokémon d'Unys",  category: 'generation', coin_reward: 5000 },
   { id: 'gen6_complete', name: 'Complétion Kalos',  description: 'Possède les 72 Pokémon de Kalos',   category: 'generation', coin_reward: 5000 },
   { id: 'gen7_complete', name: 'Complétion Alola',  description: 'Possède les 88 Pokémon de Alola',   category: 'generation', coin_reward: 5000 },
+  // Battle (victoires en Battle de caisse)
+  { id: 'battle_first_win', name: 'Baptême du Feu',      description: 'Remporte ta première battle',  category: 'battle', coin_reward: 100  },
+  { id: 'battle_5_wins',    name: 'Combattant',          description: 'Remporte 5 battles',           category: 'battle', coin_reward: 300  },
+  { id: 'battle_10_wins',   name: 'Guerrier',            description: 'Remporte 10 battles',          category: 'battle', coin_reward: 600  },
+  { id: 'battle_25_wins',   name: 'Vétéran',             description: 'Remporte 25 battles',          category: 'battle', coin_reward: 1200 },
+  { id: 'battle_50_wins',   name: 'Champion de Battle',  description: 'Remporte 50 battles',          category: 'battle', coin_reward: 2500 },
+  // Marché
+  { id: 'market_sell_1',  name: 'Premier Vendeur',  description: 'Vends 1 Pokémon sur le marché',   category: 'market', coin_reward: 50   },
+  { id: 'market_sell_10', name: 'Marchand',         description: 'Vends 10 Pokémon sur le marché',  category: 'market', coin_reward: 200  },
+  { id: 'market_sell_50', name: 'Baron du Marché',  description: 'Vends 50 Pokémon sur le marché',  category: 'market', coin_reward: 1000 },
+  { id: 'market_buy_1',   name: 'Premier Achat',    description: 'Achète 1 Pokémon sur le marché',  category: 'market', coin_reward: 50   },
+  { id: 'market_buy_10',  name: 'Acheteur Régulier', description: 'Achète 10 Pokémon sur le marché', category: 'market', coin_reward: 200 },
+  // Shinies
+  { id: 'shiny_1',  name: 'Première Étoile',              description: 'Possède 1 Pokémon shiny',             category: 'shiny', coin_reward: 200  },
+  { id: 'shiny_5',  name: 'Collectionneur Chromatique',   description: 'Possède 5 Pokémon shiny distincts',   category: 'shiny', coin_reward: 700  },
+  { id: 'shiny_10', name: 'Chasseur Chromatique',         description: 'Possède 10 Pokémon shiny distincts',  category: 'shiny', coin_reward: 1500 },
 ];
 
 // ── Type collection badges (3 tiers × 18 types = 54), generated programmatically.
@@ -95,6 +112,32 @@ for (const t of TYPE_BADGE_TYPES) {
   }
 }
 
+// ── Rarity collection badges (15): distinct species per rarity ──
+const RARITY_BADGE_DEFS: Array<{ key: string; fr: string }> = [
+  { key: 'common',    fr: 'Communs'     },
+  { key: 'rare',      fr: 'Rares'       },
+  { key: 'epic',      fr: 'Épiques'     },
+  { key: 'legendary', fr: 'Légendaires' },
+];
+const RARITY_TIER_META: Record<number, { prefix: string; coins: Record<string, number> }> = {
+  5:  { prefix: 'Amateur des',         coins: { common: 50,  rare: 75,   epic: 100,  legendary: 150  } },
+  10: { prefix: 'Collectionneur des',  coins: { common: 150, rare: 200,  epic: 300,  legendary: 500  } },
+  25: { prefix: 'Expert des',          coins: { common: 300, rare: 500,  epic: 800,  legendary: 1500 } },
+  50: { prefix: 'Maître des',          coins: { common: 600, rare: 1000, epic: 2000, legendary: 5000 } },
+};
+for (const { key, fr } of RARITY_BADGE_DEFS) {
+  for (const tier of RARITY_COLLECTION[key.toUpperCase()]) {
+    const meta = RARITY_TIER_META[tier];
+    BADGES.push({
+      id: `rarity_${key}_${tier}`,
+      name: `${meta.prefix} ${fr}`,
+      description: `Possède ${tier} Pokémon ${fr} distincts`,
+      category: 'rarity',
+      coin_reward: meta.coins[key],
+    });
+  }
+}
+
 async function main() {
   // Fail fast if DB is unreachable
   try {
@@ -102,6 +145,46 @@ async function main() {
   } catch {
     console.error('Cannot connect to database. Check DATABASE_URL and that PostgreSQL is running.');
     process.exit(1);
+  }
+
+  // Starter evolution lineage badges (21) - named after the base starter using
+  // the FR name from the Pokemon table, e.g. "Lignée Salamèche".
+  const evoBaseIds = Object.values(STARTER_EVO).map(ids => ids[0]);
+  const evoBaseNames = new Map(
+    (await prisma.pokemon.findMany({ where: { id: { in: evoBaseIds } }, select: { id: true, name: true } }))
+      .map(p => [p.id, p.name]),
+  );
+  for (const [id, ids] of Object.entries(STARTER_EVO)) {
+    const baseName = evoBaseNames.get(ids[0]) ?? `#${ids[0]}`;
+    BADGES.push({
+      id,
+      name: `Lignée ${baseName}`,
+      description: `Possède toutes les évolutions de ${baseName}`,
+      category: 'starter_evo',
+      coin_reward: 600,
+    });
+  }
+
+  // Generation collection badges - distinct species per region. Tier 100 is
+  // gated on the real per-gen species count read from the DB (gens 6/7 < 100).
+  const REGIONS: Record<number, string> = { 1: 'Kanto', 2: 'Johto', 3: 'Hoenn', 4: 'Sinnoh', 5: 'Unys', 6: 'Kalos', 7: 'Alola' };
+  const GEN_TIER_PREFIX: Record<number, string> = { 10: 'Explorateur', 25: 'Voyageur', 50: 'Habitué', 100: 'Expert' };
+  const GEN_TIER_COINS: Record<number, number> = { 10: 100, 25: 250, 50: 500, 100: 1200 };
+  const genCounts = await prisma.pokemon.groupBy({ by: ['generation'], _count: { id: true } });
+  const genTotal = new Map(genCounts.map(g => [g.generation, g._count.id]));
+  for (let gen = 1; gen <= 7; gen++) {
+    const region = REGIONS[gen];
+    const elision = /^[AEIOU]/i.test(region) ? "d'" : 'de ';
+    for (const tier of GENERATION_COLLECTION_TIERS) {
+      if (tier === 100 && (genTotal.get(gen) ?? 0) < 100) continue;
+      BADGES.push({
+        id: `gen${gen}_${tier}`,
+        name: `${GEN_TIER_PREFIX[tier]} ${elision}${region}`,
+        description: `Possède ${tier} espèces distinctes ${elision}${region}`,
+        category: 'region',
+        coin_reward: GEN_TIER_COINS[tier],
+      });
+    }
   }
 
   console.log(`Seeding ${BADGES.length} badges...`);
@@ -113,7 +196,7 @@ async function main() {
     });
     process.stdout.write('.');
   }
-  console.log(`\nDone — ${BADGES.length} badges upserted.`);
+  console.log(`\nDone - ${BADGES.length} badges upserted.`);
 }
 
 main()

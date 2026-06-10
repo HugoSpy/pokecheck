@@ -88,7 +88,7 @@ export default function Leaderboard() {
                   <td className="lb-legendary">
                     {entry.legendary_count > 0
                       ? <span className="legendary-badge">★ {entry.legendary_count}</span>
-                      : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                      : <span style={{ color: 'var(--text-muted)' }}>-</span>}
                   </td>
                   <td className="lb-trades">{entry.trade_count}</td>
                 </tr>

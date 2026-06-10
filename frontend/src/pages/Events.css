@@ -19,9 +19,14 @@
 
 /* ── Grid of portrait booster cards ── */
 .events-grid {
+  --pack-gap: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  gap: 20px;
+  /* Each pack is one sixth of the row, so at most 6 fit across the screen.
+     auto-fit collapses the unused columns and justify-content centers whatever
+     packs there are (e.g. the current 2) at that fixed size. */
+  grid-template-columns: repeat(auto-fit, calc((100% - 5 * var(--pack-gap)) / 6));
+  justify-content: center;
+  gap: var(--pack-gap);
   align-items: start;
 }
 

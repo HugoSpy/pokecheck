@@ -95,12 +95,12 @@ router.post('/attendance/start', async (req: Request, res: Response): Promise<vo
 
   // Fire-and-forget: notify all users that attendance is open
   createNotificationForAllUsers('ATTENDANCE', {
-    message: 'Check présence lancé — va tirer ton Pokémon !',
+    message: 'Check présence lancé - va tirer ton Pokémon !',
     checkId: check.id,
   }).catch(() => {});
 });
 
-// GET /admin/attendance/active — checks from the last 24h (active, expired, cancelled)
+// GET /admin/attendance/active - checks from the last 24h (active, expired, cancelled)
 router.get('/attendance/active', async (_req: Request, res: Response): Promise<void> => {
   const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const [totalUsers, checks] = await Promise.all([
@@ -124,7 +124,7 @@ router.get('/attendance/active', async (_req: Request, res: Response): Promise<v
   });
 });
 
-// POST /admin/attendance/:id/cancel — cancel + full rollback
+// POST /admin/attendance/:id/cancel - cancel + full rollback
 router.post('/attendance/:id/cancel', async (req: Request, res: Response): Promise<void> => {
   const id = String(req.params.id);
   const adminId = req.user!.userId;
@@ -220,7 +220,7 @@ router.post('/attendance/:id/cancel', async (req: Request, res: Response): Promi
   res.json(result);
 });
 
-// GET /admin/users — dropdown list for messaging
+// GET /admin/users - dropdown list for messaging
 router.get('/users', async (_req: Request, res: Response): Promise<void> => {
   const users = await prisma.user.findMany({
     select: { id: true, display_name: true, nickname: true },
@@ -229,7 +229,7 @@ router.get('/users', async (_req: Request, res: Response): Promise<void> => {
   res.json({ users: users.map(u => ({ id: u.id, display_name: u.nickname ?? u.display_name })) });
 });
 
-// POST /admin/message/all — broadcast to every user
+// POST /admin/message/all - broadcast to every user
 router.post('/message/all', async (req: Request, res: Response): Promise<void> => {
   const { content } = req.body as { content?: string };
   if (!content?.trim()) {
@@ -241,7 +241,7 @@ router.post('/message/all', async (req: Request, res: Response): Promise<void> =
   res.json({ sent: count });
 });
 
-// POST /admin/message/user — message to a specific user
+// POST /admin/message/user - message to a specific user
 router.post('/message/user', async (req: Request, res: Response): Promise<void> => {
   const { userId, content } = req.body as { userId?: string; content?: string };
   if (!userId || !content?.trim()) {

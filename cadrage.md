@@ -1,4 +1,4 @@
-# PokéCheck — Document de cadrage projet
+# PokéCheck - Document de cadrage projet
 
 ## Vue d'ensemble
 
@@ -25,7 +25,7 @@ Deploy frontend = `git push main` sur Vercel. Backend = `pm2 restart pokecheck`.
 
 ---
 
-## Authentification — lien one-shot
+## Authentification - lien one-shot
 
 ### Fonctionnement
 
@@ -90,7 +90,7 @@ Stocker `sprite_url` en DB au moment du seed (pas de fetch runtime).
 
 ---
 
-## Système de monnaie — PokéCoins
+## Système de monnaie - PokéCoins
 
 ### Sources de gains
 
@@ -150,7 +150,7 @@ Exemples :
 - Jour 10 → 190 coins
 - Jour 30 → 390 coins
 
-Pas de cap — récompense l'assiduité sur le long terme.
+Pas de cap - récompense l'assiduité sur le long terme.
 
 ### Route backend
 
@@ -263,7 +263,7 @@ Un service `checkBadges(userId)` est appelé après chaque action susceptible de
 
 ---
 
-### Catégorie — Streak de connexion
+### Catégorie - Streak de connexion
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -275,7 +275,7 @@ Un service `checkBadges(userId)` est appelé après chaque action susceptible de
 
 ---
 
-### Catégorie — Échanges
+### Catégorie - Échanges
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -287,7 +287,7 @@ Un service `checkBadges(userId)` est appelé après chaque action susceptible de
 
 ---
 
-### Catégorie — Starters (7 badges)
+### Catégorie - Starters (7 badges)
 
 Un badge par génération, il faut posséder les 3 starters simultanément.
 
@@ -303,7 +303,7 @@ Un badge par génération, il faut posséder les 3 starters simultanément.
 
 ---
 
-### Catégorie — Types
+### Catégorie - Types
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -311,7 +311,7 @@ Un badge par génération, il faut posséder les 3 starters simultanément.
 
 ---
 
-### Catégorie — Légendaires
+### Catégorie - Légendaires
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -326,7 +326,7 @@ Un badge par génération, il faut posséder les 3 starters simultanément.
 
 ---
 
-### Catégorie — Pokédex (taille)
+### Catégorie - Pokédex (taille)
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -339,7 +339,7 @@ Un badge par génération, il faut posséder les 3 starters simultanément.
 
 ---
 
-### Catégorie — Générations complètes
+### Catégorie - Générations complètes
 
 | Badge | ID | Condition | Coins |
 |---|---|---|---|
@@ -417,7 +417,7 @@ model Trade {
   from_user_id    String
   to_user_id      String
   from_pokemon_id String          // UserPokemon.id
-  to_pokemon_id   String?         // UserPokemon.id — NULL si échange coins seuls
+  to_pokemon_id   String?         // UserPokemon.id - NULL si échange coins seuls
   coins_offered   Int       @default(0)   // coins envoyés par from_user
   coins_requested Int       @default(0)   // coins demandés à to_user
   status          String          // 'pending' | 'accepted' | 'declined'
@@ -540,15 +540,15 @@ for (let id = 1; id <= LIMIT; id++) {
 
 | Route | Description |
 |---|---|
-| `/open?token=xxx` | Page de tirage — animation pack opening, consomme le token |
+| `/open?token=xxx` | Page de tirage - animation pack opening, consomme le token |
 | `/pokedex` | Pokédex personnel de l'élève connecté |
 | `/trades` | Offres d'échanges reçues et envoyées |
-| `/market` | Marché ouvert — annonces publiques Pokémon contre coins |
+| `/market` | Marché ouvert - annonces publiques Pokémon contre coins |
 | `/events` | Packs événement disponibles |
 | `/leaderboard` | Classement global (score + coins) |
-| `/u/:id` | Profil public d'un élève — Pokédex + 3 badges affichés |
-| `/profile` | Profil perso — gestion des 3 badges vitrine, historique coins |
-| `/admin` | Interface admin — gestion des events (accès restreint) |
+| `/u/:id` | Profil public d'un élève - Pokédex + 3 badges affichés |
+| `/profile` | Profil perso - gestion des 3 badges vitrine, historique coins |
+| `/admin` | Interface admin - gestion des events (accès restreint) |
 
 ### Animation tirage
 

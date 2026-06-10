@@ -77,7 +77,7 @@ export default function Pokedex() {
   }, [pokemons]);
 
   // One representative per (species, shiny) group that has duplicates: the oldest
-  // copy (obtained_at ASC) — the one that contributes to the score. Maps its
+  // copy (obtained_at ASC) - the one that contributes to the score. Maps its
   // instanceId → the group size, so the "doublons" filter shows a single card
   // per duplicated variant (with a ×N badge) instead of every copy.
   const duplicateReps = useMemo(() => {
@@ -150,7 +150,7 @@ export default function Pokedex() {
       setCoins(coins + totalCoins);
       setSelectedIds(new Set());
       setSelectMode(false);
-      setToast({ msg: `${totalSold} Pokémon vendus — +${totalCoins.toLocaleString()} coins`, type: 'success' });
+      setToast({ msg: `${totalSold} Pokémon vendus - +${totalCoins.toLocaleString()} coins`, type: 'success' });
       // Re-sync authoritative score from the server.
       getMyPokedex().then(data => setUser(data.user)).catch(() => {});
     } catch (e) {

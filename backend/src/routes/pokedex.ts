@@ -110,7 +110,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
 
   // When fetched for the trade-proposal target picker (?for_trade=1), hide the
   // Pokémon already locked in one of this user's pending trades (as offered OR
-  // requested) so they can't be selected — mirrors the conflict check in
+  // requested) so they can't be selected - mirrors the conflict check in
   // POST /trade/propose. The public profile view omits the flag and still shows
   // the full collection.
   const forTrade = req.query.for_trade === '1' || req.query.for_trade === 'true';

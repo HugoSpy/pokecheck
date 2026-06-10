@@ -25,7 +25,7 @@ async function main() {
     ]);
   }
 
-  console.log(`[coinExpiry] ${new Date().toISOString()} — ${usersToExpire.length} user(s) had coins reset (inactive > ${expiryDays} days)`);
+  console.log(`[coinExpiry] ${new Date().toISOString()} - ${usersToExpire.length} user(s) had coins reset (inactive > ${expiryDays} days)`);
 }
 
 main()

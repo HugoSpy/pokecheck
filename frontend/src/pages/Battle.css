@@ -350,7 +350,7 @@
   position: relative;
 }
 
-/* Local player — full size, natural height (identical to solo). */
+/* Local player - full size, natural height (identical to solo). */
 .battle-roll-cell.full {
   display: flex;
   justify-content: center;
@@ -360,7 +360,7 @@
   width: min(1100px, calc(100vw - 32px));
 }
 
-/* Other players — same component scaled down. The frame keeps a fixed unscaled
+/* Other players - same component scaled down. The frame keeps a fixed unscaled
    box so the scaled footprint is deterministic and the cells pack tightly. */
 .battle-roll-others {
   display: flex;

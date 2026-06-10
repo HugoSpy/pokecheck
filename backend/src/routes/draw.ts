@@ -64,7 +64,7 @@ router.post('/', authMiddleware, async (req: Request, res: Response): Promise<vo
       res.status(403).json({ error: err.message });
       return;
     }
-    // P2034 = serialization failure from concurrent draws — one request wins, others get 429.
+    // P2034 = serialization failure from concurrent draws - one request wins, others get 429.
     if (err.code === 'P2034') {
       res.status(429).json({ error: 'Too many requests, please slow down.' });
       return;

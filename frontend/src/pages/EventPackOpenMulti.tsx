@@ -33,7 +33,7 @@ interface NavState {
 }
 
 // Down-scale each roll so N packs fit on screen (same fixed-frame trick as the
-// battle arena's "mini" rolls — keeps the roll geometry deterministic).
+// battle arena's "mini" rolls - keeps the roll geometry deterministic).
 function scaleForCount(n: number): number {
   if (n <= 2) return 0.62;
   if (n <= 5) return 0.42;
@@ -78,7 +78,7 @@ export default function EventPackOpenMulti() {
   }, [state, setCoins]);
 
   // Preload every sprite, then arm the shared start time so all rolls animate
-  // in lockstep — exactly the battle-arena pattern.
+  // in lockstep - exactly the battle-arena pattern.
   useEffect(() => {
     if (results.length === 0) return;
     let cancelled = false;
@@ -110,7 +110,7 @@ export default function EventPackOpenMulti() {
       const res = await sellPokemon(r.user_pokemon_id);
       setSold(prev => prev.map((v, i) => (i === idx ? true : v)));
       await refreshProfile();
-      setToast({ msg: `Doublon revendu — +${res.coins_earned} coins`, type: 'success' });
+      setToast({ msg: `Doublon revendu - +${res.coins_earned} coins`, type: 'success' });
     } catch {
       setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
     } finally {
@@ -203,7 +203,7 @@ export default function EventPackOpenMulti() {
           </div>
 
           <button className="open-btn" onClick={() => navigate('/events')}>
-            Retour aux événements →
+            Retour à la boutique →
           </button>
         </div>
       )}

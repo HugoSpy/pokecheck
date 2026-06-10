@@ -186,6 +186,7 @@ export interface MyProfile {
   coins: number;
   streak_days: number;
   last_login: string | null;
+  last_shiny_pack_claimed_at: string | null;
   total_score: number;
   trade_count: number;
   featured_badges: string[];
@@ -197,6 +198,27 @@ export interface AllBadgeEntry extends Badge {
   unlocked_at: string | null;
   claimed: boolean;
   claimed_at: string | null;
+}
+
+export interface BadgeProgressEntry {
+  badgeId: string;
+  unlocked: boolean;
+  unlockedAt?: string;
+  claimed: boolean;
+  coinReward: number;
+  progress?: {
+    current: number;
+    required: number;
+    missingPokemon?: Array<{
+      id: number;
+      name: string;
+      spriteUrl: string;
+      rarity: Rarity;
+      points: number;
+      types: string[];
+      generation: number;
+    }>;
+  };
 }
 
 export interface PublicUserInfo {

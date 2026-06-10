@@ -21,7 +21,7 @@ module.exports = {
       watch: false,
     },
 
-    // ── Staging (dev branch — pokeschool_dev DB, port 3004) ───────────────────
+    // ── Staging (dev branch - pokeschool_dev DB, port 3004) ───────────────────
     // cwd points to the git worktree at ~/pokecheck-dev/backend so that
     // `import 'dotenv/config'` in index.ts loads the staging .env (not prod's).
     {

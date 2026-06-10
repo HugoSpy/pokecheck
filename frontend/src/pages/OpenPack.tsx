@@ -81,7 +81,7 @@ export default function OpenPack() {
   const [showBadge, setShowBadge] = useState(false);
   const [forceShiny, setForceShiny] = useState(false);
   const [progress, setProgress] = useState(0);
-  // HIDDEN FEATURE — Ditto reveal state
+  // HIDDEN FEATURE - Ditto reveal state
   const [forceDitto, setForceDitto] = useState(false);
   const [dittoPhase, setDittoPhase] = useState<'hidden' | 'flashing' | 'revealed'>('hidden');
   const [showDittoFlash, setShowDittoFlash] = useState(false);
@@ -224,7 +224,7 @@ export default function OpenPack() {
           sprite_url: shiny ? card.sprite_url.replace('/normal/', '/shiny/') : card.sprite_url,
         };
       }) as RollCardData[];
-      // HIDDEN FEATURE — strip shows the legendary, not Ditto
+      // HIDDEN FEATURE - strip shows the legendary, not Ditto
       if (drawnPokemon.is_ditto_disguise && drawnPokemon.original_legendary) {
         strip[TARGET_INDEX] = {
           id: drawnPokemon.original_legendary.id,
@@ -280,11 +280,11 @@ export default function OpenPack() {
       strip.style.transform = `translateX(${endX}px)`;
     });
 
-    // Drumroll shake — start 2s after strip begins, ease out when it stops
+    // Drumroll shake - start 2s after strip begins, ease out when it stops
     const shakeStart = setTimeout(() => setDrumrollPhase('rolling'), 2000);
 
     const timer = setTimeout(() => {
-      // Shake ease-out: 200ms transition, then off — uses same ROLL_DURATION reference
+      // Shake ease-out: 200ms transition, then off - uses same ROLL_DURATION reference
       setDrumrollPhase('ending');
       setTimeout(() => setDrumrollPhase('off'), 200);
 
@@ -303,7 +303,7 @@ export default function OpenPack() {
     };
   }, [phase]);
 
-  // Change 1 — delay action buttons 3s extra on Ditto draws
+  // Change 1 - delay action buttons 3s extra on Ditto draws
   useEffect(() => {
     if (phase !== 'done') return;
     const delay = pokemon?.is_ditto_disguise ? 3000 : 0;
@@ -311,7 +311,7 @@ export default function OpenPack() {
     return () => clearTimeout(t);
   }, [phase, pokemon?.is_ditto_disguise]);
 
-  // HIDDEN FEATURE — Ditto reveal timer: 1.2s after badge shows, flash then swap
+  // HIDDEN FEATURE - Ditto reveal timer: 1.2s after badge shows, flash then swap
   useEffect(() => {
     if (!showBadge || !pokemon?.is_ditto_disguise) return;
     let t2: ReturnType<typeof setTimeout>;
@@ -320,12 +320,12 @@ export default function OpenPack() {
     let t5: ReturnType<typeof setTimeout>;
     const t1 = setTimeout(() => {
       setDittoPhase('flashing');
-      setDrumrollPhase('rolling');           // +1700ms — shake starts, builds tension
+      setDrumrollPhase('rolling');           // +1700ms - shake starts, builds tension
       t2 = setTimeout(() => {
-        setShowDittoFlash(true);             // +2100ms — flash fires 400ms into shake
+        setShowDittoFlash(true);             // +2100ms - flash fires 400ms into shake
         t5 = setTimeout(() => {
           setShowDittoFlash(false);
-          setDittoPhase('revealed');         // +2400ms — sprite swap
+          setDittoPhase('revealed');         // +2400ms - sprite swap
         }, 300);
       }, 400);
       t3 = setTimeout(() => setDrumrollPhase('ending'), 2600); // +4300ms
@@ -351,7 +351,7 @@ export default function OpenPack() {
       const result = await sellPokemon(drawInstanceId);
       setSold(true);
       await refreshProfile();
-      setToast({ msg: `Doublon revendu — +${result.coins_earned} coins`, type: 'success' });
+      setToast({ msg: `Doublon revendu - +${result.coins_earned} coins`, type: 'success' });
     } catch {
       setToast({ msg: 'Échec de la revente, réessaie.', type: 'error' });
     } finally {
@@ -361,7 +361,7 @@ export default function OpenPack() {
 
   return (
     <div className={`pack-page ${phase} ${pokemon?.rarity?.toLowerCase() ?? ''}${drumrollPhase === 'rolling' ? ' drumrolling' : ''}${drumrollPhase === 'ending' ? ' drumroll-ending' : ''}`}>
-      {/* /open is rendered outside <Layout> (fullscreen animation) — provide a
+      {/* /open is rendered outside <Layout> (fullscreen animation) - provide a
           minimal escape hatch so the user isn't stranded without browser back */}
       <Link to="/leaderboard" className="pack-home-btn">← Accueil</Link>
 
@@ -373,7 +373,7 @@ export default function OpenPack() {
           style={{ background: pokemon.is_shiny ? 'rgba(255,255,255,0.98)' : (RARITY_FLASH[pokemon.rarity] ?? 'rgba(255,255,255,0.3)') }}
         />
       )}
-      {/* HIDDEN FEATURE — Ditto white flash */}
+      {/* HIDDEN FEATURE - Ditto white flash */}
       {showDittoFlash && <div className="rarity-flash" style={{ background: 'rgba(255,255,255,0.98)' }} />}
       {/* END HIDDEN FEATURE */}
 
@@ -416,7 +416,7 @@ export default function OpenPack() {
           ) : attAvailable ? (
             <>
               <div className="pack-countdown">
-                Pack disponible — expire dans <strong>{formatCountdown(attRemainingMs)}</strong>
+                Pack disponible - expire dans <strong>{formatCountdown(attRemainingMs)}</strong>
               </div>
               {error && (
                 <div className="pack-error">
@@ -476,7 +476,7 @@ export default function OpenPack() {
                   const winnerShiny = isWinner && !!pokemon?.is_shiny;
                   const borderColor = winnerShiny ? '#d4af37' : (RARITY_BORDER[card.rarity] ?? '#4b5563');
                   const glowColor  = winnerShiny ? '#FFD700' : rarityGlow;
-                  // HIDDEN FEATURE — swap winner card to Ditto after reveal
+                  // HIDDEN FEATURE - swap winner card to Ditto after reveal
                   const isDittoWinner = isWinner && !!pokemon?.is_ditto_disguise && dittoPhase === 'revealed';
                   const cardDisplayRarity = isDittoWinner ? 'COMMON' : card.rarity;
                   const cardSpriteUrl = isDittoWinner
@@ -516,7 +516,7 @@ export default function OpenPack() {
 
           {/* Reveal info */}
           {(phase === 'reveal' || phase === 'done') && pokemon && (() => {
-            // HIDDEN FEATURE — Ditto display variables
+            // HIDDEN FEATURE - Ditto display variables
             const isDitto = !!pokemon.is_ditto_disguise;
             const dittoRevealed = isDitto && dittoPhase === 'revealed';
             const revealName = dittoRevealed

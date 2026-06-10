@@ -1,8 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
-import { getMyProfile, getAllBadges, claimDailyLogin, updateUsername, updateFeaturedBadges, claimBadge } from '../api/userApi';
+import { Link } from 'react-router-dom';
+import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, claimBadge } from '../api/userApi';
 import { useUserCtx } from '../context/UserContext';
-import type { MyProfile, AllBadgeEntry } from '../api/types';
+import type { MyProfile, AllBadgeEntry, BadgeProgressEntry } from '../api/types';
 import Toast from '../components/Toast';
+import BadgeDetailModal from '../components/BadgeDetailModal';
 import { Coins, Lock } from '../components/icons';
 import './Profile.css';
 
@@ -10,18 +12,55 @@ const CATEGORY_LABELS: Record<string, string> = {
   streak: 'Connexion',
   trade: 'Échanges',
   pokedex: 'Pokédex',
+  rarity: 'Rareté',
   starters: 'Starters',
-  gen: 'Générations',
+  starter_evo: 'Lignées Starters',
+  generation: 'Générations',
+  region: 'Régions',
   legendary: 'Légendaires',
-  type: 'Types',
+  types: 'Types',
+  battle: 'Battle',
+  market: 'Marché',
+  shiny: 'Shinies',
 };
+
+// Display order of badge categories. "Lignées Starters" sits between Starters
+// and Types; "Rareté" follows Pokédex; "Régions" follows Générations.
+const CATEGORY_ORDER = [
+  'streak', 'trade', 'pokedex', 'rarity',
+  'generation', 'region',
+  'starters', 'starter_evo', 'types',
+  'legendary', 'shiny', 'battle', 'market',
+];
 
 function categoryLabel(cat: string): string {
   return CATEGORY_LABELS[cat] ?? cat;
 }
 
+// Persisted per-category collapse state for the badges page.
+const BADGES_COLLAPSED_KEY = 'pokecheck_badges_collapsed';
+
+function loadCollapsed(): Record<string, boolean> {
+  try {
+    const raw = localStorage.getItem(BADGES_COLLAPSED_KEY);
+    return raw ? JSON.parse(raw) as Record<string, boolean> : {};
+  } catch {
+    return {};
+  }
+}
+
+// Free daily Shiny pack resets at Paris midnight = 22:00 UTC (CEST/summer),
+// mirroring the backend boundary in routes/users.ts.
+function shinyPackAvailable(claimedAt: string | null): boolean {
+  if (!claimedAt) return true;
+  const PARIS_OFFSET_MS = 22 * 60 * 60 * 1000;
+  const DAY_MS = 24 * 60 * 60 * 1000;
+  const lastReset = Math.floor((Date.now() - PARIS_OFFSET_MS) / DAY_MS) * DAY_MS + PARIS_OFFSET_MS;
+  return new Date(claimedAt).getTime() < lastReset;
+}
+
 function formatDate(iso: string | null): string {
-  if (!iso) return '—';
+  if (!iso) return '-';
   const d = new Date(iso);
   const dd = String(d.getDate()).padStart(2, '0');
   const mm = String(d.getMonth() + 1).padStart(2, '0');
@@ -34,10 +73,16 @@ function categoryFallbackEmoji(category: string): string {
     streak: '🔥',
     trade: '🔄',
     pokedex: '📖',
+    rarity: '💠',
     starters: '🌱',
-    gen: '🌍',
+    starter_evo: '🌿',
+    generation: '🌍',
+    region: '🗺️',
     legendary: '⭐',
-    type: '💎',
+    types: '💎',
+    battle: '⚔️',
+    market: '🪙',
+    shiny: '✨',
   };
   return map[category] ?? '🏅';
 }
@@ -47,6 +92,9 @@ export default function Profile() {
 
   const [profile, setProfile] = useState<MyProfile | null>(null);
   const [badges, setBadges] = useState<AllBadgeEntry[]>([]);
+  const [progressMap, setProgressMap] = useState<Map<string, BadgeProgressEntry>>(new Map());
+  const [selectedBadge, setSelectedBadge] = useState<AllBadgeEntry | null>(null);
+  const [collapsedCats, setCollapsedCats] = useState<Record<string, boolean>>(loadCollapsed);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [claimLoading, setClaimLoading] = useState(false);
@@ -67,17 +115,26 @@ export default function Profile() {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
+  const toggleCategory = useCallback((cat: string) => {
+    setCollapsedCats(prev => {
+      const next = { ...prev, [cat]: !prev[cat] };
+      try { localStorage.setItem(BADGES_COLLAPSED_KEY, JSON.stringify(next)); } catch { /* ignore */ }
+      return next;
+    });
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
       setError(null);
       try {
-        const [prof, allBadges] = await Promise.all([getMyProfile(), getAllBadges()]);
+        const [prof, allBadges, progress] = await Promise.all([getMyProfile(), getAllBadges(), getBadgeProgress()]);
         if (cancelled) return;
         setProfile(prof);
         setUsername(prof.display_name);
         setBadges(allBadges);
+        setProgressMap(new Map(progress.map(p => [p.badgeId, p])));
         setFeaturedDraft(prof.featured_badges ?? []);
         if (prof.last_login) {
           const today = new Date().toISOString().slice(0, 10);
@@ -131,6 +188,8 @@ export default function Profile() {
       setBadges(prev => prev.map(b =>
         b.id === badge.id ? { ...b, claimed: true, claimed_at: new Date().toISOString() } : b
       ));
+      // Keep the open modal in sync so it flips to "Récompense réclamée ✓".
+      setSelectedBadge(prev => prev && prev.id === badge.id ? { ...prev, claimed: true, claimed_at: new Date().toISOString() } : prev);
       showToast(`+${result.coins_earned} coins récupérés !`, 'success');
     } catch (e) {
       showToast(e instanceof Error ? e.message : 'Erreur', 'error');
@@ -200,8 +259,13 @@ export default function Profile() {
 
   if (!profile) return null;
 
-  // Group badges by category
-  const categories = Array.from(new Set(badges.map(b => b.category)));
+  // Group badges by category, following the explicit display order (unknown
+  // categories appended at the end).
+  const presentCategories = new Set(badges.map(b => b.category));
+  const categories = [
+    ...CATEGORY_ORDER.filter(c => presentCategories.has(c)),
+    ...Array.from(presentCategories).filter(c => !CATEGORY_ORDER.includes(c)),
+  ];
 
   const unlockedBadges = badges.filter(b => b.unlocked);
 
@@ -261,6 +325,14 @@ export default function Profile() {
               Récupérer mes coins du jour
             </button>
           )}
+
+          {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
+            <Link to="/events/pack?shiny=1" className="btn btn-primary">
+              Ouvrir le pack Shiny ✨
+            </Link>
+          ) : (
+            <span className="claim-done">Pack Shiny - Disponible à 00h00</span>
+          )}
         </div>
       </section>
 
@@ -273,17 +345,42 @@ export default function Profile() {
 
         {categories.map(cat => {
           const catBadges = badges.filter(b => b.category === cat);
+          const isCollapsed = !!collapsedCats[cat];
+          const catUnlocked = catBadges.filter(b => b.unlocked).length;
+          const catPct = catBadges.length > 0 ? Math.round((catUnlocked / catBadges.length) * 100) : 0;
           return (
             <div key={cat} className="badge-category-group">
-              <div className="badge-category-title">{categoryLabel(cat)}</div>
-              <div className="badges-grid">
+              <button
+                type="button"
+                className="badge-category-title"
+                onClick={() => toggleCategory(cat)}
+                aria-expanded={!isCollapsed}
+              >
+                {categoryLabel(cat)}
+                {isCollapsed ? (
+                  <span className="badge-category-progress">
+                    <span className="badge-category-progress-bar">
+                      <span className="badge-category-progress-fill" style={{ width: `${catPct}%` }} />
+                    </span>
+                    <span className="badge-category-progress-label">{catPct}%</span>
+                  </span>
+                ) : (
+                  <span className="badge-category-line" />
+                )}
+                <span className="badge-category-arrow">{isCollapsed ? '▶' : '▼'}</span>
+              </button>
+              <div className={`badge-category-content${isCollapsed ? ' collapsed' : ''}`}>
+                <div className="badges-grid">
                 {catBadges.map(badge => (
-                  <div
+                  <button
+                    type="button"
                     key={badge.id}
-                    className={`badge-card${badge.unlocked ? '' : ' locked'}${badge.unlocked && !badge.claimed ? ' badge-card--unclaimed' : ''}`}
+                    className={`badge-card badge-card--clickable${badge.unlocked ? '' : ' locked'}${badge.unlocked && !badge.claimed ? ' badge-card--unclaimed' : ''}`}
                     title={badge.description}
+                    onClick={() => setSelectedBadge(badge)}
                   >
                     {!badge.unlocked && <span className="badge-lock-overlay"><Lock size={11} /></span>}
+                    {badge.unlocked && !badge.claimed && <span className="badge-unclaimed-dot" aria-label="Récompense à réclamer" />}
                     <div className="badge-card-icon">
                       {badge.icon_url ? (
                         <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
@@ -292,22 +389,12 @@ export default function Profile() {
                       )}
                     </div>
                     <span className="badge-card-name">{badge.name}</span>
-                    {badge.unlocked && badge.claimed && badge.unlocked_at && (
+                    {badge.unlocked && badge.unlocked_at && (
                       <span className="badge-card-date">{formatDate(badge.unlocked_at)}</span>
                     )}
-                    {badge.unlocked && !badge.claimed && (
-                      <button
-                        className="badge-claim-btn"
-                        onClick={() => handleClaimBadge(badge)}
-                        disabled={claimingBadge === badge.id}
-                      >
-                        {claimingBadge === badge.id
-                          ? <span className="spinner" style={{ width: 12, height: 12, borderWidth: 2 }} />
-                          : <>Récupérer <Coins size={12} /> {badge.coin_reward}</>}
-                      </button>
-                    )}
-                  </div>
+                  </button>
                 ))}
+                </div>
               </div>
             </div>
           );
@@ -394,6 +481,17 @@ export default function Profile() {
           Sauvegarder
         </button>
       </section>
+
+      {/* ── Badge detail modal ── */}
+      {selectedBadge && (
+        <BadgeDetailModal
+          badge={selectedBadge}
+          progress={progressMap.get(selectedBadge.id)}
+          claiming={claimingBadge === selectedBadge.id}
+          onClaim={() => handleClaimBadge(selectedBadge)}
+          onClose={() => setSelectedBadge(null)}
+        />
+      )}
 
       {/* ── Toast ── */}
       {toast && (

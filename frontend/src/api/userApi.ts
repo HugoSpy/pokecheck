@@ -1,5 +1,5 @@
 import { apiFetch } from './client';
-import type { UserBadge, DailyLoginResult, SellResult, BulkSellResult, MyProfile, AllBadgeEntry } from './types';
+import type { UserBadge, DailyLoginResult, SellResult, BulkSellResult, MyProfile, AllBadgeEntry, BadgeProgressEntry } from './types';
 
 export async function getMyProfile(): Promise<MyProfile> {
   return apiFetch<MyProfile>('/users/me');
@@ -7,6 +7,10 @@ export async function getMyProfile(): Promise<MyProfile> {
 
 export async function getAllBadges(): Promise<AllBadgeEntry[]> {
   return apiFetch<AllBadgeEntry[]>('/users/all-badges');
+}
+
+export async function getBadgeProgress(): Promise<BadgeProgressEntry[]> {
+  return apiFetch<BadgeProgressEntry[]>('/users/badges/progress');
 }
 
 export async function searchUsers(q: string): Promise<{ users: { id: string; display_name: string }[] }> {

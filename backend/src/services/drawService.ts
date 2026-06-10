@@ -4,7 +4,7 @@ import { getSellPrice } from './coinService';
 
 type Tx = PrismaClient | Prisma.TransactionClient;
 
-/** Draw rarity distribution — single source of truth for /draw and /attendance/open. */
+/** Draw rarity distribution - single source of truth for /draw and /attendance/open. */
 export function pickRarity(): string {
   const roll = Math.random();
   if (roll < 0.798) return 'COMMON';   // 79.8%
@@ -31,7 +31,7 @@ export interface DrawAndCreateResult {
   userPokemonId: string;
   pokemon: DrawnPokemon;
   /** True when the owner already holds another instance of this exact variant
-   *  (same pokemon_id + is_shiny) — i.e. selling it won't lower total_score. */
+   *  (same pokemon_id + is_shiny) - i.e. selling it won't lower total_score. */
   isDuplicate: boolean;
   /** Coins the drawn Pokémon would yield if sold immediately. */
   sellPrice: number;
@@ -47,7 +47,7 @@ export async function drawAndCreate(
   userId: string,
   opts: { source: string; forceShiny?: boolean; forceDitto?: boolean }
 ): Promise<DrawAndCreateResult> {
-  // HIDDEN FEATURE — forceDitto guarantees a LEGENDARY base draw so the secondary roll fires
+  // HIDDEN FEATURE - forceDitto guarantees a LEGENDARY base draw so the secondary roll fires
   const rarity = opts.forceDitto === true ? 'LEGENDARY' : pickRarity();
   // END HIDDEN FEATURE
 
@@ -60,7 +60,7 @@ export async function drawAndCreate(
 
   const isShiny = opts.forceShiny === true || Math.random() < 1 / 4096;
 
-  // HIDDEN FEATURE — Ditto substitution (LEGENDARY draws only)
+  // HIDDEN FEATURE - Ditto substitution (LEGENDARY draws only)
   const DITTO_ID = 132;
   let originalLegendary: { id: number; name: string; sprite_url: string } | undefined;
   if (rarity === 'LEGENDARY') {

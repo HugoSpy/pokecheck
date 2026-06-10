@@ -194,7 +194,7 @@
 .rarity-chip.rarity-legendary { color: var(--gold); }
 .rarity-chip.rarity-legendary.active { background: rgba(245,166,35,0.1); border-color: var(--gold); }
 
-/* Type chips — color driven by --type-color CSS variable set inline */
+/* Type chips - color driven by --type-color CSS variable set inline */
 .type-chip {
   background: color-mix(in srgb, var(--type-color, #9CA3AF) 12%, var(--bg-deep));
   color: color-mix(in srgb, var(--type-color, #9CA3AF) 90%, white);

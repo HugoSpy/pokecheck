@@ -1,8 +1,8 @@
-// Phase 2 — "Battle de caisse" draw generation.
+// Phase 2 - "Battle de caisse" draw generation.
 //
 // This mirrors the winner + strip logic of POST /event/draw (routes/event.ts)
-// EXACTLY — same base rates, same rarity_multiplier weighting, same shiny roll,
-// same sprite/points transforms — but it is PURE: it never writes a UserPokemon.
+// EXACTLY - same base rates, same rarity_multiplier weighting, same shiny roll,
+// same sprite/points transforms - but it is PURE: it never writes a UserPokemon.
 // Battle draws are not added to anyone's Pokédex (decided later), so the draw is
 // decoupled from persistence and can be run for every player in one pass.
 import { Prisma, PrismaClient } from '@prisma/client';
@@ -45,7 +45,7 @@ export interface EventPools {
 /**
  * Loads an event's Pokémon pool grouped by rarity and precomputes the weighted
  * rarity table (base rate × the event's rarity_multiplier). Returns null when
- * the event is missing or its pool is empty — caller should abort the battle.
+ * the event is missing or its pool is empty - caller should abort the battle.
  */
 export async function loadEventPools(prisma: Tx, eventId: string): Promise<EventPools | null> {
   const event = await prisma.event.findUnique({ where: { id: eventId } });
@@ -88,7 +88,7 @@ function rollShiny(multiplier: number | undefined): boolean {
   return Math.random() < shinyRate;
 }
 
-/** Rolls one Pokémon from the pool — identical selection logic to the event draw. */
+/** Rolls one Pokémon from the pool - identical selection logic to the event draw. */
 export function rollBattlePokemon(ep: EventPools): BattlePokemon {
   const rarity = pickRarity(ep);
   const candidates = ep.pools[rarity].length > 0 ? ep.pools[rarity] : ep.all;
@@ -105,7 +105,7 @@ export function rollBattlePokemon(ep: EventPools): BattlePokemon {
 }
 
 /**
- * Builds a 30-card strip of decoys with the real winner planted at index 22 —
+ * Builds a 30-card strip of decoys with the real winner planted at index 22 -
  * the same shape the solo client renders. The winner is the result used for the
  * battle's score comparison.
  */
@@ -117,7 +117,7 @@ export function buildStrip(ep: EventPools): { strip: BattlePokemon[]; winner: Ba
 }
 
 /**
- * True when exactly one player has the top score — i.e. there's a clear winner.
+ * True when exactly one player has the top score - i.e. there's a clear winner.
  * A battle that ends tied at the top is re-rolled (see startBattle) until this
  * returns true. An empty/solo result is trivially "unique".
  */

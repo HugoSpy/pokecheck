@@ -171,7 +171,7 @@ function EventCard({ event }: { event: GameEvent }) {
           >
             {opening
               ? 'Ouverture…'
-              : `${count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} — ${totalPrice} coins`}
+              : `${count === 1 ? 'Ouvrir' : `Ouvrir ×${count}`} - ${totalPrice} coins`}
           </button>
           {error && <div className="event-error">{error}</div>}
         </div>
@@ -194,11 +194,15 @@ export default function Events() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Shiny Surge stays in the DB (its pool/multipliers power the free daily
+  // Shiny pack on the profile) but is no longer a purchasable pack here.
+  const visibleEvents = events.filter(e => e.name !== 'Shiny Surge');
+
   if (loading) {
     return (
       <div className="loading-screen">
         <div className="spinner" />
-        Chargement des événements…
+        Chargement de la boutique…
       </div>
     );
   }
@@ -209,16 +213,16 @@ export default function Events() {
 
   return (
     <div className="events-page">
-      <h1 className="events-title">Événements</h1>
+      <h1 className="events-title">Boutique</h1>
 
-      {events.length === 0 ? (
+      {visibleEvents.length === 0 ? (
         <div className="events-empty">
-          <div className="events-empty-title">Aucun événement en cours.</div>
+          <div className="events-empty-title">Aucun pack disponible pour le moment.</div>
           <div className="events-empty-sub">Reviens bientôt !</div>
         </div>
       ) : (
         <div className="events-grid">
-          {events.map(event => <EventCard key={event.id} event={event} />)}
+          {visibleEvents.map(event => <EventCard key={event.id} event={event} />)}
         </div>
       )}
     </div>
