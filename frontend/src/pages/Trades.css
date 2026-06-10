@@ -492,3 +492,20 @@
   justify-content: center;
   flex-wrap: wrap;
 }
+
+/* ── Per-side filter bar on the propose form (reuses .pokedex-filters look) ── */
+.trade-grid-filters {
+  padding: 12px;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.trade-grid-filters .filter-search { max-width: none; }
+
+.trade-grid-count {
+  margin-top: 8px;
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+.trade-grid-count strong { color: var(--accent); }
