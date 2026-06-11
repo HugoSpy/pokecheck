@@ -122,19 +122,6 @@ export default function Market() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="spinner" />
-        Chargement du marché…
-      </div>
-    );
-  }
-
-  if (error) {
-    return <div className="error-banner">Erreur : {error}</div>;
-  }
-
   const activeListings = listings.filter(l => l.status === 'active');
   const myListings = listings.filter(l => l.seller_id === userId);
 
@@ -151,6 +138,8 @@ export default function Market() {
     });
   }
 
+  // Derived/memoized values must run on every render (before the early returns
+  // below) to keep the hook order stable - see React error #310.
   const filteredActiveListings = useMemo(() => applyFilters(activeListings),
     [activeListings, search, filterGen, filterRarity, filterType, filterShiny]);
   const filteredMyListings = useMemo(() => applyFilters(myListings),
@@ -161,6 +150,19 @@ export default function Market() {
     activeListings.forEach(l => l.userPokemon?.pokemon.types.forEach(t => types.add(t)));
     return [...types].sort();
   }, [activeListings]);
+
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" />
+        Chargement du marché…
+      </div>
+    );
+  }
+
+  if (error) {
+    return <div className="error-banner">Erreur : {error}</div>;
+  }
 
   // Pokemon available for sale: exclude those already listed
   const listedInstanceIds = new Set(
