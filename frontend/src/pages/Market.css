@@ -130,6 +130,60 @@
 }
 
 /* ── Listings list ── */
+/* ── Filters top row: search (grows) + sort dropdown (right) ── */
+.market-filters-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.market-filters-top .filter-search {
+  flex: 1;
+  min-width: 160px;
+}
+
+.market-sort {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.market-sort-label {
+  font-family: var(--font-condensed);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.market-sort-select {
+  appearance: none;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 7px 28px 7px 12px;
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  transition: border-color var(--transition);
+}
+
+.market-sort-select:hover,
+.market-sort-select:focus {
+  border-color: var(--border-bright);
+  outline: none;
+}
+
 /* ── Listing grid (buy + mine tabs) ── */
 .market-listings {
   display: grid;

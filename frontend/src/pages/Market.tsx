@@ -24,6 +24,14 @@ function timeRemaining(expiresAt: string): string {
 
 type Tab = 'buy' | 'sell' | 'mine';
 
+type SortKey = 'recent' | 'price_asc' | 'price_desc' | 'number';
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'recent',     label: 'Plus récentes' },
+  { value: 'price_asc',  label: 'Prix croissant' },
+  { value: 'price_desc', label: 'Prix décroissant' },
+  { value: 'number',     label: 'N° de Pokémon' },
+];
+
 export default function Market() {
   const { coins, setCoins, profile } = useUserCtx();
 
@@ -41,6 +49,7 @@ export default function Market() {
   const [filterRarity, setFilterRarity] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterShiny, setFilterShiny] = useState(false);
+  const [sortBy, setSortBy] = useState<SortKey>('recent');
 
   // Sell form state
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemonInstance | null>(null);
@@ -138,12 +147,24 @@ export default function Market() {
     });
   }
 
+  function applySort(list: MarketListing[]) {
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case 'price_asc':  return a.price_coins - b.price_coins;
+        case 'price_desc': return b.price_coins - a.price_coins;
+        case 'number':     return (a.userPokemon?.pokemon.id ?? 0) - (b.userPokemon?.pokemon.id ?? 0);
+        case 'recent':     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default:           return 0;
+      }
+    });
+  }
+
   // Derived/memoized values must run on every render (before the early returns
   // below) to keep the hook order stable - see React error #310.
-  const filteredActiveListings = useMemo(() => applyFilters(activeListings),
-    [activeListings, search, filterGen, filterRarity, filterType, filterShiny]);
-  const filteredMyListings = useMemo(() => applyFilters(myListings),
-    [myListings, search, filterGen, filterRarity, filterType, filterShiny]);
+  const filteredActiveListings = useMemo(() => applySort(applyFilters(activeListings)),
+    [activeListings, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
+  const filteredMyListings = useMemo(() => applySort(applyFilters(myListings)),
+    [myListings, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
 
   const allTypes = useMemo(() => {
     const types = new Set<string>();
@@ -212,13 +233,27 @@ export default function Market() {
       {/* ── Filters (buy + mine tabs) ── */}
       {(tab === 'buy' || tab === 'mine') && (
         <div className="pokedex-filters">
-          <input
-            className="filter-search"
-            type="text"
-            placeholder="Rechercher un Pokémon…"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+          <div className="market-filters-top">
+            <input
+              className="filter-search"
+              type="text"
+              placeholder="Rechercher un Pokémon…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <label className="market-sort">
+              <span className="market-sort-label">Trier</span>
+              <select
+                className="market-sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortKey)}
+              >
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
 
           <div className="filter-row">
             <div className="filter-label">Génération</div>
