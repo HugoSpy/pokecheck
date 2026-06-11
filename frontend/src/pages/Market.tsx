@@ -185,14 +185,20 @@ export default function Market() {
     return <div className="error-banner">Erreur : {error}</div>;
   }
 
-  // Pokemon available for sale: exclude those already listed
+  // Pokemon available for sale: exclude those already listed and those still
+  // locked (tradeable_at in the future) - the backend rejects listing a locked
+  // Pokémon anyway (400), so don't even offer them here.
   const listedInstanceIds = new Set(
     listings
       .filter(l => l.status === 'active' && l.seller_id === userId)
       .map(l => l.userPokemon?.instanceId)
       .filter(Boolean)
   );
-  const sellablePokemons = myPokemons.filter(p => !listedInstanceIds.has(p.instanceId));
+  const now = Date.now();
+  const sellablePokemons = myPokemons.filter(p =>
+    !listedInstanceIds.has(p.instanceId) &&
+    !(p.tradeable_at && new Date(p.tradeable_at).getTime() > now)
+  );
 
   return (
     <div className="market-page">
