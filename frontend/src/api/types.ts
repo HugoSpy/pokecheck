@@ -23,12 +23,20 @@ export interface UserPokemonInstance extends PokemonInfo {
   tradeable_at: string | null;
 }
 
+export interface FavoritePokemonInfo {
+  instanceId: string;
+  is_shiny: boolean;
+  pokemon: { id: number; name: string; sprite_url: string };
+}
+
 export interface UserInfo {
   id: string;
   display_name: string;
   total_score: number;
   trade_count: number;
   featured_badges?: Badge[];
+  trainer_gender?: 'M' | 'F' | null;
+  favorite_pokemon?: FavoritePokemonInfo | null;
 }
 
 export interface RollCardData {
@@ -222,6 +230,8 @@ export interface MyProfile {
   trade_count: number;
   featured_badges: string[];
   is_admin: boolean;
+  trainer_gender: 'M' | 'F' | null;
+  favorite_pokemon_id: string | null;
 }
 
 export interface AllBadgeEntry extends Badge {

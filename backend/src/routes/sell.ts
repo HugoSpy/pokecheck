@@ -65,6 +65,12 @@ router.post('/bulk', authMiddleware, bulkSellLimiter, async (req: Request, res: 
         throw Object.assign(new Error('One or more Pokémon are not yours or no longer exist'), { status: 403 });
       }
 
+      // The favorite Pokémon can never be sold.
+      const seller = await tx.user.findUnique({ where: { id: userId }, select: { favorite_pokemon_id: true } });
+      if (seller?.favorite_pokemon_id && uniqueIds.includes(seller.favorite_pokemon_id)) {
+        throw Object.assign(new Error('Impossible de vendre votre Pokémon favori'), { status: 400 });
+      }
+
       // Refuse if any of these Pokémon is tied to a pending trade (on either
       // side, any item - TradeItem covers multi-Pokémon trades that the legacy
       // from_pokemon_id/to_pokemon_id columns would miss). Selling here would
@@ -124,6 +130,13 @@ router.post('/:userPokemonId', authMiddleware, sellLimiter, async (req: Request,
 
   if (userPokemon.user_id !== userId) {
     res.status(403).json({ error: 'This Pokémon does not belong to you' });
+    return;
+  }
+
+  // The favorite Pokémon can never be sold.
+  const seller = await prisma.user.findUnique({ where: { id: userId }, select: { favorite_pokemon_id: true } });
+  if (seller?.favorite_pokemon_id === userPokemonId) {
+    res.status(400).json({ error: 'Impossible de vendre votre Pokémon favori' });
     return;
   }
 

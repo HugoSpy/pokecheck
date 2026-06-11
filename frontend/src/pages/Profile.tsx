@@ -1,10 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, claimBadge } from '../api/userApi';
+import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, updateTrainerProfile, claimBadge } from '../api/userApi';
+import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
-import type { MyProfile, AllBadgeEntry, BadgeProgressEntry } from '../api/types';
+import type { MyProfile, AllBadgeEntry, BadgeProgressEntry, UserPokemonInstance } from '../api/types';
 import Toast from '../components/Toast';
 import BadgeDetailModal from '../components/BadgeDetailModal';
+import FavoritePokemonModal from '../components/FavoritePokemonModal';
 import { Coins, Lock } from '../components/icons';
 import './Profile.css';
 
@@ -109,6 +111,9 @@ export default function Profile() {
   const [featuredSaving, setFeaturedSaving] = useState(false);
   const [claimingBadge, setClaimingBadge] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  const [favoriteModalOpen, setFavoriteModalOpen] = useState(false);
+  const [favoritePokemon, setFavoritePokemon] = useState<UserPokemonInstance | null>(null);
+  const [trainerSaving, setTrainerSaving] = useState(false);
 
   const showToast = useCallback((msg: string, type: 'success' | 'error') => {
     setToast({ msg, type });
@@ -136,6 +141,16 @@ export default function Profile() {
         setBadges(allBadges);
         setProgressMap(new Map(progress.map(p => [p.badgeId, p])));
         setFeaturedDraft(prof.featured_badges ?? []);
+        // Resolve the favorite Pokémon instance for display (the profile only
+        // carries its id). Only fetch the pokedex when a favorite is set.
+        if (prof.favorite_pokemon_id) {
+          getMyPokedex()
+            .then(data => {
+              if (cancelled) return;
+              setFavoritePokemon(data.pokemons.find(p => p.instanceId === prof.favorite_pokemon_id) ?? null);
+            })
+            .catch(() => { /* non-blocking */ });
+        }
         if (prof.last_login) {
           const today = new Date().toISOString().slice(0, 10);
           const loginDay = new Date(prof.last_login).toISOString().slice(0, 10);
@@ -221,6 +236,36 @@ export default function Profile() {
     }
   }
 
+  async function handleSetGender(gender: 'M' | 'F') {
+    if (trainerSaving || profile?.trainer_gender === gender) return;
+    setTrainerSaving(true);
+    try {
+      const result = await updateTrainerProfile({ trainer_gender: gender });
+      setProfile(prev => prev ? { ...prev, trainer_gender: result.trainer_gender } : null);
+      showToast('Dresseur sauvegardé !', 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erreur de sauvegarde', 'error');
+    } finally {
+      setTrainerSaving(false);
+    }
+  }
+
+  async function handlePickFavorite(p: UserPokemonInstance) {
+    if (trainerSaving) return;
+    setTrainerSaving(true);
+    try {
+      const result = await updateTrainerProfile({ favorite_pokemon_id: p.instanceId });
+      setProfile(prev => prev ? { ...prev, favorite_pokemon_id: result.favorite_pokemon_id } : null);
+      setFavoritePokemon(p);
+      setFavoriteModalOpen(false);
+      showToast(`${p.name} est ton Pokémon favori !`, 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erreur de sauvegarde', 'error');
+    } finally {
+      setTrainerSaving(false);
+    }
+  }
+
   async function handleSaveFeatured() {
     setFeaturedSaving(true);
     try {
@@ -296,6 +341,66 @@ export default function Profile() {
             {usernameSaving ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
             Sauvegarder
           </button>
+        </div>
+      </section>
+
+      {/* ── Section: Mon dresseur ── */}
+      <section className="profile-section">
+        <h2 className="profile-section-title">
+          <span>🎽</span> Mon dresseur
+        </h2>
+
+        <div className="trainer-customization">
+          <div className="trainer-gender-picker">
+            {(['M', 'F'] as const).map(g => {
+              const selected = profile.trainer_gender === g;
+              return (
+                <button
+                  key={g}
+                  type="button"
+                  className={`trainer-gender-option${selected ? ' selected' : ''}`}
+                  onClick={() => handleSetGender(g)}
+                  disabled={trainerSaving}
+                  aria-pressed={selected}
+                  aria-label={g === 'M' ? 'Dresseur' : 'Dresseuse'}
+                >
+                  <img
+                    src={g === 'M' ? '/base_trainer_m.gif' : '/base_trainer_f.gif'}
+                    alt={g === 'M' ? 'Dresseur' : 'Dresseuse'}
+                    className="trainer-gender-gif"
+                  />
+                  <span>{g === 'M' ? 'Dresseur' : 'Dresseuse'}</span>
+                </button>
+              );
+            })}
+            {!profile.trainer_gender && (
+              <div className="trainer-gender-hint">Choisis ton apparence de dresseur</div>
+            )}
+          </div>
+
+          <div className="trainer-favorite">
+            {favoritePokemon ? (
+              <div className="trainer-favorite-current" title="Pokémon favori">
+                <span className="trainer-favorite-star">⭐</span>
+                <img src={favoritePokemon.sprite_url} alt={favoritePokemon.name} className="trainer-favorite-sprite" />
+                <span className="trainer-favorite-name">{favoritePokemon.name}{favoritePokemon.is_shiny ? ' ✨' : ''}</span>
+              </div>
+            ) : (
+              <div className="trainer-favorite-empty">Aucun Pokémon favori</div>
+            )}
+            <button
+              className="btn btn-primary"
+              onClick={() => setFavoriteModalOpen(true)}
+              disabled={trainerSaving}
+            >
+              {favoritePokemon ? 'Changer mon Pokémon favori' : 'Choisir mon Pokémon favori'}
+            </button>
+            {favoritePokemon && (
+              <p className="trainer-favorite-hint">
+                Ton favori t'accompagne sur ton profil public et ne peut être ni vendu ni échangé.
+              </p>
+            )}
+          </div>
         </div>
       </section>
 
@@ -481,6 +586,15 @@ export default function Profile() {
           Sauvegarder
         </button>
       </section>
+
+      {/* ── Favorite Pokémon picker ── */}
+      {favoriteModalOpen && (
+        <FavoritePokemonModal
+          currentFavoriteId={profile.favorite_pokemon_id}
+          onPick={handlePickFavorite}
+          onClose={() => setFavoriteModalOpen(false)}
+        />
+      )}
 
       {/* ── Badge detail modal ── */}
       {selectedBadge && (

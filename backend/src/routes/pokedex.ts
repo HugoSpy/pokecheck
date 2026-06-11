@@ -92,7 +92,13 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { id: true, display_name: true, nickname: true, total_score: true, trade_count: true, featured_badges: true },
+    select: {
+      id: true, display_name: true, nickname: true, total_score: true,
+      trade_count: true, featured_badges: true, trainer_gender: true,
+      favorite_pokemon: {
+        include: { pokemon: { select: { id: true, name: true, sprite_url: true } } },
+      },
+    },
   });
 
   if (!user) {
@@ -141,7 +147,25 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   });
 
   res.json({
-    user: { id: user.id, display_name: user.nickname ?? user.display_name, total_score: user.total_score, trade_count: user.trade_count, featured_badges: featured_badge_objects },
+    user: {
+      id: user.id,
+      display_name: user.nickname ?? user.display_name,
+      total_score: user.total_score,
+      trade_count: user.trade_count,
+      featured_badges: featured_badge_objects,
+      trainer_gender: user.trainer_gender,
+      favorite_pokemon: user.favorite_pokemon && {
+        instanceId: user.favorite_pokemon.id,
+        is_shiny: user.favorite_pokemon.is_shiny,
+        pokemon: {
+          id: user.favorite_pokemon.pokemon.id,
+          name: user.favorite_pokemon.pokemon.name,
+          sprite_url: user.favorite_pokemon.is_shiny
+            ? user.favorite_pokemon.pokemon.sprite_url.replace('/normal/', '/shiny/')
+            : user.favorite_pokemon.pokemon.sprite_url,
+        },
+      },
+    },
     pokemons: userPokemons.map(up => ({
       instanceId: up.id,
       obtainedAt: up.obtained_at,

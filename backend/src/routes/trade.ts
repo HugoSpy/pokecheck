@@ -186,6 +186,22 @@ router.post('/propose', async (req: Request, res: Response): Promise<void> => {
     }
   }
 
+  // Favorite Pokémon are untradeable - on both sides. The proposer can't offer
+  // their favorite, and a trade requesting the target's favorite would transfer
+  // it on accept, so block it at proposal time too.
+  const [proposer, target] = await Promise.all([
+    prisma.user.findUnique({ where: { id: userId }, select: { favorite_pokemon_id: true } }),
+    prisma.user.findUnique({ where: { id: to_user_id }, select: { favorite_pokemon_id: true } }),
+  ]);
+  if (proposer?.favorite_pokemon_id && fromIds.includes(proposer.favorite_pokemon_id)) {
+    res.status(400).json({ error: "Impossible d'échanger votre Pokémon favori" });
+    return;
+  }
+  if (target?.favorite_pokemon_id && toIds.includes(target.favorite_pokemon_id)) {
+    res.status(400).json({ error: 'Impossible de demander le Pokémon favori de ce dresseur' });
+    return;
+  }
+
   // None of the proposer's Pokémon may be actively listed on the market.
   const listed = await prisma.marketListing.findFirst({
     where: { pokemon_id: { in: fromIds }, status: 'active' },
