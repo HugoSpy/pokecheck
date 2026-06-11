@@ -231,7 +231,10 @@ export default function Market() {
       </div>
 
       {/* ── Filters (buy + mine tabs) ── */}
+      {/* Wrapped in .pokedex-page so the larger Pokédex filter styling
+          (.pokedex-page .filter-chip etc.) applies here too. */}
       {(tab === 'buy' || tab === 'mine') && (
+        <div className="pokedex-page">
         <div className="pokedex-filters">
           <div className="market-filters-top">
             <input
@@ -304,6 +307,7 @@ export default function Market() {
               >✨ Shiny</button>
             </div>
           </div>
+        </div>
         </div>
       )}
 

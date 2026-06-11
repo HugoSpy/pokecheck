@@ -154,11 +154,11 @@
 
 .market-sort-label {
   font-family: var(--font-condensed);
-  font-size: var(--text-xs);
+  font-size: 14px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--text-secondary);
+  color: var(--text-primary);
 }
 
 .market-sort-select {
@@ -167,10 +167,11 @@
   color: var(--text-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 7px 28px 7px 12px;
+  padding: 12px 34px 12px 16px;
   font-family: var(--font-condensed);
-  font-size: var(--text-sm);
+  font-size: 16px;
   font-weight: 600;
+  letter-spacing: 0.03em;
   cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
