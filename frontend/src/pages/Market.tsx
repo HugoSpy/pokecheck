@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { getMarketListings, createListing, buyListing, cancelListing } from '../api/marketApi';
 import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
@@ -7,7 +7,9 @@ import { getSellPrice } from '../api/types';
 import RarityBadge from '../components/RarityBadge';
 import Toast from '../components/Toast';
 import { Coins, Clock } from '../components/icons';
+import { RARITIES, RARITY_FR, TYPE_FR, TYPE_COLORS } from '../utils/pokemon';
 import './Market.css';
+import './Pokedex.css';
 
 function timeRemaining(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now();
@@ -22,6 +24,14 @@ function timeRemaining(expiresAt: string): string {
 
 type Tab = 'buy' | 'sell' | 'mine';
 
+type SortKey = 'recent' | 'price_asc' | 'price_desc' | 'number';
+const SORT_OPTIONS: { value: SortKey; label: string }[] = [
+  { value: 'recent',     label: 'Plus récentes' },
+  { value: 'price_asc',  label: 'Prix croissant' },
+  { value: 'price_desc', label: 'Prix décroissant' },
+  { value: 'number',     label: 'N° de Pokémon' },
+];
+
 export default function Market() {
   const { coins, setCoins, profile } = useUserCtx();
 
@@ -32,6 +42,14 @@ export default function Market() {
   const [tab, setTab] = useState<Tab>('buy');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Filter state (buy + mine tabs)
+  const [search, setSearch] = useState('');
+  const [filterGen, setFilterGen] = useState<number | null>(null);
+  const [filterRarity, setFilterRarity] = useState<string | null>(null);
+  const [filterType, setFilterType] = useState<string | null>(null);
+  const [filterShiny, setFilterShiny] = useState(false);
+  const [sortBy, setSortBy] = useState<SortKey>('recent');
 
   // Sell form state
   const [selectedPokemon, setSelectedPokemon] = useState<UserPokemonInstance | null>(null);
@@ -113,6 +131,47 @@ export default function Market() {
     }
   }
 
+  const activeListings = listings.filter(l => l.status === 'active');
+  const myListings = listings.filter(l => l.seller_id === userId);
+
+  function applyFilters(list: MarketListing[]) {
+    return list.filter(l => {
+      const poke = l.userPokemon?.pokemon;
+      if (!poke) return true;
+      if (search && !poke.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filterGen !== null && poke.generation !== filterGen) return false;
+      if (filterRarity !== null && poke.rarity !== filterRarity) return false;
+      if (filterType !== null && !poke.types.includes(filterType)) return false;
+      if (filterShiny && !l.userPokemon?.is_shiny) return false;
+      return true;
+    });
+  }
+
+  function applySort(list: MarketListing[]) {
+    return [...list].sort((a, b) => {
+      switch (sortBy) {
+        case 'price_asc':  return a.price_coins - b.price_coins;
+        case 'price_desc': return b.price_coins - a.price_coins;
+        case 'number':     return (a.userPokemon?.pokemon.id ?? 0) - (b.userPokemon?.pokemon.id ?? 0);
+        case 'recent':     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default:           return 0;
+      }
+    });
+  }
+
+  // Derived/memoized values must run on every render (before the early returns
+  // below) to keep the hook order stable - see React error #310.
+  const filteredActiveListings = useMemo(() => applySort(applyFilters(activeListings)),
+    [activeListings, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
+  const filteredMyListings = useMemo(() => applySort(applyFilters(myListings)),
+    [myListings, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
+
+  const allTypes = useMemo(() => {
+    const types = new Set<string>();
+    activeListings.forEach(l => l.userPokemon?.pokemon.types.forEach(t => types.add(t)));
+    return [...types].sort();
+  }, [activeListings]);
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -126,17 +185,20 @@ export default function Market() {
     return <div className="error-banner">Erreur : {error}</div>;
   }
 
-  const activeListings = listings.filter(l => l.status === 'active');
-  const myListings = listings.filter(l => l.seller_id === userId);
-
-  // Pokemon available for sale: exclude those already listed
+  // Pokemon available for sale: exclude those already listed and those still
+  // locked (tradeable_at in the future) - the backend rejects listing a locked
+  // Pokémon anyway (400), so don't even offer them here.
   const listedInstanceIds = new Set(
     listings
       .filter(l => l.status === 'active' && l.seller_id === userId)
       .map(l => l.userPokemon?.instanceId)
       .filter(Boolean)
   );
-  const sellablePokemons = myPokemons.filter(p => !listedInstanceIds.has(p.instanceId));
+  const now = Date.now();
+  const sellablePokemons = myPokemons.filter(p =>
+    !listedInstanceIds.has(p.instanceId) &&
+    !(p.tradeable_at && new Date(p.tradeable_at).getTime() > now)
+  );
 
   return (
     <div className="market-page">
@@ -174,6 +236,87 @@ export default function Market() {
         </button>
       </div>
 
+      {/* ── Filters (buy + mine tabs) ── */}
+      {/* Wrapped in .pokedex-page so the larger Pokédex filter styling
+          (.pokedex-page .filter-chip etc.) applies here too. */}
+      {(tab === 'buy' || tab === 'mine') && (
+        <div className="pokedex-page">
+        <div className="pokedex-filters">
+          <div className="market-filters-top">
+            <input
+              className="filter-search"
+              type="text"
+              placeholder="Rechercher un Pokémon…"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <label className="market-sort">
+              <span className="market-sort-label">Trier</span>
+              <select
+                className="market-sort-select"
+                value={sortBy}
+                onChange={e => setSortBy(e.target.value as SortKey)}
+              >
+                {SORT_OPTIONS.map(o => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Génération</div>
+            <div className="filter-group">
+              {[1,2,3,4,5,6,7].map(g => (
+                <button
+                  key={g}
+                  className={`filter-chip${filterGen === g ? ' active' : ''}`}
+                  onClick={() => setFilterGen(filterGen === g ? null : g)}
+                >Gen {g}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Rareté</div>
+            <div className="filter-group">
+              {RARITIES.map(r => (
+                <button
+                  key={r}
+                  className={`filter-chip rarity-chip rarity-${r.toLowerCase()}${filterRarity === r ? ' active' : ''}`}
+                  onClick={() => setFilterRarity(filterRarity === r ? null : r)}
+                >{RARITY_FR[r]}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Type</div>
+            <div className="filter-group filter-types">
+              {allTypes.map(t => (
+                <button
+                  key={t}
+                  className={`filter-chip type-chip${filterType === t ? ' active' : ''}`}
+                  style={{ '--type-color': TYPE_COLORS[t] ?? '#9CA3AF' } as React.CSSProperties}
+                  onClick={() => setFilterType(filterType === t ? null : t)}
+                >{TYPE_FR[t] ?? t}</button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-row">
+            <div className="filter-label">Autres</div>
+            <div className="filter-group">
+              <button
+                className={`filter-chip${filterShiny ? ' active' : ''}`}
+                onClick={() => setFilterShiny(v => !v)}
+              >✨ Shiny</button>
+            </div>
+          </div>
+        </div>
+        </div>
+      )}
+
       {/* ── Buy tab ── */}
       {tab === 'buy' && (
         <div className="market-section">
@@ -181,67 +324,59 @@ export default function Market() {
             <Coins size={16} /> <span className="market-balance-num">{coins.toLocaleString()}</span> coins
           </div>
 
-          {activeListings.length === 0 ? (
+          {filteredActiveListings.length === 0 ? (
             <div className="market-empty">Aucune annonce active pour le moment.</div>
           ) : (
             <div className="market-listings">
-              {activeListings.map(listing => {
+              {filteredActiveListings.map(listing => {
                 const poke = listing.userPokemon?.pokemon;
                 const isMine = listing.seller_id === userId;
                 const cantAfford = coins < listing.price_coins;
                 const isLoading = actionLoading === listing.id;
 
                 return (
-                  <div key={listing.id} className="market-listing">
-                    {/* Sprite */}
+                  <div key={listing.id} className="market-card">
                     {poke && (
                       <img
-                        className="market-listing-sprite"
+                        className="market-card-sprite"
                         src={poke.sprite_url}
                         alt={poke.name}
                       />
                     )}
 
-                    {/* Info */}
-                    <div className="market-listing-info">
-                      <span className="market-listing-name">{poke?.name ?? '???'}</span>
-                      {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
-                    </div>
+                    <span className="market-card-name">{poke?.name ?? '???'}</span>
+                    {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
 
-                    {/* Price + seller */}
-                    <div className="market-listing-meta">
-                      <span className="market-listing-price">
-                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
+                    <div className="market-card-meta">
+                      <span className="market-card-price">
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()}
                       </span>
-                      <span className="market-listing-seller">
+                      <span className="market-card-seller" title={listing.seller.display_name}>
                         {listing.seller.display_name}
                       </span>
-                      <span className="market-listing-time">
+                      <span className="market-card-time">
                         <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
                     </div>
 
-                    {/* Action */}
-                    <div className="market-listing-action">
-                      {isMine ? (
-                        <button className="btn btn-ghost" disabled>Ma vente</button>
-                      ) : (
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => handleBuy(listing.id)}
-                          disabled={cantAfford || isLoading}
-                          title={cantAfford ? 'Coins insuffisants' : undefined}
-                        >
-                          {isLoading ? (
-                            <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                          ) : cantAfford ? (
-                            'Coins insuffisants'
-                          ) : (
-                            'Acheter'
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {isMine ? (
+                      <button className="btn btn-ghost market-card-btn" disabled>Ma vente</button>
+                    ) : (
+                      <button
+                        className="btn btn-primary market-card-btn"
+                        onClick={() => handleBuy(listing.id)}
+                        disabled={cantAfford || isLoading}
+                        title={cantAfford ? 'Coins insuffisants' : undefined}
+                      >
+                        {isLoading ? (
+                          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                        ) : cantAfford ? (
+                          'Trop cher'
+                        ) : (
+                          'Acheter'
+                        )}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -253,58 +388,52 @@ export default function Market() {
       {/* ── My listings tab ── */}
       {tab === 'mine' && (
         <div className="market-section">
-          {myListings.length === 0 ? (
+          {filteredMyListings.length === 0 ? (
             <div className="market-empty">Vous n'avez aucune annonce active.</div>
           ) : (
             <div className="market-listings">
-              {myListings.map(listing => {
+              {filteredMyListings.map(listing => {
                 const poke = listing.userPokemon?.pokemon;
                 const isLoading = actionLoading === listing.id;
 
                 return (
-                  <div key={listing.id} className="market-listing">
+                  <div key={listing.id} className="market-card">
                     {poke && (
                       <img
-                        className="market-listing-sprite"
+                        className="market-card-sprite"
                         src={poke.sprite_url}
                         alt={poke.name}
                       />
                     )}
 
-                    <div className="market-listing-info">
-                      <span className="market-listing-name">{poke?.name ?? '???'}</span>
-                      {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
-                    </div>
+                    <span className="market-card-name">{poke?.name ?? '???'}</span>
+                    {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
 
-                    <div className="market-listing-meta">
-                      <span className="market-listing-price">
-                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
+                    <div className="market-card-meta">
+                      <span className="market-card-price">
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()}
                       </span>
-                      <span className="market-listing-time">
+                      <span className="market-card-time">
                         <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
-                      <span
-                        className={`market-listing-status market-listing-status--${listing.status}`}
-                      >
+                      <span className={`market-card-status market-card-status--${listing.status}`}>
                         {listing.status === 'active' ? 'Active' : listing.status === 'sold' ? 'Vendue' : 'Annulée'}
                       </span>
                     </div>
 
-                    <div className="market-listing-action">
-                      {listing.status === 'active' && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleCancel(listing.id)}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                          ) : (
-                            'Annuler'
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {listing.status === 'active' && (
+                      <button
+                        className="btn btn-danger market-card-btn"
+                        onClick={() => handleCancel(listing.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                        ) : (
+                          'Annuler'
+                        )}
+                      </button>
+                    )}
                   </div>
                 );
               })}
