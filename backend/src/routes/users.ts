@@ -108,6 +108,75 @@ router.patch('/username', authMiddleware, async (req: Request, res: Response): P
   res.json({ display_name: updated.nickname ?? updated.display_name });
 });
 
+// PATCH /users/profile - trainer customization { trainer_gender?, favorite_pokemon_id? }
+// trainer_gender: 'M' | 'F'. favorite_pokemon_id: a UserPokemon.id owned by the
+// caller, or null to clear. The favorite is protected from sell/trade/market
+// listing elsewhere, so refuse picking a Pokémon already committed to a pending
+// trade or an active listing - otherwise that trade/listing completing would
+// transfer the favorite away.
+router.patch('/profile', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { trainer_gender, favorite_pokemon_id } = req.body as {
+    trainer_gender?: unknown;
+    favorite_pokemon_id?: unknown;
+  };
+
+  const data: { trainer_gender?: string; favorite_pokemon_id?: string | null } = {};
+
+  if (trainer_gender !== undefined) {
+    if (trainer_gender !== 'M' && trainer_gender !== 'F') {
+      res.status(400).json({ error: "trainer_gender must be 'M' or 'F'" });
+      return;
+    }
+    data.trainer_gender = trainer_gender;
+  }
+
+  if (favorite_pokemon_id !== undefined) {
+    if (favorite_pokemon_id === null) {
+      data.favorite_pokemon_id = null;
+    } else if (typeof favorite_pokemon_id !== 'string') {
+      res.status(400).json({ error: 'favorite_pokemon_id must be a string or null' });
+      return;
+    } else {
+      const up = await prisma.userPokemon.findUnique({ where: { id: favorite_pokemon_id } });
+      if (!up || up.user_id !== userId) {
+        res.status(403).json({ error: 'Pokémon not owned by you' });
+        return;
+      }
+      const [pendingItem, activeListing] = await Promise.all([
+        prisma.tradeItem.findFirst({
+          where: { pokemon_id: favorite_pokemon_id, trade: { status: 'pending' } },
+        }),
+        prisma.marketListing.findFirst({
+          where: { pokemon_id: favorite_pokemon_id, status: 'active' },
+        }),
+      ]);
+      if (pendingItem) {
+        res.status(400).json({ error: 'Ce Pokémon est engagé dans un échange en attente' });
+        return;
+      }
+      if (activeListing) {
+        res.status(400).json({ error: 'Ce Pokémon est en vente sur le marché' });
+        return;
+      }
+      data.favorite_pokemon_id = favorite_pokemon_id;
+    }
+  }
+
+  if (Object.keys(data).length === 0) {
+    res.status(400).json({ error: 'Nothing to update' });
+    return;
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: { trainer_gender: true, favorite_pokemon_id: true },
+  });
+
+  res.json(updated);
+});
+
 // PATCH /users/featured-badges - mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
 router.patch('/featured-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
@@ -156,6 +225,8 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       trade_count: true,
       featured_badges: true,
       is_admin: true,
+      trainer_gender: true,
+      favorite_pokemon_id: true,
     },
   });
   if (!user) { res.status(404).json({ error: 'User not found' }); return; }

@@ -54,6 +54,16 @@ export async function updateUsername(displayName: string): Promise<{ display_nam
   });
 }
 
+export async function updateTrainerProfile(patch: {
+  trainer_gender?: 'M' | 'F';
+  favorite_pokemon_id?: string | null;
+}): Promise<{ trainer_gender: 'M' | 'F' | null; favorite_pokemon_id: string | null }> {
+  return apiFetch('/users/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(patch),
+  });
+}
+
 export async function updateFeaturedBadges(badgeIds: string[]): Promise<void> {
   await apiFetch<void>('/users/featured-badges', {
     method: 'PATCH',

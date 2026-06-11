@@ -22,6 +22,10 @@ model User {
   last_shiny_pack_claimed_at DateTime?
   featured_badges    String[]
   created_at         DateTime  @default(now())
+  trainer_gender      String?  // 'M' | 'F', null = not chosen yet
+  favorite_pokemon_id String?  // UserPokemon.id, null = not chosen
+
+  favorite_pokemon UserPokemon? @relation("FavoritePokemon", fields: [favorite_pokemon_id], references: [id], onDelete: SetNull)
 
   pokemons          UserPokemon[]
   trades_sent       Trade[]         @relation("TradeSent")
@@ -75,6 +79,7 @@ model UserPokemon {
   user    User    @relation(fields: [user_id], references: [id])
   pokemon Pokemon @relation(fields: [pokemon_id], references: [id])
   trade_items TradeItem[]
+  favorited_by User[] @relation("FavoritePokemon")
 }
 
 model Trade {

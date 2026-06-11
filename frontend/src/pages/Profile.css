@@ -449,3 +449,107 @@
 .profile-username-input:focus {
   border-color: var(--accent);
 }
+
+/* ── Trainer customization (gender + favorite Pokémon) ── */
+.trainer-customization {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.trainer-gender-picker {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.trainer-gender-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 10px;
+  background: var(--bg-elevated);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-secondary);
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: border-color var(--transition), box-shadow var(--transition), color var(--transition);
+}
+
+.trainer-gender-option:hover {
+  border-color: var(--border-bright);
+  color: var(--text-primary);
+}
+
+.trainer-gender-option.selected {
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.trainer-gender-option:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.trainer-gender-gif {
+  height: 64px;
+  image-rendering: pixelated;
+}
+
+.trainer-gender-hint {
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.trainer-favorite {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.trainer-favorite-current {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--bg-elevated);
+  border: 1px solid rgba(212, 175, 55, 0.45);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 0 10px rgba(212, 175, 55, 0.15);
+}
+
+.trainer-favorite-sprite {
+  height: 48px;
+  image-rendering: pixelated;
+}
+
+.trainer-favorite-name {
+  font-family: var(--font-condensed);
+  font-size: var(--text-md);
+  font-weight: 700;
+  text-transform: capitalize;
+  color: var(--text-primary);
+}
+
+.trainer-favorite-empty {
+  font-family: var(--font-condensed);
+  font-size: var(--text-sm);
+  color: var(--text-muted);
+}
+
+.trainer-favorite-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  max-width: 320px;
+}

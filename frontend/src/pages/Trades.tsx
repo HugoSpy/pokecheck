@@ -81,7 +81,8 @@ export default function Trades() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const { coins, refreshProfile } = useUserCtx();
+  const { coins, refreshProfile, profile } = useUserCtx();
+  const favoriteId = profile?.favorite_pokemon_id ?? null;
 
   const [animation, setAnimation] = useState<{
     given:      { sprite_url: string; name: string };
@@ -403,13 +404,27 @@ export default function Trades() {
                 <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} />
                 <div className="mini-grid">
                   {displayedMine.map(p => (
-                    <PokemonCard
-                      key={p.instanceId}
-                      pokemon={p}
-                      selectable
-                      selected={selectedMineIds.includes(p.instanceId)}
-                      onSelect={() => toggleSelection(p.instanceId, selectedMineIds, setSelectedMineIds)}
-                    />
+                    p.instanceId === favoriteId ? (
+                      // The favorite Pokémon is untradeable: shown but disabled.
+                      <div
+                        key={p.instanceId}
+                        title="Pokémon favori"
+                        style={{ position: 'relative', opacity: 0.55, cursor: 'not-allowed' }}
+                      >
+                        <span style={{ position: 'absolute', top: 6, right: 8, zIndex: 2 }}>⭐</span>
+                        <div style={{ pointerEvents: 'none' }}>
+                          <PokemonCard pokemon={p} selectable selected={false} />
+                        </div>
+                      </div>
+                    ) : (
+                      <PokemonCard
+                        key={p.instanceId}
+                        pokemon={p}
+                        selectable
+                        selected={selectedMineIds.includes(p.instanceId)}
+                        onSelect={() => toggleSelection(p.instanceId, selectedMineIds, setSelectedMineIds)}
+                      />
+                    )
                   ))}
                 </div>
                 <GridCount selected={selectedMineIds.length} shown={displayedMine.length} total={tradeableMine.length} />

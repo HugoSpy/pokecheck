@@ -74,6 +74,13 @@ router.post('/list', authMiddleware, async (req: Request, res: Response): Promis
     return;
   }
 
+  // The favorite Pokémon can never be sold - a market listing is a sale.
+  const seller = await prisma.user.findUnique({ where: { id: userId }, select: { favorite_pokemon_id: true } });
+  if (seller?.favorite_pokemon_id === userPokemonId) {
+    res.status(400).json({ error: 'Impossible de vendre votre Pokémon favori' });
+    return;
+  }
+
   const pendingTrade = await prisma.trade.findFirst({
     where: {
       status: 'pending',

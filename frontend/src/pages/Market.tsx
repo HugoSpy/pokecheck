@@ -456,27 +456,35 @@ export default function Market() {
             <div className="market-sell-grid">
               {sellablePokemons.map(p => {
                 const isSelected = selectedPokemon?.instanceId === p.instanceId;
+                const isFavorite = p.instanceId === profile?.favorite_pokemon_id;
                 const marketPrice = getSellPrice(p);
+                const toggle = () => {
+                  if (isFavorite) return;
+                  setSelectedPokemon(isSelected ? null : p);
+                  setPrice(String(marketPrice));
+                };
                 return (
                   <div
                     key={p.instanceId}
                     className={`market-sell-card${isSelected ? ' selected' : ''}`}
+                    style={isFavorite ? { opacity: 0.55, cursor: 'not-allowed', position: 'relative' } : undefined}
                     role="button"
-                    tabIndex={0}
+                    tabIndex={isFavorite ? -1 : 0}
                     aria-pressed={isSelected}
-                    aria-label={`Sélectionner ${p.name} à vendre`}
-                    onClick={() => {
-                      setSelectedPokemon(isSelected ? null : p);
-                      setPrice(String(marketPrice));
-                    }}
+                    aria-disabled={isFavorite || undefined}
+                    aria-label={isFavorite ? `${p.name} - Pokémon favori, non vendable` : `Sélectionner ${p.name} à vendre`}
+                    title={isFavorite ? 'Pokémon favori' : undefined}
+                    onClick={toggle}
                     onKeyDown={e => {
                       if (e.key === 'Enter' || e.key === ' ') {
                         e.preventDefault();
-                        setSelectedPokemon(isSelected ? null : p);
-                        setPrice(String(marketPrice));
+                        toggle();
                       }
                     }}
                   >
+                    {isFavorite && (
+                      <span style={{ position: 'absolute', top: 4, right: 6, zIndex: 1 }}>⭐</span>
+                    )}
                     <img
                       src={p.sprite_url}
                       alt={p.name}
@@ -485,7 +493,7 @@ export default function Market() {
                     <span className="market-sell-card-name">{p.name}</span>
                     <RarityBadge rarity={p.rarity} size="sm" />
                     <span className="market-sell-card-hint">
-                      {marketPrice} coins market ~
+                      {isFavorite ? 'Pokémon favori' : `${marketPrice} coins market ~`}
                     </span>
                   </div>
                 );

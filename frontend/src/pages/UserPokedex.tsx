@@ -1,9 +1,58 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { getPublicPokedex } from '../api/pokemonApi';
-import type { UserInfo, UserPokemonInstance } from '../api/types';
+import type { UserInfo, UserPokemonInstance, FavoritePokemonInfo } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
 import './Pokedex.css';
+
+// Same animated-GIF slug derivation as PokemonDetailModal / TradeAnimation3D:
+// the slug is the sprite filename, and projectpokemon.org hosts the GIFs.
+function animatedGifUrl(fav: FavoritePokemonInfo): string {
+  const slug = fav.pokemon.sprite_url.split('/').pop()?.replace('.png', '') ?? '';
+  return fav.is_shiny
+    ? `https://projectpokemon.org/images/shiny-sprite/${slug}.gif`
+    : `https://projectpokemon.org/images/normal-sprite/${slug}.gif`;
+}
+
+// Trainer avatar + favorite Pokémon companion, shown on the public profile.
+// The companion sits slightly behind and beside the trainer.
+function TrainerDisplay({ user }: { user: UserInfo }) {
+  const fav = user.favorite_pokemon;
+  const [gifError, setGifError] = useState(false);
+  if (!user.trainer_gender) return null;
+
+  return (
+    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end', marginBottom: 10, minHeight: 192 }}>
+      {fav && (
+        <img
+          src={gifError ? fav.pokemon.sprite_url : animatedGifUrl(fav)}
+          alt={fav.pokemon.name}
+          title={`${fav.pokemon.name}${fav.is_shiny ? ' ✨' : ''} - Pokémon favori`}
+          onError={() => setGifError(true)}
+          style={{
+            position: 'absolute',
+            left: 104,
+            bottom: 8,
+            height: 128,
+            imageRendering: 'pixelated',
+            zIndex: 0,
+            opacity: 0.95,
+            filter: fav.is_shiny
+              ? 'drop-shadow(0 0 8px rgba(212,175,55,0.6))'
+              : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+          }}
+        />
+      )}
+      <img
+        src={user.trainer_gender === 'M' ? '/base_trainer_m.gif' : '/base_trainer_f.gif'}
+        alt="Dresseur"
+        style={{ position: 'relative', height: 192, imageRendering: 'pixelated', zIndex: 1 }}
+      />
+      {/* Spacer so the companion isn't clipped by the inline-flex box */}
+      {fav && <div style={{ width: 160 }} />}
+    </div>
+  );
+}
 
 export default function UserPokedex() {
   const { id } = useParams<{ id: string }>();
@@ -59,6 +108,7 @@ export default function UserPokedex() {
           >
             ← Retour
           </button>
+          <TrainerDisplay user={user} />
           <h1 className="pokedex-title">{user.display_name}</h1>
           <div className="pokedex-subtitle">Collection publique</div>
         </div>
