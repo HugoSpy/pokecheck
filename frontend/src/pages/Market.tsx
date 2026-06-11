@@ -290,56 +290,48 @@ export default function Market() {
                 const isLoading = actionLoading === listing.id;
 
                 return (
-                  <div key={listing.id} className="market-listing">
-                    {/* Sprite */}
+                  <div key={listing.id} className="market-card">
                     {poke && (
                       <img
-                        className="market-listing-sprite"
+                        className="market-card-sprite"
                         src={poke.sprite_url}
                         alt={poke.name}
                       />
                     )}
 
-                    {/* Info */}
-                    <div className="market-listing-info">
-                      <span className="market-listing-name">{poke?.name ?? '???'}</span>
-                      {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
-                    </div>
+                    <span className="market-card-name">{poke?.name ?? '???'}</span>
+                    {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
 
-                    {/* Price + seller */}
-                    <div className="market-listing-meta">
-                      <span className="market-listing-price">
-                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
+                    <div className="market-card-meta">
+                      <span className="market-card-price">
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()}
                       </span>
-                      <span className="market-listing-seller">
+                      <span className="market-card-seller" title={listing.seller.display_name}>
                         {listing.seller.display_name}
                       </span>
-                      <span className="market-listing-time">
+                      <span className="market-card-time">
                         <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
                     </div>
 
-                    {/* Action */}
-                    <div className="market-listing-action">
-                      {isMine ? (
-                        <button className="btn btn-ghost" disabled>Ma vente</button>
-                      ) : (
-                        <button
-                          className="btn btn-primary"
-                          onClick={() => handleBuy(listing.id)}
-                          disabled={cantAfford || isLoading}
-                          title={cantAfford ? 'Coins insuffisants' : undefined}
-                        >
-                          {isLoading ? (
-                            <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                          ) : cantAfford ? (
-                            'Coins insuffisants'
-                          ) : (
-                            'Acheter'
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {isMine ? (
+                      <button className="btn btn-ghost market-card-btn" disabled>Ma vente</button>
+                    ) : (
+                      <button
+                        className="btn btn-primary market-card-btn"
+                        onClick={() => handleBuy(listing.id)}
+                        disabled={cantAfford || isLoading}
+                        title={cantAfford ? 'Coins insuffisants' : undefined}
+                      >
+                        {isLoading ? (
+                          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                        ) : cantAfford ? (
+                          'Trop cher'
+                        ) : (
+                          'Acheter'
+                        )}
+                      </button>
+                    )}
                   </div>
                 );
               })}
@@ -360,49 +352,43 @@ export default function Market() {
                 const isLoading = actionLoading === listing.id;
 
                 return (
-                  <div key={listing.id} className="market-listing">
+                  <div key={listing.id} className="market-card">
                     {poke && (
                       <img
-                        className="market-listing-sprite"
+                        className="market-card-sprite"
                         src={poke.sprite_url}
                         alt={poke.name}
                       />
                     )}
 
-                    <div className="market-listing-info">
-                      <span className="market-listing-name">{poke?.name ?? '???'}</span>
-                      {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
-                    </div>
+                    <span className="market-card-name">{poke?.name ?? '???'}</span>
+                    {poke && <RarityBadge rarity={poke.rarity} size="sm" />}
 
-                    <div className="market-listing-meta">
-                      <span className="market-listing-price">
-                        <Coins size={14} /> {listing.price_coins.toLocaleString()} coins
+                    <div className="market-card-meta">
+                      <span className="market-card-price">
+                        <Coins size={14} /> {listing.price_coins.toLocaleString()}
                       </span>
-                      <span className="market-listing-time">
+                      <span className="market-card-time">
                         <Clock size={12} /> {timeRemaining(listing.expires_at)}
                       </span>
-                      <span
-                        className={`market-listing-status market-listing-status--${listing.status}`}
-                      >
+                      <span className={`market-card-status market-card-status--${listing.status}`}>
                         {listing.status === 'active' ? 'Active' : listing.status === 'sold' ? 'Vendue' : 'Annulée'}
                       </span>
                     </div>
 
-                    <div className="market-listing-action">
-                      {listing.status === 'active' && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleCancel(listing.id)}
-                          disabled={isLoading}
-                        >
-                          {isLoading ? (
-                            <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                          ) : (
-                            'Annuler'
-                          )}
-                        </button>
-                      )}
-                    </div>
+                    {listing.status === 'active' && (
+                      <button
+                        className="btn btn-danger market-card-btn"
+                        onClick={() => handleCancel(listing.id)}
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                        ) : (
+                          'Annuler'
+                        )}
+                      </button>
+                    )}
                   </div>
                 );
               })}
