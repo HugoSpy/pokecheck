@@ -381,7 +381,6 @@ export default function Profile() {
           <div className="trainer-favorite">
             {favoritePokemon ? (
               <div className="trainer-favorite-current" title="Pokémon favori">
-                <span className="trainer-favorite-star">⭐</span>
                 <img src={favoritePokemon.sprite_url} alt={favoritePokemon.name} className="trainer-favorite-sprite" />
                 <span className="trainer-favorite-name">{favoritePokemon.name}{favoritePokemon.is_shiny ? ' ✨' : ''}</span>
               </div>

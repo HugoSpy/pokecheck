@@ -22,7 +22,7 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
   if (!user.trainer_gender) return null;
 
   return (
-    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end', marginBottom: 10, minHeight: 96 }}>
+    <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end', marginBottom: 10, minHeight: 192 }}>
       {fav && (
         <img
           src={gifError ? fav.pokemon.sprite_url : animatedGifUrl(fav)}
@@ -31,9 +31,9 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
           onError={() => setGifError(true)}
           style={{
             position: 'absolute',
-            left: 52,
-            bottom: 4,
-            height: 64,
+            left: 104,
+            bottom: 8,
+            height: 128,
             imageRendering: 'pixelated',
             zIndex: 0,
             opacity: 0.95,
@@ -46,10 +46,10 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
       <img
         src={user.trainer_gender === 'M' ? '/base_trainer_m.gif' : '/base_trainer_f.gif'}
         alt="Dresseur"
-        style={{ position: 'relative', height: 96, imageRendering: 'pixelated', zIndex: 1 }}
+        style={{ position: 'relative', height: 192, imageRendering: 'pixelated', zIndex: 1 }}
       />
       {/* Spacer so the companion isn't clipped by the inline-flex box */}
-      {fav && <div style={{ width: 80 }} />}
+      {fav && <div style={{ width: 160 }} />}
     </div>
   );
 }
