@@ -1,7 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { addCoins } from './coinService';
 
-const prisma = new PrismaClient();
 
 export interface DailyLoginResult {
   coins_earned: number;

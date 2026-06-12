@@ -3,11 +3,11 @@
 // duplicating the rarity weighting. Probabilities come from the event's
 // rarity_multiplier (not hardcoded); `spendPrice` toggles the coin cost so the
 // same function serves both the paid event pack and the free daily pack.
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { spendCoins, getSellPrice } from './coinService';
 import { recalculateUserPokedexValue } from './pokedexValue';
 
-const prisma = new PrismaClient();
 
 const STRIP_SIZE = 29;
 const BASE_SHINY_RATE = 1 / 4096;

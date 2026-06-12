@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { addCoins, spendCoins } from '../services/coinService';
@@ -7,7 +8,6 @@ import { checkBadges } from '../services/badgeService';
 import { createNotification } from '../utils/notifications';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 

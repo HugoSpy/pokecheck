@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { getSellPrice, addCoins } from '../services/coinService';
@@ -7,7 +8,6 @@ import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // 5 sells/s per user - keyed by JWT user id, not IP, because students share a
 // Cloudflare egress IP. Selling is a routine, legitimate action, so the limiter

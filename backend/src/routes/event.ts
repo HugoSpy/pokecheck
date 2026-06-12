@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { spendCoins, getSellPrice } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
@@ -7,7 +8,6 @@ import { checkBadges } from '../services/badgeService';
 import { drawFromEvent } from '../services/eventDraw';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const FULL_STRIP_SIZE = 30; // multi-open returns full strips with the winner baked in
 const WINNER_INDEX = 22;    // matches PackRoll's TARGET_INDEX

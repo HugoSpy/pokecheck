@@ -7,11 +7,10 @@
 //
 // Guarded by DEV_BACKDOOR=true - must never be set in the prod .env.
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { signSessionToken } from './auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const TEST_MS_IDS: Record<string, string> = {
   '1': 'test-account-1',

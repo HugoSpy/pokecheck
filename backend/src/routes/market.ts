@@ -1,12 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { spendCoins, addCoins } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   const listings = await prisma.marketListing.findMany({

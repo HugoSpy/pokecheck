@@ -1,8 +1,7 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET /pokemon/search?name=&type=&rarity=&generation=&limit= - search the global
 // Pokémon species table (NOT a user's collection). Public, like /pokedex.

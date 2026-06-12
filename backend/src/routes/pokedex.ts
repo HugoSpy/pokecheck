@@ -1,9 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;

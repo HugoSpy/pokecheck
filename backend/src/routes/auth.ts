@@ -3,12 +3,11 @@ import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import passport from 'passport';
 import { Strategy as MicrosoftStrategy } from 'passport-microsoft';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { claimDailyLogin } from '../services/streakService';
 import { checkBadges } from '../services/badgeService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // M2 - JWT duration is now driven by SESSION_DURATION (default 1h) for both
 // Microsoft OAuth and one-shot tokens. The previous 24h hardcoded default meant

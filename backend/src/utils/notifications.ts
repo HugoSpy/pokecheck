@@ -1,6 +1,6 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 export type NotificationType = 'BADGE' | 'TRADE_RECEIVED' | 'TRADE_ACCEPTED' | 'ATTENDANCE' | 'ADMIN_MESSAGE';
 

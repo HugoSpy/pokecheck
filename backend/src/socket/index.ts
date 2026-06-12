@@ -2,7 +2,8 @@ import type { Server as HttpServer } from 'http';
 import { Server, Socket, DefaultEventsMap } from 'socket.io';
 import * as cookie from 'cookie';
 import jwt from 'jsonwebtoken';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import type { AuthPayload } from '../middleware/authMiddleware';
 import { loadGenPools, buildStrip, hasUniqueWinner } from '../services/battleDrawService';
 import { dailyGenerations, parisDayKey } from '../services/shopService';
@@ -22,7 +23,6 @@ import {
   type BattlePokemon,
 } from './battleManager';
 
-const prisma = new PrismaClient();
 
 interface SocketUser {
   userId: string;
