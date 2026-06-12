@@ -100,7 +100,7 @@ export default function UserPokedex() {
               display: 'flex',
               alignItems: 'center',
               gap: 6,
-              padding: 0,
+              padding: '10px 0',
               transition: 'color 150ms',
             }}
             onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-primary)')}

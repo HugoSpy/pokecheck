@@ -254,6 +254,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0; /* prevent grid blowout from nowrap type chips */
 }
 
 .propose-col-header {
@@ -498,6 +499,7 @@
   padding: 12px;
   gap: 10px;
   margin-bottom: 10px;
+  min-width: 0;
 }
 .trade-grid-filters .filter-search { max-width: none; }
 

@@ -354,3 +354,10 @@
   font-size: var(--text-xs);
   color: var(--text-muted);
 }
+
+@media (max-width: 640px) {
+  .feat-vote-btn {
+    width: 44px;
+    height: 44px;
+  }
+}

@@ -170,3 +170,13 @@
   border-radius: var(--radius-sm);
   padding: 2px 9px;
 }
+
+@media (max-width: 640px) {
+  .psm-close {
+    min-width: 44px;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

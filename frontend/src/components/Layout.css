@@ -163,6 +163,7 @@
 @media (max-width: 640px) {
   .nav-username { display: none; }
   .nav-login span { display: none; }
+  .nav-logout { padding: 12px 14px; }
 }
 
 /* ── Admin ── */
@@ -170,7 +171,7 @@
   display: inline-block;
   margin-left: 6px;
   padding: 1px 6px;
-  font-size: 9px;
+  font-size: var(--text-xs);
   font-weight: 700;
   letter-spacing: 0.1em;
   color: var(--accent);
