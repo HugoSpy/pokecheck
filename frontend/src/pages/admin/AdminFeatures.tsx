@@ -2,12 +2,13 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserCtx } from '../../context/UserContext';
 import {
-  getFeatures, voteFeature,
+  getFeatures, voteFeature, sortFeatures,
   getPendingFeatures, publishFeature, editFeature, rejectFeature, markFeatureDone, getFeaturesHistory,
+  getFeatureVotes,
 } from '../../api/features';
-import type { Feature, PendingFeature, HistoryFeature } from '../../api/features';
+import type { Feature, PendingFeature, HistoryFeature, FeatureVoter } from '../../api/features';
 import FeatureCard, { applyVoteOptimistic } from '../../components/FeatureCard';
-import { Shield } from '../../components/icons';
+import { Shield, ThumbsUp, ThumbsDown } from '../../components/icons';
 import Toast from '../../components/Toast';
 import '../Features.css';
 
@@ -44,7 +45,7 @@ export default function AdminFeatures() {
     catch (e) { showToast((e as Error).message, 'error'); }
   }
   async function loadPublished() {
-    try { setPublished(await getFeatures()); }
+    try { setPublished(sortFeatures(await getFeatures())); }
     catch (e) { showToast((e as Error).message, 'error'); }
   }
   async function loadHistory() {
@@ -87,10 +88,10 @@ export default function AdminFeatures() {
     const target = prev.find(f => f.id === id);
     if (!target) return;
     const optimistic = applyVoteOptimistic(target.score, target.myVoteToday, value);
-    setPublished(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f)));
+    setPublished(sortFeatures(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f))));
     try {
       const res = await voteFeature(id, value);
-      setPublished(cur => cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f)));
+      setPublished(cur => sortFeatures(cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f))));
     } catch (e) {
       setPublished(prev);
       showToast((e as Error).message ?? 'Erreur lors du vote', 'error');
@@ -264,6 +265,7 @@ interface PublishedAdminCardProps {
 function PublishedAdminCard({ feature, onVote, onDone, onEdit, onError }: PublishedAdminCardProps) {
   const [editing, setEditing] = useState(false);
   const [confirmDone, setConfirmDone] = useState(false);
+  const [votersOpen, setVotersOpen] = useState(false);
   const [title, setTitle] = useState(feature.title);
   const [description, setDescription] = useState(feature.description);
   const [saving, setSaving] = useState(false);
@@ -333,7 +335,7 @@ function PublishedAdminCard({ feature, onVote, onDone, onEdit, onError }: Publis
     );
   }
 
-  const extraAction = confirmDone ? (
+  const actions = confirmDone ? (
     <div className="feat-confirm" style={{ marginTop: 12 }}>
       <span>Marquer comme réalisée ?</span>
       <button className="btn btn-primary" onClick={onDone}>Oui</button>
@@ -343,8 +345,73 @@ function PublishedAdminCard({ feature, onVote, onDone, onEdit, onError }: Publis
     <div className="feat-admin-actions">
       <button className="btn btn-ghost" onClick={startEdit}>Éditer</button>
       <button className="btn btn-ghost" onClick={() => setConfirmDone(true)}>Marquer comme fait</button>
+      <button className="btn btn-ghost" onClick={() => setVotersOpen(o => !o)}>
+        {votersOpen ? 'Masquer les votes' : 'Voir les votes'}
+      </button>
     </div>
   );
 
+  const extraAction = (
+    <>
+      {actions}
+      {votersOpen && <VotersPanel featureId={feature.id} onError={onError} />}
+    </>
+  );
+
   return <FeatureCard feature={feature} onVote={onVote} extraAction={extraAction} />;
+}
+
+// ── Voters panel: who voted what (real names) ─────────────────────────────────
+
+function VotersPanel({ featureId, onError }: { featureId: string; onError: (msg: string) => void }) {
+  const [voters, setVoters] = useState<FeatureVoter[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    getFeatureVotes(featureId)
+      .then(v => { if (alive) setVoters(v); })
+      .catch(e => { if (alive) onError((e as Error).message ?? 'Erreur chargement des votes'); });
+    return () => { alive = false; };
+  }, [featureId]);
+
+  if (voters === null) return <p className="feat-voters-empty">Chargement des votes…</p>;
+  if (voters.length === 0) return <p className="feat-voters-empty">Aucun vote pour le moment.</p>;
+
+  const up = voters.filter(v => v.total > 0);
+  const down = voters.filter(v => v.total < 0);
+
+  return (
+    <div className="feat-voters">
+      {up.length > 0 && (
+        <div className="feat-voters-group">
+          <div className="feat-voters-head feat-voters-head--up">
+            <ThumbsUp size={14} /> Pour ({up.length})
+          </div>
+          <ul className="feat-voters-list">
+            {up.map(v => (
+              <li key={v.user_id} className="feat-voter">
+                <span className="feat-voter-name">{v.name}</span>
+                {v.total > 1 && <span className="feat-voter-weight">×{v.total}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      {down.length > 0 && (
+        <div className="feat-voters-group">
+          <div className="feat-voters-head feat-voters-head--down">
+            <ThumbsDown size={14} /> Contre ({down.length})
+          </div>
+          <ul className="feat-voters-list">
+            {down.map(v => (
+              <li key={v.user_id} className="feat-voter">
+                <span className="feat-voter-name">{v.name}</span>
+                {v.total < -1 && <span className="feat-voter-weight">×{-v.total}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
 }

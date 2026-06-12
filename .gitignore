@@ -5,3 +5,8 @@ dist/
 *.log
 
 graphify-out/
+
+# build artifact
+frontend/tsconfig.tsbuildinfo
+# stray local export
+PokeCheck App.html
