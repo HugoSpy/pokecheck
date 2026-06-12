@@ -51,7 +51,7 @@
 
 .stat-chip-label {
   font-family: var(--font-condensed);
-  font-size: 10px;
+  font-size: var(--text-xs);
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.12em;
@@ -372,6 +372,10 @@
 /* ── Types area scroll on mobile ── */
 .filter-types { overflow-x: auto; padding-bottom: 4px; flex-wrap: nowrap; }
 @media (min-width: 640px) { .filter-types { flex-wrap: wrap; } }
+
+@media (max-width: 640px) {
+  .pokedex-search-btn { padding: 11px 14px; }
+}
 
 @media (min-width: 768px) {
   .pokedex-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }

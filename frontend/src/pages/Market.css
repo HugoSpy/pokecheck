@@ -475,4 +475,11 @@
   .market-sell-grid {
     grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
   }
+
+  .market-tab {
+    padding: 10px 10px;
+    font-size: var(--text-sm);
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+  }
 }

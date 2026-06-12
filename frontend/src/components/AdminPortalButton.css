@@ -38,5 +38,7 @@
   }
   .ap-portal-btn {
     padding: 7px 9px;
+    min-height: 40px;
+    min-width: 40px;
   }
 }

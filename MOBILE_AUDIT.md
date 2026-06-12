@@ -27,7 +27,27 @@ AdminPortal, AdminAttendance, AdminFeatures.
 
 ---
 
-## 🟢 Quick wins (< 30 min chacun, CSS pur)
+## ✅ Tier 🟢 — Implémenté (commit `fix/mobile-quick-wins`, 12/06/2026)
+
+Tous les quick wins ont été appliqués et re-validés à 375×667 (Playwright).
+Aucune régression à 1280px (overflowX=0 sur toutes les pages modifiées).
+
+| # | Fix | Fichier(s) | Résultat |
+|---|-----|------------|---------|
+| QW1 | `min-width: 0` sur `.propose-col` + `.trade-grid-filters` → overflow 859px → 0 | `Trades.css` | ✅ |
+| QW2 | `flex-wrap: wrap` sur `.profile-claim-row` → overflow 104px → 0 | `Profile.css` | ✅ |
+| QW3 | `min-width: 0` sur `.shop-card` + 2 colonnes sous 640px → overflow 136px → 0, qty 30px | `Shop.css` | ✅ |
+| QW4 | `.nav-logout { padding: 12px 14px }` + `.ap-portal-btn { min-height/width: 40px }` sous 640px | `Layout.css`, `AdminPortalButton.css` | ✅ nav-logout 40px |
+| QW5 | `.pokedex-search-btn { padding: 11px 14px }` sous 640px → ~40px | `Pokedex.css` | ✅ |
+| QW6 | `.feat-vote-btn { width: 44px; height: 44px }` sous 640px | `Features.css` | ✅ |
+| QW7 | `.pdm-close { 44×44 }` + `.psm-close { min 44×44 }` sous 640px | `PokemonDetailModal.css`, `PokemonSearchModal.css` | ✅ 44×44 confirmé |
+| QW8 | `.badge-card-date` 9px → `var(--text-xs)`, `.nav-admin-badge` 9px → `var(--text-xs)`, `.stat-chip-label` 10px → `var(--text-xs)` | `Profile.css`, `Layout.css`, `Pokedex.css` | ✅ |
+| QW9 | Back button `← Retour` : `padding: 0` → `padding: 10px 0` → 36px | `UserPokedex.tsx` | ✅ 36px |
+| QW10 | `.market-tab` : `padding: 10px`, `font-size: var(--text-sm)`, `white-space: nowrap` sous 640px | `Market.css` | ✅ tabs sur 1 ligne |
+
+---
+
+## 🟢 Quick wins — référence originale (archivé)
 
 ### QW1 — Trades : débordement horizontal de 859px ⚠️ LE bug mobile
 - **Page** : Échanges (`/trades`), section « Proposer un échange »

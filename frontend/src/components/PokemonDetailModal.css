@@ -204,6 +204,10 @@
     width: 144px;
     height: 144px;
   }
+  .pdm-close {
+    width: 44px;
+    height: 44px;
+  }
 }
 
 /* ── Sell ── */

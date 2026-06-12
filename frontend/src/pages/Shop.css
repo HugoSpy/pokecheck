@@ -73,6 +73,7 @@
   flex-direction: column;
   gap: 14px;
   transition: border-color var(--transition);
+  min-width: 0; /* prevent grid blowout */
 }
 
 .shop-card:hover {
@@ -169,14 +170,15 @@
   text-align: center;
 }
 
-/* ── Mobile: keep the 3 packs on one row, just tighten spacing ── */
+/* ── Mobile: 2 packs per row so cards are usable at 375px ── */
 @media (max-width: 640px) {
   .shop-grid {
-    --pack-gap: 10px;
+    --pack-gap: 12px;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .shop-card {
-    padding: 10px;
+    padding: 12px;
     gap: 10px;
   }
 
