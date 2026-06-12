@@ -155,4 +155,40 @@ router.get('/history', async (_req: Request, res: Response): Promise<void> => {
   })));
 });
 
+// ── GET /admin/features/:id/votes ─────────────────────────────────────────────
+// Who voted what on a published idea. Votes are per-Paris-day, so a voter can
+// have several rows; we aggregate to a net value per user. Identifies voters by
+// their REAL name (display_name) — deliberately NOT the nickname.
+
+router.get('/:id/votes', async (req: Request, res: Response): Promise<void> => {
+  const id = String(req.params.id);
+
+  const feature = await prisma.featureRequest.findUnique({ where: { id } });
+  if (!feature) {
+    res.status(404).json({ error: 'Feature not found' });
+    return;
+  }
+
+  const votes = await prisma.featureVote.findMany({
+    where: { feature_id: id },
+    include: { user: { select: { id: true, display_name: true } } },
+  });
+
+  // Aggregate to a net value per voter (sum of their daily votes).
+  const byUser = new Map<string, { user_id: string; name: string; total: number }>();
+  for (const v of votes) {
+    const entry = byUser.get(v.user_id) ?? { user_id: v.user_id, name: v.user.display_name, total: 0 };
+    entry.total += v.value;
+    byUser.set(v.user_id, entry);
+  }
+
+  // Drop voters whose votes net to zero (e.g. up then down), then rank
+  // upvoters first, downvoters last; alphabetical within equal totals.
+  const result = [...byUser.values()]
+    .filter(e => e.total !== 0)
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+
+  res.json(result);
+});
+
 export default router;

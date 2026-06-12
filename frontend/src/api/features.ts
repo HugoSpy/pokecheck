@@ -43,6 +43,12 @@ export interface VoteResult {
   myVoteToday: 1 | -1 | null;
 }
 
+export interface FeatureVoter {
+  user_id: string;
+  name: string;   // real name (display_name), not nickname
+  total: number;  // net vote: positive = upvoter, negative = downvoter
+}
+
 /**
  * Canonical ordering for the published list: highest score first; on a tie the
  * oldest idea ranks higher (most recent sinks to the bottom of the tie group).
@@ -110,4 +116,8 @@ export async function markFeatureDone(id: string): Promise<PendingFeature> {
 
 export async function getFeaturesHistory(): Promise<HistoryFeature[]> {
   return apiFetch<HistoryFeature[]>('/admin/features/history');
+}
+
+export async function getFeatureVotes(id: string): Promise<FeatureVoter[]> {
+  return apiFetch<FeatureVoter[]>(`/admin/features/${id}/votes`);
 }
