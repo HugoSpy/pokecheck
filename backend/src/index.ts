@@ -23,6 +23,8 @@ import shopRouter from './routes/shop';
 import attendanceRouter from './routes/attendance';
 import notificationsRouter from './routes/notifications';
 import devAuthRouter from './routes/devAuth';
+import featuresRouter from './routes/features';
+import adminFeaturesRouter from './routes/admin/features';
 import { initBattleSocket } from './socket';
 
 const app = express();
@@ -124,6 +126,8 @@ app.use('/event', eventRouter);
 app.use('/shop', shopRouter);
 app.use('/attendance', attendanceRouter);
 app.use('/notifications', notificationsRouter);
+app.use('/features', featuresRouter);
+app.use('/admin/features', adminFeaturesRouter);
 
 // [DEV ONLY - NEVER MERGE] - test-account backdoor login, gated by
 // DEV_BACKDOOR=true (must never be set in the prod .env).

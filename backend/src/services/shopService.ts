@@ -5,6 +5,8 @@
 import { Prisma, PrismaClient } from '@prisma/client';
 import { spendCoins, getSellPrice } from './coinService';
 import { drawAndCreate } from './drawService';
+import { parisDayKey, getParisDayStart as _getParisDayStart } from '../utils/parisTime';
+export { parisDayKey } from '../utils/parisTime';
 
 const prisma = new PrismaClient();
 
@@ -42,17 +44,6 @@ export function getPackPrice(): number {
 }
 
 // ── Paris-time helpers ────────────────────────────────────────────────────────
-
-/** "YYYY-MM-DD" for the current Paris day. Used as the rotation seed + replay key. */
-export function parisDayKey(now: Date = new Date()): string {
-  // en-CA formats as YYYY-MM-DD; Europe/Paris handles DST automatically.
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Europe/Paris',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-}
 
 /** UTC instant of the next Paris midnight (for the rotation countdown). */
 export function nextRotationAt(now: Date = new Date()): Date {

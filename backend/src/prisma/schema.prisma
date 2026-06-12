@@ -37,6 +37,8 @@ model User {
   market_purchases  MarketListing[] @relation("MarketBuyer")
   notifications     Notification[]
   shop_purchases    ShopPurchase[]
+  feature_requests  FeatureRequest[]
+  feature_votes     FeatureVote[]
 }
 
 // Daily shop anti-replay: one row per (user, gen, day). The @@unique constraint
@@ -239,4 +241,33 @@ model AttendanceOpening {
   attendance AttendanceCheck @relation(fields: [attendance_id], references: [id], onDelete: Cascade)
 
   @@unique([attendance_id, user_id]) // 1 ouverture max par check par user
+}
+
+model FeatureRequest {
+  id           String    @id @default(uuid())
+  title        String
+  description  String
+  status       String    // 'PENDING' | 'PUBLISHED' | 'DONE'
+  created_by   String
+  created_at   DateTime  @default(now())
+  published_at DateTime?
+  done_at      DateTime?
+
+  votes   FeatureVote[]
+  creator User @relation(fields: [created_by], references: [id])
+
+  @@index([status])
+}
+
+model FeatureVote {
+  id         String   @id @default(uuid())
+  feature_id String
+  user_id    String
+  value      Int      // +1 or -1
+  vote_date  DateTime // truncated to Paris day (midnight UTC of that day)
+
+  feature FeatureRequest @relation(fields: [feature_id], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [user_id], references: [id])
+
+  @@unique([feature_id, user_id, vote_date])
 }
