@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useUserCtx } from '../../context/UserContext';
 import {
   getFeatures, voteFeature,
-  getPendingFeatures, publishFeature, rejectFeature, markFeatureDone, getFeaturesHistory,
+  getPendingFeatures, publishFeature, editFeature, rejectFeature, markFeatureDone, getFeaturesHistory,
 } from '../../api/features';
 import type { Feature, PendingFeature, HistoryFeature } from '../../api/features';
 import FeatureCard, { applyVoteOptimistic } from '../../components/FeatureCard';
@@ -107,6 +107,12 @@ export default function AdminFeatures() {
     }
   }
 
+  async function handleEdit(id: string, title: string, description: string) {
+    const updated = await editFeature(id, { title, description });
+    setPublished(p => p.map(f => (f.id === id ? { ...f, title: updated.title, description: updated.description } : f)));
+    showToast('Idée modifiée.', 'success');
+  }
+
   return (
     <div className="feat-page">
       <header className="feat-header">
@@ -143,11 +149,13 @@ export default function AdminFeatures() {
         published.length === 0
           ? <p className="feat-empty">Aucune suggestion publiée.</p>
           : <div className="feat-list">{published.map(f => (
-              <FeatureCard
+              <PublishedAdminCard
                 key={f.id}
                 feature={f}
                 onVote={handleVote}
-                extraAction={<DoneAction onDone={() => handleDone(f.id)} />}
+                onDone={() => handleDone(f.id)}
+                onEdit={handleEdit}
+                onError={msg => showToast(msg, 'error')}
               />
             ))}</div>
       )}
@@ -243,19 +251,100 @@ function PendingCard({ feature, onPublish, onReject }: PendingCardProps) {
   );
 }
 
-// ── "Marquer comme fait" with inline confirm ──────────────────────────────────
+// ── Published card: vote view + inline edit + done ────────────────────────────
 
-function DoneAction({ onDone }: { onDone: () => void }) {
-  const [confirm, setConfirm] = useState(false);
-  return confirm ? (
+interface PublishedAdminCardProps {
+  feature: Feature;
+  onVote: (id: string, value: 1 | -1) => void;
+  onDone: () => void;
+  onEdit: (id: string, title: string, description: string) => Promise<void>;
+  onError: (msg: string) => void;
+}
+
+function PublishedAdminCard({ feature, onVote, onDone, onEdit, onError }: PublishedAdminCardProps) {
+  const [editing, setEditing] = useState(false);
+  const [confirmDone, setConfirmDone] = useState(false);
+  const [title, setTitle] = useState(feature.title);
+  const [description, setDescription] = useState(feature.description);
+  const [saving, setSaving] = useState(false);
+
+  const canSave = title.trim().length > 0 && description.trim().length > 0 && !saving;
+
+  function startEdit() {
+    setTitle(feature.title);
+    setDescription(feature.description);
+    setEditing(true);
+  }
+
+  async function save() {
+    if (!canSave) return;
+    setSaving(true);
+    try {
+      await onEdit(feature.id, title.trim(), description.trim());
+      setEditing(false);
+    } catch (e) {
+      onError((e as Error).message ?? 'Erreur lors de la modification');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // Edit mode: keep the vote column visible (read-only), swap the body for a form.
+  if (editing) {
+    return (
+      <div className="feat-card">
+        <div className="feat-vote">
+          <span className="feat-score">{feature.score}</span>
+        </div>
+        <div className="feat-card-body">
+          <div className="feat-field">
+            <div className="feat-label">
+              <span>Titre</span>
+              <span className="feat-counter">{title.length}/{TITLE_MAX}</span>
+            </div>
+            <input
+              className="feat-input"
+              value={title}
+              maxLength={TITLE_MAX}
+              onChange={e => setTitle(e.target.value)}
+            />
+          </div>
+          <div className="feat-field">
+            <div className="feat-label">
+              <span>Description</span>
+              <span className="feat-counter">{description.length}/{DESC_MAX}</span>
+            </div>
+            <textarea
+              className="feat-textarea"
+              value={description}
+              maxLength={DESC_MAX}
+              rows={4}
+              onChange={e => setDescription(e.target.value)}
+            />
+          </div>
+          <div className="feat-admin-actions">
+            <button className="btn btn-primary" onClick={save} disabled={!canSave}>
+              {saving ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+            <button className="btn btn-ghost" onClick={() => setEditing(false)} disabled={saving}>Annuler</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const extraAction = confirmDone ? (
     <div className="feat-confirm" style={{ marginTop: 12 }}>
       <span>Marquer comme réalisée ?</span>
       <button className="btn btn-primary" onClick={onDone}>Oui</button>
-      <button className="btn btn-ghost" onClick={() => setConfirm(false)}>Annuler</button>
+      <button className="btn btn-ghost" onClick={() => setConfirmDone(false)}>Annuler</button>
     </div>
   ) : (
     <div className="feat-admin-actions">
-      <button className="btn btn-ghost" onClick={() => setConfirm(true)}>Marquer comme fait</button>
+      <button className="btn btn-ghost" onClick={startEdit}>Éditer</button>
+      <button className="btn btn-ghost" onClick={() => setConfirmDone(true)}>Marquer comme fait</button>
     </div>
   );
+
+  return <FeatureCard feature={feature} onVote={onVote} extraAction={extraAction} />;
 }

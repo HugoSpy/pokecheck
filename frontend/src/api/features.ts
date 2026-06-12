@@ -79,6 +79,16 @@ export async function publishFeature(
   });
 }
 
+export async function editFeature(
+  id: string,
+  edits: { title?: string; description?: string },
+): Promise<PendingFeature> {
+  return apiFetch<PendingFeature>(`/admin/features/${id}/edit`, {
+    method: 'PATCH',
+    body: JSON.stringify(edits),
+  });
+}
+
 export async function rejectFeature(id: string): Promise<{ ok: boolean }> {
   return apiFetch<{ ok: boolean }>(`/admin/features/${id}/reject`, { method: 'PATCH' });
 }

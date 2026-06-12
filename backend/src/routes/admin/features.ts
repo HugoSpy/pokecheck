@@ -51,6 +51,43 @@ router.patch('/:id/publish', async (req: Request, res: Response): Promise<void> 
   res.json(updated);
 });
 
+// ── PATCH /admin/features/:id/edit ────────────────────────────────────────────
+// Edit a PUBLISHED feature's title/description in place (votes/score untouched).
+
+router.patch('/:id/edit', async (req: Request, res: Response): Promise<void> => {
+  const id = String(req.params.id);
+  const { title, description } = req.body as { title?: string; description?: string };
+
+  if (title !== undefined && (!title.trim() || title.trim().length > 100)) {
+    res.status(400).json({ error: 'title must be between 1 and 100 characters' });
+    return;
+  }
+  if (description !== undefined && (!description.trim() || description.trim().length > 1000)) {
+    res.status(400).json({ error: 'description must be between 1 and 1000 characters' });
+    return;
+  }
+
+  const feature = await prisma.featureRequest.findUnique({ where: { id } });
+  if (!feature) {
+    res.status(404).json({ error: 'Feature not found' });
+    return;
+  }
+  if (feature.status !== 'PUBLISHED') {
+    res.status(400).json({ error: 'Only published features can be edited here' });
+    return;
+  }
+
+  const updated = await prisma.featureRequest.update({
+    where: { id },
+    data: {
+      ...(title !== undefined ? { title: title.trim() } : {}),
+      ...(description !== undefined ? { description: description.trim() } : {}),
+    },
+  });
+
+  res.json(updated);
+});
+
 // ── PATCH /admin/features/:id/reject ──────────────────────────────────────────
 
 router.patch('/:id/reject', async (req: Request, res: Response): Promise<void> => {
