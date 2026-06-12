@@ -6,6 +6,7 @@ import { startAttendanceCheck } from '../api/attendanceApi';
 import { getAdminUsers, sendMessageAll, sendMessageUser } from '../api/adminPortalApi';
 import type { AdminUser } from '../api/adminPortalApi';
 import { Shield } from '../components/icons';
+import { getPendingFeatures } from '../api/features';
 import './AdminPortal.css';
 
 export default function AdminPortal() {
@@ -33,6 +34,7 @@ export default function AdminPortal() {
           <div className="ap-actions-grid">
             <AttendanceCard />
             <PackCard />
+            <FeaturesCard />
           </div>
         </section>
 
@@ -181,6 +183,38 @@ function PackCard() {
       <button className="ap-btn ap-btn--primary" onClick={handleGenerate} disabled={loading}>
         {loading ? 'Génération…' : 'Générer un pack'}
       </button>
+    </div>
+  );
+}
+
+// ── Features card ────────────────────────────────────────────────────────────
+
+function FeaturesCard() {
+  const [pendingCount, setPendingCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    getPendingFeatures().then(list => setPendingCount(list.length)).catch(() => {});
+  }, []);
+
+  return (
+    <div className="ap-card">
+      <div className="ap-card-icon">💡</div>
+      <div>
+        <h3 className="ap-card-title">Suggestions</h3>
+        <p className="ap-card-desc">
+          Modère les idées proposées par les élèves : valide, refuse ou marque comme faites.
+        </p>
+      </div>
+
+      {pendingCount !== null && pendingCount > 0 && (
+        <p className="ap-feedback ap-feedback--warning">
+          {pendingCount} suggestion{pendingCount > 1 ? 's' : ''} en attente
+        </p>
+      )}
+
+      <a href="/admin/features" className="ap-detail-link">
+        Gérer les suggestions →
+      </a>
     </div>
   );
 }

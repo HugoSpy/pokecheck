@@ -22,6 +22,8 @@ import eventRouter from './routes/event';
 import shopRouter from './routes/shop';
 import attendanceRouter from './routes/attendance';
 import notificationsRouter from './routes/notifications';
+import featuresRouter from './routes/features';
+import adminFeaturesRouter from './routes/admin/features';
 import { initBattleSocket } from './socket';
 
 const app = express();
@@ -123,6 +125,8 @@ app.use('/event', eventRouter);
 app.use('/shop', shopRouter);
 app.use('/attendance', attendanceRouter);
 app.use('/notifications', notificationsRouter);
+app.use('/features', featuresRouter);
+app.use('/admin/features', adminFeaturesRouter);
 
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 

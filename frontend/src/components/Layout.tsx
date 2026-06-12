@@ -6,7 +6,7 @@ import { useUserCtx } from '../context/UserContext';
 import BadgeNotification from './BadgeNotification';
 import NotificationButton from './NotificationButton';
 import AdminPortalButton from './AdminPortalButton';
-import { Coins, Grid, Swap, ShoppingBag, Store, User, Pokeball, Swords } from './icons';
+import { Coins, Grid, Swap, ShoppingBag, Store, User, Pokeball, Swords, Lightbulb } from './icons';
 import { isDevEnv } from '../data/patchnotes';
 import './Layout.css';
 
@@ -18,17 +18,19 @@ const NAV_LINKS = [
   { to: '/shop',        label: 'Boutique'    },
   { to: '/battle',      label: 'Battle'      },
   { to: '/leaderboard', label: 'Classement'  },
+  { to: '/features',    label: 'Idées'       },
   { to: '/profile',     label: 'Profil'      },
 ];
 
 const BOTTOM_NAV = [
-  { to: '/pokedex', label: 'Pokédex',    Icon: Grid        },
-  { to: '/trades',  label: 'Échanges',   Icon: Swap        },
-  { to: '/open',    label: 'Ouvrir',     Icon: Pokeball    },
-  { to: '/shop',    label: 'Boutique',   Icon: ShoppingBag },
-  { to: '/market',  label: 'Marché',     Icon: Store       },
-  { to: '/battle',  label: 'Battle',     Icon: Swords      },
-  { to: '/profile', label: 'Profil',     Icon: User        },
+  { to: '/pokedex',  label: 'Pokédex',    Icon: Grid        },
+  { to: '/trades',   label: 'Échanges',   Icon: Swap        },
+  { to: '/open',     label: 'Ouvrir',     Icon: Pokeball    },
+  { to: '/shop',     label: 'Boutique',   Icon: ShoppingBag },
+  { to: '/market',   label: 'Marché',     Icon: Store       },
+  { to: '/battle',   label: 'Battle',     Icon: Swords      },
+  { to: '/features', label: 'Idées',      Icon: Lightbulb   },
+  { to: '/profile',  label: 'Profil',     Icon: User        },
 ];
 
 export default function Layout() {

@@ -17,8 +17,10 @@ import ShopPackOpen from './pages/ShopPackOpen';
 import ShopPackOpenMulti from './pages/ShopPackOpenMulti';
 import Battle from './pages/Battle';
 import Profile from './pages/Profile';
+import Features from './pages/Features';
 import AdminAttendance from './pages/AdminAttendance';
 import AdminPortal from './pages/AdminPortal';
+import AdminFeatures from './pages/admin/AdminFeatures';
 import Layout from './components/Layout';
 
 function AppRoutes() {
@@ -50,6 +52,7 @@ function AppRoutes() {
         <Route path="/shop"        element={<Shop />} />
         <Route path="/battle"      element={<Battle />} />
         <Route path="/profile"     element={<Profile />} />
+        <Route path="/features"    element={<Features />} />
         <Route
           path="/admin"
           element={isAdmin ? <AdminPortal /> : <Navigate to="/leaderboard" replace />}
@@ -57,6 +60,10 @@ function AppRoutes() {
         <Route
           path="/admin/attendance"
           element={isAdmin ? <AdminAttendance /> : <Navigate to="/leaderboard" replace />}
+        />
+        <Route
+          path="/admin/features"
+          element={isAdmin ? <AdminFeatures /> : <Navigate to="/leaderboard" replace />}
         />
       </Route>
       <Route
