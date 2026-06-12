@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { getFeatures, voteFeature, proposeFeature } from '../api/features';
+import { useEffect, useRef, useState } from 'react';
+import { getFeatures, voteFeature, proposeFeature, sortFeatures } from '../api/features';
 import type { Feature } from '../api/features';
 import { useUserCtx } from '../context/UserContext';
 import FeatureCard, { applyVoteOptimistic } from '../components/FeatureCard';
@@ -19,6 +19,9 @@ export default function Features() {
   const [votingId, setVotingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+  // Mirror of votingId readable inside the polling interval closure, so a
+  // background refresh never stomps an in-flight optimistic vote.
+  const votingRef = useRef<string | null>(null);
 
   function showToast(msg: string, type: 'success' | 'error') {
     setToast({ msg, type });
@@ -32,7 +35,7 @@ export default function Features() {
 
   async function load() {
     try {
-      setFeatures(await getFeatures());
+      setFeatures(sortFeatures(await getFeatures()));
     } catch (e) {
       showToast((e as Error).message ?? 'Erreur de chargement', 'error');
     } finally {
@@ -42,23 +45,39 @@ export default function Features() {
 
   useEffect(() => { load(); }, []);
 
+  // Live score polling: every 3s pull fresh scores/votes and re-rank. Silent on
+  // error; skipped while a vote is mid-flight so it doesn't clobber the optimistic
+  // state before the server confirms.
+  useEffect(() => {
+    const i = setInterval(async () => {
+      if (votingRef.current) return;
+      try {
+        const fresh = sortFeatures(await getFeatures());
+        if (!votingRef.current) setFeatures(fresh);
+      } catch { /* silent */ }
+    }, 3000);
+    return () => clearInterval(i);
+  }, []);
+
   async function handleVote(id: string, value: 1 | -1) {
     const prev = features;
     const target = prev.find(f => f.id === id);
     if (!target) return;
 
-    // Optimistic update (don't re-sort while the user is interacting).
+    // Optimistic update + re-sort so the idea moves to its new rank immediately.
     const optimistic = applyVoteOptimistic(target.score, target.myVoteToday, value);
-    setFeatures(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f)));
+    setFeatures(sortFeatures(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f))));
+    votingRef.current = id;
     setVotingId(id);
 
     try {
       const res = await voteFeature(id, value);
-      setFeatures(cur => cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f)));
+      setFeatures(cur => sortFeatures(cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f))));
     } catch (e) {
       setFeatures(prev); // revert
       showToast((e as Error).message ?? 'Erreur lors du vote', 'error');
     } finally {
+      votingRef.current = null;
       setVotingId(null);
     }
   }

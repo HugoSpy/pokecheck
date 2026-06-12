@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useUserCtx } from '../../context/UserContext';
 import {
-  getFeatures, voteFeature,
+  getFeatures, voteFeature, sortFeatures,
   getPendingFeatures, publishFeature, editFeature, rejectFeature, markFeatureDone, getFeaturesHistory,
 } from '../../api/features';
 import type { Feature, PendingFeature, HistoryFeature } from '../../api/features';
@@ -44,7 +44,7 @@ export default function AdminFeatures() {
     catch (e) { showToast((e as Error).message, 'error'); }
   }
   async function loadPublished() {
-    try { setPublished(await getFeatures()); }
+    try { setPublished(sortFeatures(await getFeatures())); }
     catch (e) { showToast((e as Error).message, 'error'); }
   }
   async function loadHistory() {
@@ -87,10 +87,10 @@ export default function AdminFeatures() {
     const target = prev.find(f => f.id === id);
     if (!target) return;
     const optimistic = applyVoteOptimistic(target.score, target.myVoteToday, value);
-    setPublished(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f)));
+    setPublished(sortFeatures(prev.map(f => (f.id === id ? { ...f, ...optimistic } : f))));
     try {
       const res = await voteFeature(id, value);
-      setPublished(cur => cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f)));
+      setPublished(cur => sortFeatures(cur.map(f => (f.id === id ? { ...f, score: res.score, myVoteToday: res.myVoteToday } : f))));
     } catch (e) {
       setPublished(prev);
       showToast((e as Error).message ?? 'Erreur lors du vote', 'error');

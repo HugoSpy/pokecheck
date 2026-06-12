@@ -43,6 +43,17 @@ export interface VoteResult {
   myVoteToday: 1 | -1 | null;
 }
 
+/**
+ * Canonical ordering for the published list: highest score first; on a tie the
+ * oldest idea ranks higher (most recent sinks to the bottom of the tie group).
+ * Shared so the client re-applies the exact same order after an optimistic vote.
+ */
+export function sortFeatures<T extends { score: number; created_at: string }>(list: T[]): T[] {
+  return [...list].sort(
+    (a, b) => b.score - a.score || new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+  );
+}
+
 // ── Public ────────────────────────────────────────────────────────────────────
 
 export async function getFeatures(): Promise<Feature[]> {

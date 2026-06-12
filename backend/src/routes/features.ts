@@ -20,7 +20,7 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       votes: { select: { value: true, user_id: true, vote_date: true } },
       creator: { select: { display_name: true, nickname: true } },
     },
-    orderBy: { created_at: 'desc' },
+    orderBy: { created_at: 'asc' },
   });
 
   const result = features
@@ -41,6 +41,9 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
         myVoteToday: myVoteRow ? myVoteRow.value as 1 | -1 : null,
       };
     })
+    // Highest score first; on a tie, the oldest idea ranks higher (most recent
+    // sinks to the bottom of the tie group). The asc orderBy above makes the
+    // stable sort keep oldest-first within equal scores.
     .sort((a, b) => b.score - a.score);
 
   res.json(result);
