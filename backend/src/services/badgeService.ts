@@ -1,6 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 
-const prisma = new PrismaClient();
 
 export const STARTERS: Record<string, number[]> = {
   starters_gen1: [1, 4, 7],

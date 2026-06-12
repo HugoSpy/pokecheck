@@ -2,13 +2,13 @@
 // the Paris-time date so every user sees the same offers each day, rotating at
 // Paris midnight. Buying a pack triggers one gen-filtered draw (same logic as
 // POST /draw via drawService) inside a Serializable transaction.
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { spendCoins, getSellPrice } from './coinService';
 import { drawAndCreate } from './drawService';
 import { parisDayKey, getParisDayStart as _getParisDayStart } from '../utils/parisTime';
 export { parisDayKey } from '../utils/parisTime';
 
-const prisma = new PrismaClient();
 
 // Decoration cards flanking the winner in the CSGO-style roll animation.
 const STRIP_SIZE = 29;       // single-open: winner is inserted client-side at index 22

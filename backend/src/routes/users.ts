@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { addCoins } from '../services/coinService';
 import { drawFromEvent } from '../services/eventDraw';
@@ -11,7 +11,6 @@ import {
 } from '../services/badgeService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // GET /users/search?q=prénom+nom  - recherche élève par nom (min 2 chars)
 router.get('/search', authMiddleware, async (req: Request, res: Response): Promise<void> => {

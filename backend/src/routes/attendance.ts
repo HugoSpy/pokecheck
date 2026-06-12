@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import { Prisma, PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { drawAndCreate } from '../services/drawService';
 import { claimDailyLogin } from '../services/streakService';
 import { checkBadges } from '../services/badgeService';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 

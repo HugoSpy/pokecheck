@@ -1,12 +1,12 @@
 import { Router, Request, Response } from 'express';
 import crypto from 'crypto';
-import { Prisma, PrismaClient } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { adminMiddleware } from '../middleware/adminMiddleware';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { createNotification, createNotificationForAllUsers } from '../utils/notifications';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const ATTENDANCE_TTL_MS = 15 * 60 * 1000;
 

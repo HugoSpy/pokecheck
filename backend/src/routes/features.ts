@@ -1,10 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { getParisDayStart } from '../utils/parisTime';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 router.use(authMiddleware);
 
