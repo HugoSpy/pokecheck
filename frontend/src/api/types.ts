@@ -275,7 +275,5 @@ const DROP_RATE: Record<string, number> = {
 };
 export function getSellPrice(instance: { id?: number; points: number; rarity: string; is_shiny?: boolean }): number {
   if (instance.id === 132) return instance.is_shiny ? 333 : 111;
-  // TEMP: backend points stored with ×3, we display as ×40 until backend restart + SQL migration
-  const pts = instance.is_shiny ? instance.points * (40 / 3) : instance.points;
-  return Math.round(pts / (DROP_RATE[instance.rarity] ?? 0.60) / 20);
+  return Math.round(instance.points / (DROP_RATE[instance.rarity] ?? 0.60) / 20);
 }
