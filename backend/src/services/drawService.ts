@@ -83,7 +83,7 @@ export async function drawAndCreate(
   const spriteUrl = isShiny
     ? pokemon.sprite_url.replace('/normal/', '/shiny/')
     : pokemon.sprite_url;
-  const finalPoints = isShiny ? pokemon.points * 3 : pokemon.points;
+  const finalPoints = isShiny ? pokemon.points * 35 : pokemon.points;
 
   const created = await tx.userPokemon.create({
     data: {
