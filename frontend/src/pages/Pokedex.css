@@ -311,6 +311,15 @@
   transition: background 0.15s, filter 0.15s;
 }
 .pokedex-search-btn:hover { filter: brightness(1.15); }
+.pokedex-search-btn:disabled { opacity: 0.5; cursor: default; }
+.pokedex-search-btn:disabled:hover { filter: none; }
+
+.pokedex-export-btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
 
 /* ── Bulk-sell action bar (sticky above the mobile bottom-nav) ── */
 .pokedex-bulk-bar {
