@@ -23,6 +23,7 @@ model User {
   featured_badges    String[]
   created_at         DateTime  @default(now())
   trainer_gender      String?  // 'M' | 'F', null = not chosen yet
+  trainer_avatar      String?  // badge ID of the selected trainer avatar (e.g. "trainer_red"), null = none
   favorite_pokemon_id String?  // UserPokemon.id, null = not chosen
 
   favorite_pokemon UserPokemon? @relation("FavoritePokemon", fields: [favorite_pokemon_id], references: [id], onDelete: SetNull)

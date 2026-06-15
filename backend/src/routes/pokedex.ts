@@ -128,7 +128,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
     where: { id: userId },
     select: {
       id: true, display_name: true, nickname: true, total_score: true,
-      trade_count: true, featured_badges: true, trainer_gender: true,
+      trade_count: true, featured_badges: true, trainer_gender: true, trainer_avatar: true,
       favorite_pokemon: {
         include: { pokemon: { select: { id: true, name: true, sprite_url: true } } },
       },
@@ -188,6 +188,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       trade_count: user.trade_count,
       featured_badges: featured_badge_objects,
       trainer_gender: user.trainer_gender,
+      trainer_avatar: user.trainer_avatar,
       favorite_pokemon: user.favorite_pokemon && {
         instanceId: user.favorite_pokemon.id,
         is_shiny: user.favorite_pokemon.is_shiny,

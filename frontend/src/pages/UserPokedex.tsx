@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { getPublicPokedex } from '../api/pokemonApi';
 import type { UserInfo, UserPokemonInstance, FavoritePokemonInfo } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
+import { TRAINER_AVATAR_MAP } from '../config/trainerAvatars';
 import './Pokedex.css';
 
 // Same animated-GIF slug derivation as PokemonDetailModal / TradeAnimation3D:
@@ -19,7 +20,15 @@ function animatedGifUrl(fav: FavoritePokemonInfo): string {
 function TrainerDisplay({ user }: { user: UserInfo }) {
   const fav = user.favorite_pokemon;
   const [gifError, setGifError] = useState(false);
-  if (!user.trainer_gender) return null;
+
+  // A selected trainer avatar (a claimed trainer badge) overrides the default
+  // gendered base sprite. Fall back to the gendered base when no avatar is set.
+  const trainerAvatar = user.trainer_avatar ? TRAINER_AVATAR_MAP[user.trainer_avatar] : null;
+  const avatarSrc = trainerAvatar
+    ?? (user.trainer_gender === 'M' ? '/base_trainer_m.gif'
+      : user.trainer_gender === 'F' ? '/base_trainer_f.gif'
+      : null);
+  if (!avatarSrc) return null;
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end', marginBottom: 10, minHeight: 192 }}>
@@ -44,7 +53,7 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
         />
       )}
       <img
-        src={user.trainer_gender === 'M' ? '/base_trainer_m.gif' : '/base_trainer_f.gif'}
+        src={avatarSrc}
         alt="Dresseur"
         style={{ position: 'relative', height: 192, imageRendering: 'pixelated', zIndex: 1 }}
       />

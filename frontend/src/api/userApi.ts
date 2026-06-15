@@ -64,6 +64,13 @@ export async function updateTrainerProfile(patch: {
   });
 }
 
+export async function updateTrainerAvatar(badgeId: string | null): Promise<{ trainer_avatar: string | null }> {
+  return apiFetch('/users/trainer-avatar', {
+    method: 'PATCH',
+    body: JSON.stringify({ badge_id: badgeId }),
+  });
+}
+
 export async function updateFeaturedBadges(badgeIds: string[]): Promise<void> {
   await apiFetch<void>('/users/featured-badges', {
     method: 'PATCH',
