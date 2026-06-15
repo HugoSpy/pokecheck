@@ -39,6 +39,7 @@ export interface UserInfo {
   trade_count: number;
   featured_badges?: Badge[];
   trainer_gender?: 'M' | 'F' | null;
+  trainer_avatar?: string | null;
   favorite_pokemon?: FavoritePokemonInfo | null;
 }
 
@@ -234,6 +235,7 @@ export interface MyProfile {
   featured_badges: string[];
   is_admin: boolean;
   trainer_gender: 'M' | 'F' | null;
+  trainer_avatar: string | null;
   favorite_pokemon_id: string | null;
 }
 

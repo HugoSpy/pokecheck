@@ -1,9 +1,10 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, updateTrainerProfile, claimBadge } from '../api/userApi';
+import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUsername, updateFeaturedBadges, updateTrainerProfile, updateTrainerAvatar, claimBadge } from '../api/userApi';
 import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry, BadgeProgressEntry, UserPokemonInstance } from '../api/types';
+import { TRAINER_AVATAR_MAP, TRAINER_AVATAR_IDS } from '../config/trainerAvatars';
 import Toast from '../components/Toast';
 import BadgeDetailModal from '../components/BadgeDetailModal';
 import FavoritePokemonModal from '../components/FavoritePokemonModal';
@@ -268,6 +269,20 @@ export default function Profile() {
     }
   }
 
+  async function handleSelectAvatar(badgeId: string | null) {
+    if (trainerSaving) return;
+    setTrainerSaving(true);
+    try {
+      const result = await updateTrainerAvatar(badgeId);
+      setProfile(prev => prev ? { ...prev, trainer_avatar: result.trainer_avatar } : null);
+      showToast(result.trainer_avatar ? 'Avatar dresseur sauvegardé !' : 'Avatar réinitialisé', 'success');
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : 'Erreur de sauvegarde', 'error');
+    } finally {
+      setTrainerSaving(false);
+    }
+  }
+
   async function handleSaveFeatured() {
     setFeaturedSaving(true);
     try {
@@ -401,6 +416,63 @@ export default function Profile() {
                 Ton favori t'accompagne sur ton profil public et ne peut être ni vendu ni échangé.
               </p>
             )}
+          </div>
+        </div>
+
+        {/* ── Avatar Dresseur (équipes de dresseurs débloquées) ── */}
+        <div className="trainer-avatar-block">
+          <h3 className="trainer-avatar-title">Avatar Dresseur</h3>
+          <p className="trainer-avatar-hint">
+            Débloque un badge « Équipe de dresseur » pour utiliser son avatar sur ton profil public.
+          </p>
+          <div className="badges-grid">
+            {/* Aucun avatar - revient au dresseur de base */}
+            <button
+              type="button"
+              className={`badge-card badge-card--clickable${!profile.trainer_avatar ? ' selected' : ''}`}
+              onClick={() => handleSelectAvatar(null)}
+              disabled={trainerSaving}
+              title="Aucun avatar"
+            >
+              {!profile.trainer_avatar && <span className="trainer-avatar-check">✓</span>}
+              <div className="badge-card-icon">🚫</div>
+              <span className="badge-card-name">Aucun avatar</span>
+            </button>
+
+            {TRAINER_AVATAR_IDS.map(id => {
+              const badge = badgeMap.get(id);
+              const unlocked = !!badge?.unlocked;
+              const active = profile.trainer_avatar === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  className={`badge-card badge-card--clickable${unlocked ? '' : ' locked'}${active ? ' selected' : ''}`}
+                  // Locked: open the badge detail modal (same trigger as the badge
+                  // grid). Unlocked: toggle it as the active avatar.
+                  onClick={() => {
+                    if (!unlocked) { if (badge) setSelectedBadge(badge); return; }
+                    handleSelectAvatar(active ? null : id);
+                  }}
+                  disabled={trainerSaving && unlocked}
+                  style={!unlocked ? { cursor: 'not-allowed' } : undefined}
+                  title={badge?.name ?? id}
+                >
+                  {!unlocked && <span className="badge-lock-overlay"><Lock size={11} /></span>}
+                  {active && <span className="trainer-avatar-check">✓</span>}
+                  <div className="badge-card-icon">
+                    <img
+                      src={TRAINER_AVATAR_MAP[id]}
+                      alt={badge?.name ?? id}
+                      width={40}
+                      height={40}
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                  </div>
+                  <span className="badge-card-name">{badge?.name ?? id}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </section>

@@ -10,6 +10,8 @@ import {
   GEN_COUNT, ALL_TYPES, TYPE_BADGE_TIERS,
 } from '../services/badgeService';
 
+const TRAINER_AVATAR_BADGE_IDS = new Set(TRAINER_BADGES.map(t => t.id));
+
 const router = Router();
 
 // GET /users/search?q=prénom+nom  - recherche élève par nom (min 2 chars)
@@ -176,6 +178,37 @@ router.patch('/profile', authMiddleware, async (req: Request, res: Response): Pr
   res.json(updated);
 });
 
+// PATCH /users/trainer-avatar - select a trainer badge's avatar, or clear it.
+// Body: { badge_id: string | null }. null clears the avatar; a string must be one
+// of the 6 trainer badge IDs AND unlocked by the caller (403 otherwise) - same
+// "must own the badge" gate as featured-badges.
+router.patch('/trainer-avatar', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { badge_id } = req.body as { badge_id?: unknown };
+
+  if (badge_id === null) {
+    await prisma.user.update({ where: { id: userId }, data: { trainer_avatar: null } });
+    res.json({ trainer_avatar: null });
+    return;
+  }
+
+  if (typeof badge_id !== 'string' || !TRAINER_AVATAR_BADGE_IDS.has(badge_id)) {
+    res.status(400).json({ error: 'badge_id must be a trainer badge ID or null' });
+    return;
+  }
+
+  const owned = await prisma.userBadge.findUnique({
+    where: { user_id_badge_id: { user_id: userId, badge_id } },
+  });
+  if (!owned) {
+    res.status(403).json({ error: 'Badge non débloqué' });
+    return;
+  }
+
+  await prisma.user.update({ where: { id: userId }, data: { trainer_avatar: badge_id } });
+  res.json({ trainer_avatar: badge_id });
+});
+
 // PATCH /users/featured-badges - mettre à jour les badges vitrine (max 3) { badgeIds: string[] }
 router.patch('/featured-badges', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
@@ -225,6 +258,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       featured_badges: true,
       is_admin: true,
       trainer_gender: true,
+      trainer_avatar: true,
       favorite_pokemon_id: true,
     },
   });
