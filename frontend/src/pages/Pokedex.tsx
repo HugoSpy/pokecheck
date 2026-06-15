@@ -73,7 +73,9 @@ export default function Pokedex() {
     if (format === 'json') {
       downloadBlob(JSON.stringify(data, null, 2), `pokedex_${date}.json`, 'application/json');
     } else {
-      downloadBlob(toCsv(data), `pokedex_${date}.csv`, 'text/csv');
+      const CSV_FIELDS = ['pokedex_id', 'name', 'generation', 'rarity', 'is_shiny'] as const;
+      const rows = data.map(r => Object.fromEntries(CSV_FIELDS.map(f => [f, r[f]])));
+      downloadBlob(toCsv(rows), `pokedex_${date}.csv`, 'text/csv');
     }
   }, []);
 
