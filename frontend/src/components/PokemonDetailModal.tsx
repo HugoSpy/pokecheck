@@ -133,7 +133,7 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
           )}
           {pokemon.original_owner_name != null && (
             <div className="pdm-stat">
-              <span className="pdm-stat-label">Propriétaire original</span>
+              <span className="pdm-stat-label">Proprio original</span>
               <span className="pdm-stat-value">
                 {pokemon.original_owner_id === profile?.id ? 'Vous' : pokemon.original_owner_name}
               </span>
@@ -142,7 +142,10 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
           {!!pokemon.trade_count && (
             <div className="pdm-stat">
               <span className="pdm-stat-label">Échangé</span>
-              <span className="pdm-stat-value">{pokemon.trade_count} fois</span>
+              <span className="pdm-stat-value">
+                <span style={{ fontSize: 18, fontWeight: 700 }}>{pokemon.trade_count}</span>
+                <span style={{ fontSize: 12, color: 'var(--text-muted)' }}> fois</span>
+              </span>
             </div>
           )}
         </div>
