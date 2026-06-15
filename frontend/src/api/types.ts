@@ -21,6 +21,9 @@ export interface UserPokemonInstance extends PokemonInfo {
   obtainedAt: string;
   source: string;
   tradeable_at: string | null;
+  original_owner_id?: string | null;
+  original_owner_name?: string | null;
+  trade_count?: number;
 }
 
 export interface FavoritePokemonInfo {

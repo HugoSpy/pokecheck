@@ -28,6 +28,7 @@ model User {
   favorite_pokemon UserPokemon? @relation("FavoritePokemon", fields: [favorite_pokemon_id], references: [id], onDelete: SetNull)
 
   pokemons          UserPokemon[]
+  originally_owned  UserPokemon[]   @relation("OriginalOwner")
   trades_sent       Trade[]         @relation("TradeSent")
   trades_recv       Trade[]         @relation("TradeReceived")
   one_shot_tokens   OneshotToken[]
@@ -78,10 +79,14 @@ model UserPokemon {
   tradeable_at DateTime?
   is_shiny     Boolean   @default(false)
 
-  user    User    @relation(fields: [user_id], references: [id])
-  pokemon Pokemon @relation(fields: [pokemon_id], references: [id])
-  trade_items TradeItem[]
-  favorited_by User[] @relation("FavoritePokemon")
+  original_owner_id  String?
+  trade_count        Int     @default(0)
+
+  user           User     @relation(fields: [user_id], references: [id])
+  pokemon        Pokemon  @relation(fields: [pokemon_id], references: [id])
+  original_owner User?    @relation("OriginalOwner", fields: [original_owner_id], references: [id])
+  trade_items    TradeItem[]
+  favorited_by   User[]   @relation("FavoritePokemon")
 }
 
 model Trade {

@@ -81,7 +81,7 @@ export async function drawFromEvent(
   const { userPokemonId, isDuplicate } = await prisma.$transaction(async tx => {
     if (opts.spendPrice) await spendCoins(tx, userId, event.price, 'event_pack');
     const created = await tx.userPokemon.create({
-      data: { user_id: userId, pokemon_id: winner.id, source: opts.source, tradeable_at: null, is_shiny: isShiny },
+      data: { user_id: userId, pokemon_id: winner.id, source: opts.source, tradeable_at: null, is_shiny: isShiny, original_owner_id: userId },
     });
     await recalculateUserPokedexValue(tx, userId);
     const duplicateCount = await tx.userPokemon.count({
