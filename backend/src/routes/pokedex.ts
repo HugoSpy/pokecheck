@@ -10,7 +10,7 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
   const [userPokemons, user, totalPokemon] = await Promise.all([
     prisma.userPokemon.findMany({
       where: { user_id: userId },
-      include: { pokemon: true },
+      include: { pokemon: true, original_owner: true },
       orderBy: { obtained_at: 'desc' },
     }),
     prisma.user.findUnique({
@@ -29,6 +29,11 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
       source: up.source,
       tradeable_at: up.tradeable_at,
       is_shiny: up.is_shiny,
+      original_owner_id: up.original_owner_id,
+      original_owner_name: up.original_owner
+        ? (up.original_owner.nickname ?? up.original_owner.display_name)
+        : null,
+      trade_count: up.trade_count,
       ...up.pokemon,
       sprite_url: up.is_shiny ? up.pokemon.sprite_url.replace('/normal/', '/shiny/') : up.pokemon.sprite_url,
       points: up.pokemon.points,
@@ -91,7 +96,7 @@ router.get('/export', authMiddleware, async (req: Request, res: Response): Promi
 
   const userPokemons = await prisma.userPokemon.findMany({
     where: { user_id: userId },
-    include: { pokemon: true },
+    include: { pokemon: true, original_owner: true },
     orderBy: [{ pokemon: { id: 'asc' } }],
   });
 
@@ -107,6 +112,10 @@ router.get('/export', authMiddleware, async (req: Request, res: Response): Promi
     types: up.pokemon.types.join('/'),
     source: up.source,
     obtained_at: up.obtained_at.toISOString(),
+    original_owner: up.original_owner
+      ? (up.original_owner.nickname ?? up.original_owner.display_name)
+      : 'Inconnu',
+    trade_count: up.trade_count,
   }));
 
   res.json(data);

@@ -92,6 +92,7 @@ export async function drawAndCreate(
       source: opts.source,
       tradeable_at: null,
       is_shiny: isShiny,
+      original_owner_id: userId,
     },
   });
 

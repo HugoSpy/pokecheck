@@ -3,6 +3,7 @@ import type { UserPokemonInstance } from '../api/types';
 import { getSellPrice } from '../api/types';
 import RarityBadge from './RarityBadge';
 import { TYPE_FR } from '../utils/pokemon';
+import { useUserCtx } from '../context/UserContext';
 import './PokemonDetailModal.css';
 
 const RARITY_COLOR: Record<string, string> = {
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) {
+  const { profile } = useUserCtx();
   const isShiny    = pokemon.is_shiny ?? false;
   const isLegendary = pokemon.rarity === 'LEGENDARY';
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
@@ -127,6 +129,20 @@ export default function PokemonDetailModal({ pokemon, onClose, onSell }: Props) 
               <span className="pdm-stat-value">
                 {new Date(pokemon.obtainedAt).toLocaleDateString('fr-FR')}
               </span>
+            </div>
+          )}
+          {pokemon.original_owner_name != null && (
+            <div className="pdm-stat">
+              <span className="pdm-stat-label">Propriétaire original</span>
+              <span className="pdm-stat-value">
+                {pokemon.original_owner_id === profile?.id ? 'Vous' : pokemon.original_owner_name}
+              </span>
+            </div>
+          )}
+          {!!pokemon.trade_count && (
+            <div className="pdm-stat">
+              <span className="pdm-stat-label">Échangé</span>
+              <span className="pdm-stat-value">{pokemon.trade_count} fois</span>
             </div>
           )}
         </div>

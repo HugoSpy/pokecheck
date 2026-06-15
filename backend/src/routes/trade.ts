@@ -380,6 +380,12 @@ router.post('/accept/:id', async (req: Request, res: Response): Promise<void> =>
       data: { status: 'cancelled' },
     });
 
+    // Increment trade_count on each exchanged UserPokemon.
+    await tx.userPokemon.updateMany({
+      where: { id: { in: exchangedIds } },
+      data: { trade_count: { increment: 1 } },
+    });
+
     // Coins.
     if (trade.coins_offered > 0) {
       await spendCoins(tx, trade.from_user_id, trade.coins_offered, 'trade');

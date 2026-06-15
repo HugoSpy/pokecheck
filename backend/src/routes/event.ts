@@ -152,7 +152,7 @@ router.post('/draw', authMiddleware, async (req: Request, res: Response): Promis
         const created: Array<{ id: string; isDuplicate: boolean }> = [];
         for (const { p, shiny } of rolls) {
           const row = await tx.userPokemon.create({
-            data: { user_id: userId, pokemon_id: p.id, source: 'event', tradeable_at: null, is_shiny: shiny },
+            data: { user_id: userId, pokemon_id: p.id, source: 'event', tradeable_at: null, is_shiny: shiny, original_owner_id: userId },
           });
           // Duplicate accounts for earlier creates in this same batch (visible in-tx).
           const duplicateCount = await tx.userPokemon.count({
