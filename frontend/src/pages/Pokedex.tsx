@@ -9,6 +9,8 @@ import Toast from '../components/Toast';
 import { Search } from '../components/icons';
 import { TYPE_FR, RARITY_FR, RARITIES, TYPE_COLORS } from '../utils/pokemon';
 import PokemonSearchModal from '../components/PokemonSearchModal';
+import { canExport, getRemainingCooldownSeconds, markExport, toCsv, downloadBlob } from '../utils/exportCollection';
+import { apiFetch } from '../api/client';
 import './Pokedex.css';
 
 const BULK_SELL_CHUNK = 50; // backend caps each /sell/bulk call at 50 ids
@@ -48,6 +50,31 @@ export default function Pokedex() {
   const exitSelectMode = useCallback(() => {
     setSelectMode(false);
     setSelectedIds(new Set());
+  }, []);
+
+  const [cooldown, setCooldown] = useState(getRemainingCooldownSeconds());
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const interval = setInterval(() => {
+      const remaining = getRemainingCooldownSeconds();
+      setCooldown(remaining);
+      if (remaining <= 0) clearInterval(interval);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [cooldown]);
+
+  const handleExport = useCallback(async (format: 'csv' | 'json') => {
+    if (!canExport()) return;
+    markExport();
+    setCooldown(60);
+    const data = await apiFetch<Record<string, unknown>[]>('/pokedex/export');
+    const date = new Date().toISOString().slice(0, 10);
+    if (format === 'json') {
+      downloadBlob(JSON.stringify(data, null, 2), `pokedex_${date}.json`, 'application/json');
+    } else {
+      downloadBlob(toCsv(data), `pokedex_${date}.csv`, 'text/csv');
+    }
   }, []);
 
   const [filterDuplicates, setFilterDuplicates] = useState(false);
@@ -202,6 +229,24 @@ export default function Pokedex() {
           <button className="pokedex-search-btn" onClick={() => setSearchModalOpen(true)}>
             <Search size={15} /> Rechercher un Pokémon
           </button>
+          <div className="pokedex-export-btns">
+            <button
+              className="pokedex-search-btn"
+              onClick={() => handleExport('csv')}
+              disabled={cooldown > 0}
+              title={cooldown > 0 ? `Disponible dans ${cooldown}s` : 'Exporter en CSV'}
+            >
+              {cooldown > 0 ? `CSV (${cooldown}s)` : 'Exporter CSV'}
+            </button>
+            <button
+              className="pokedex-search-btn"
+              onClick={() => handleExport('json')}
+              disabled={cooldown > 0}
+              title={cooldown > 0 ? `Disponible dans ${cooldown}s` : 'Exporter en JSON'}
+            >
+              {cooldown > 0 ? `JSON (${cooldown}s)` : 'Exporter JSON'}
+            </button>
+          </div>
         </div>
         <div className="pokedex-stats">
           <StatChip label="Pokémon" value={pokemons.length} color="var(--accent)" />

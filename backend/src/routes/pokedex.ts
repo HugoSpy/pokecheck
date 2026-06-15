@@ -86,6 +86,32 @@ router.get('/random', async (req: Request, res: Response): Promise<void> => {
   res.json({ pokemons });
 });
 
+router.get('/export', authMiddleware, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+
+  const userPokemons = await prisma.userPokemon.findMany({
+    where: { user_id: userId },
+    include: { pokemon: true },
+    orderBy: [{ pokemon: { id: 'asc' } }],
+  });
+
+  const data = userPokemons.map(up => ({
+    instance_id: up.id,
+    pokedex_id: up.pokemon.id,
+    name: up.pokemon.name,
+    generation: up.pokemon.generation,
+    rarity: up.pokemon.rarity,
+    is_shiny: up.is_shiny,
+    points: up.pokemon.points,
+    bst: up.pokemon.bst,
+    types: up.pokemon.types.join('/'),
+    source: up.source,
+    obtained_at: up.obtained_at.toISOString(),
+  }));
+
+  res.json(data);
+});
+
 router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
   const userId = String(req.params.userId);
 
