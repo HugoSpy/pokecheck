@@ -4,7 +4,29 @@ import { STARTER_EVO, RARITY_COLLECTION, GENERATION_COLLECTION_TIERS } from '../
 
 const prisma = new PrismaClient();
 
-const BADGES = [
+type BadgeSeed = {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  coin_reward: number;
+  icon_url?: string;
+};
+
+// Placeholder Pokéball icon for the trainer-team badges (real artwork will be
+// uploaded later). Built as an inline SVG data-URI so it renders through the
+// existing icon_url <img> path - no asset file or external request needed.
+const POKEBALL_ICON = 'data:image/svg+xml;utf8,' + encodeURIComponent(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">' +
+  '<circle cx="50" cy="50" r="46" fill="#fff" stroke="#1a1a1a" stroke-width="5"/>' +
+  '<path d="M5 50a45 45 0 0 1 90 0z" fill="#e3350d"/>' +
+  '<rect x="4" y="46" width="92" height="8" fill="#1a1a1a"/>' +
+  '<circle cx="50" cy="50" r="15" fill="#fff" stroke="#1a1a1a" stroke-width="5"/>' +
+  '<circle cx="50" cy="50" r="6" fill="#fff" stroke="#1a1a1a" stroke-width="3"/>' +
+  '</svg>'
+);
+
+const BADGES: BadgeSeed[] = [
   // Streak
   { id: 'streak_1',   name: 'Première connexion',        description: 'Connecte-toi pour la première fois',                   category: 'streak',     coin_reward: 50    },
   { id: 'streak_7',   name: 'Premier pas',              description: 'Connecte-toi 7 jours de suite',                        category: 'streak',     coin_reward: 200   },
@@ -26,6 +48,13 @@ const BADGES = [
   { id: 'starters_gen5', name: 'Trio Unys',   description: 'Possède Vipélierre, Gruikui et Moustillon',   category: 'starters', coin_reward: 500 },
   { id: 'starters_gen6', name: 'Trio Kalos',   description: 'Possède Marisson, Feunnec et Grenousse',      category: 'starters', coin_reward: 500 },
   { id: 'starters_gen7', name: 'Trio Alola',   description: 'Possède Brindibou, Flamiaou et Otaquin',      category: 'starters', coin_reward: 500 },
+  // Dresseurs (équipes de dresseurs célèbres - posséder toute l'équipe)
+  { id: 'trainer_red',      name: 'Équipe de Red',      description: 'Possède les 6 Pokémon de Red (Mt. Argenté)',           category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_cynthia',  name: 'Équipe de Cynthia',  description: 'Possède les 6 Pokémon de la Championne Cynthia',       category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_misty',    name: "Équipe d'Ondine",    description: "Possède les 6 Pokémon d'Ondine",                       category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_n',        name: 'Équipe de N',        description: 'Possède les Pokémon de N — Reshiram ou Zekrom suffit', category: 'trainer', coin_reward: 2500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_brock',    name: 'Équipe de Pierre',   description: 'Possède les 6 Pokémon de Pierre',                      category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_giovanni', name: 'Équipe de Giovanni', description: 'Possède les 5 Pokémon de Giovanni',                    category: 'trainer', coin_reward: 1200, icon_url: POKEBALL_ICON },
   // Types
   { id: 'all_types', name: 'Collectionneur de types', description: 'Possède au moins 1 Pokémon de chacun des 18 types', category: 'types', coin_reward: 1500 },
   // Légendaires

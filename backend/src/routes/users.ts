@@ -5,7 +5,7 @@ import { addCoins } from '../services/coinService';
 import { drawFromEvent } from '../services/eventDraw';
 import { checkBadges } from '../services/badgeService';
 import {
-  STARTERS, STARTER_EVO, STREAK_BADGES, TRADE_BADGES, POKEDEX_BADGES,
+  STARTERS, STARTER_EVO, TRAINER_BADGES, STREAK_BADGES, TRADE_BADGES, POKEDEX_BADGES,
   BATTLE_BADGES, MARKET_SELL_BADGES, MARKET_BUY_BADGES, SHINY_BADGES,
   GEN_COUNT, ALL_TYPES, TYPE_BADGE_TIERS,
 } from '../services/badgeService';
@@ -416,6 +416,20 @@ router.get('/badges/progress', authMiddleware, async (req: Request, res: Respons
     const lineage = STARTERS[badgeId] ?? STARTER_EVO[badgeId];
     if (lineage) {
       return { current: lineage.filter(id => ownedIds.has(id)).length, required: lineage.length, missingPokemon: missing(lineage) };
+    }
+
+    // Trainer team badges - team species + an optional "one of" legendary (N).
+    const trainer = TRAINER_BADGES.find(tb => tb.id === badgeId);
+    if (trainer) {
+      const teamIds = trainer.required_pokemon_ids;
+      const oneOfSatisfied = !trainer.one_of || trainer.one_of.some(id => ownedIds.has(id));
+      const required = teamIds.length + (trainer.one_of ? 1 : 0);
+      const current = teamIds.filter(id => ownedIds.has(id)).length + (trainer.one_of && oneOfSatisfied ? 1 : 0);
+      const missingIds = [
+        ...teamIds.filter(id => !ownedIds.has(id)),
+        ...(trainer.one_of && !oneOfSatisfied ? trainer.one_of : []),
+      ];
+      return { current, required, missingPokemon: missing(missingIds) };
     }
 
     const legGen = badgeId.match(/^legendary_gen(\d)$/);

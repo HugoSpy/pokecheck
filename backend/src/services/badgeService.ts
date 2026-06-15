@@ -23,6 +23,19 @@ export const STARTER_EVO: Record<string, number[]> = {
   starter_evo_fire_gen7:  [725, 726, 727], starter_evo_water_gen7: [728, 729, 730], starter_evo_grass_gen7: [722, 723, 724],
 };
 
+// Trainer team badges - own at least one instance of every species on a famous
+// trainer's team. `one_of` (optional) requires owning at least one id from that
+// list IN ADDITION to all required_pokemon_ids - used by N, whose team counts as
+// complete with either Reshiram (643) OR Zekrom (644).
+export const TRAINER_BADGES: Array<{ id: string; required_pokemon_ids: number[]; one_of?: number[] }> = [
+  { id: 'trainer_red',      required_pokemon_ids: [3, 6, 9, 25, 131, 143] },
+  { id: 'trainer_cynthia',  required_pokemon_ids: [350, 407, 442, 445, 448, 468] },
+  { id: 'trainer_misty',    required_pokemon_ids: [54, 120, 121, 175, 183, 230] },
+  { id: 'trainer_n',        required_pokemon_ids: [565, 567, 571, 584, 601], one_of: [643, 644] },
+  { id: 'trainer_brock',    required_pokemon_ids: [74, 95, 42, 37, 204, 453] },
+  { id: 'trainer_giovanni', required_pokemon_ids: [31, 34, 51, 53, 112] },
+];
+
 export const BATTLE_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'battle_first_win', threshold: 1  },
   { id: 'battle_5_wins',    threshold: 5  },
@@ -226,6 +239,15 @@ export async function checkBadges(userId: string): Promise<string[]> {
   // Starter evolution lineage badges (own all 3 stages)
   for (const [badgeId, ids] of Object.entries(STARTER_EVO)) {
     if (ids.every(id => ownedPokemonIds.has(id))) await unlock(badgeId);
+  }
+
+  // Trainer team badges - own every species on the team. N additionally needs
+  // one of his box legendaries (one_of). All checks hit the in-memory set, no
+  // extra query.
+  for (const tb of TRAINER_BADGES) {
+    const hasTeam = tb.required_pokemon_ids.every(id => ownedPokemonIds.has(id));
+    const hasOneOf = !tb.one_of || tb.one_of.some(id => ownedPokemonIds.has(id));
+    if (hasTeam && hasOneOf) await unlock(tb.id);
   }
 
   // All 18 types badge

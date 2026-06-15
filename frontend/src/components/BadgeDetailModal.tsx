@@ -6,7 +6,7 @@ import './BadgeDetailModal.css';
 
 const CATEGORY_EMOJI: Record<string, string> = {
   streak: '🔥', trade: '🔄', pokedex: '📖', rarity: '💠', starters: '🌱', starter_evo: '🌿',
-  generation: '🌍', region: '🗺️', legendary: '⭐', types: '💎', battle: '⚔️', market: '🪙', shiny: '✨',
+  trainer: '🧢', generation: '🌍', region: '🗺️', legendary: '⭐', types: '💎', battle: '⚔️', market: '🪙', shiny: '✨',
 };
 
 // Unit shown after "X / Y" in the progress bar, per badge family.
