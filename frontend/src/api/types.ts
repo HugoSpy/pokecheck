@@ -274,6 +274,5 @@ const DROP_RATE: Record<string, number> = {
   COMMON: 0.60, RARE: 0.25, EPIC: 0.12, LEGENDARY: 0.012,
 };
 export function getSellPrice(instance: { id?: number; points: number; rarity: string; is_shiny?: boolean }): number {
-  if (instance.id === 132) return instance.is_shiny ? 333 : 111;
   return Math.round(instance.points / (DROP_RATE[instance.rarity] ?? 0.60) / 20);
 }
