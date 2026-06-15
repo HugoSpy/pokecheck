@@ -17,6 +17,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   rarity: 'Rareté',
   starters: 'Starters',
   starter_evo: 'Lignées Starters',
+  trainer: 'Dresseurs',
   generation: 'Générations',
   region: 'Régions',
   legendary: 'Légendaires',
@@ -31,7 +32,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 const CATEGORY_ORDER = [
   'streak', 'trade', 'pokedex', 'rarity',
   'generation', 'region',
-  'starters', 'starter_evo', 'types',
+  'starters', 'starter_evo', 'trainer', 'types',
   'legendary', 'shiny', 'battle', 'market',
 ];
 
@@ -78,6 +79,7 @@ function categoryFallbackEmoji(category: string): string {
     rarity: '💠',
     starters: '🌱',
     starter_evo: '🌿',
+    trainer: '🧢',
     generation: '🌍',
     region: '🗺️',
     legendary: '⭐',
