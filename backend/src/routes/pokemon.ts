@@ -61,7 +61,30 @@ router.get('/:pokemonId/owners', async (req: Request, res: Response): Promise<vo
     }))
     .sort((a, b) => b.count - a.count || a.displayName.localeCompare(b.displayName));
 
-  res.json({ owners });
+  // Active market listings for this species. MarketListing.pokemon_id is a
+  // UserPokemon instance id (not a species id) and there is no Prisma relation,
+  // so resolve it in two steps - bounded by the (small) set of active listings
+  // rather than by every instance of the species.
+  const activeListings = await prisma.marketListing.findMany({
+    where: { status: 'active' },
+    select: { pokemon_id: true, price_coins: true },
+  });
+  let market: { lowest_price: number; count: number } | null = null;
+  if (activeListings.length > 0) {
+    const speciesInstances = await prisma.userPokemon.findMany({
+      where: { pokemon_id: pokemonId, id: { in: activeListings.map(l => l.pokemon_id) } },
+      select: { id: true },
+    });
+    const speciesInstanceIds = new Set(speciesInstances.map(i => i.id));
+    const prices = activeListings
+      .filter(l => speciesInstanceIds.has(l.pokemon_id))
+      .map(l => l.price_coins);
+    if (prices.length > 0) {
+      market = { lowest_price: Math.min(...prices), count: prices.length };
+    }
+  }
+
+  res.json({ owners, market });
 });
 
 export default router;

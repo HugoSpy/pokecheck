@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { searchPokemonSpecies, getPokemonOwners, type PokemonSpecies, type PokemonOwner } from '../api/pokemonApi';
+import { searchPokemonSpecies, getPokemonOwners, type PokemonSpecies, type PokemonOwner, type PokemonMarketInfo } from '../api/pokemonApi';
 import { RARITY_FR } from '../utils/pokemon';
 import PokemonFilters from './PokemonFilters';
 import './PokemonSearchModal.css';
@@ -27,6 +27,7 @@ export default function PokemonSearchModal({ onClose }: Props) {
   // ── Step 2: owners of the selected species ──
   const [selected, setSelected] = useState<PokemonSpecies | null>(null);
   const [owners, setOwners] = useState<PokemonOwner[]>([]);
+  const [market, setMarket] = useState<PokemonMarketInfo | null>(null);
   const [loadingOwners, setLoadingOwners] = useState(false);
 
   // Close on Escape.
@@ -53,15 +54,21 @@ export default function PokemonSearchModal({ onClose }: Props) {
   const openOwners = useCallback((p: PokemonSpecies) => {
     setSelected(p);
     setOwners([]);
+    setMarket(null);
     setLoadingOwners(true);
     getPokemonOwners(p.id)
-      .then(data => setOwners(data.owners))
-      .catch(() => setOwners([]))
+      .then(data => { setOwners(data.owners); setMarket(data.market); })
+      .catch(() => { setOwners([]); setMarket(null); })
       .finally(() => setLoadingOwners(false));
   }, []);
 
   const goToProfile = useCallback((userId: string) => {
     navigate(`/u/${userId}`);
+    onClose();
+  }, [navigate, onClose]);
+
+  const goToMarket = useCallback(() => {
+    navigate('/market');
     onClose();
   }, [navigate, onClose]);
 
@@ -119,6 +126,18 @@ export default function PokemonSearchModal({ onClose }: Props) {
                 </div>
               </div>
             </div>
+
+            {!loadingOwners && market && (
+              <button className="psm-market" onClick={goToMarket}>
+                <span className="psm-market-tag">Marché</span>
+                <span className="psm-market-price">
+                  dès {market.lowest_price.toLocaleString('fr-FR')} coins
+                </span>
+                {market.count > 1 && (
+                  <span className="psm-market-count">{market.count} en vente</span>
+                )}
+              </button>
+            )}
 
             {loadingOwners ? (
               <div className="psm-loading"><div className="spinner" /></div>

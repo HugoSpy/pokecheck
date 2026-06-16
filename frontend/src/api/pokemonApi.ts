@@ -34,8 +34,13 @@ export async function searchPokemonSpecies(params: {
   return apiFetch<{ pokemons: PokemonSpecies[] }>(`/pokemon/search?${qs.toString()}`);
 }
 
-export async function getPokemonOwners(pokemonId: number): Promise<{ owners: PokemonOwner[] }> {
-  return apiFetch<{ owners: PokemonOwner[] }>(`/pokemon/${pokemonId}/owners`);
+export interface PokemonMarketInfo {
+  lowest_price: number;
+  count: number;
+}
+
+export async function getPokemonOwners(pokemonId: number): Promise<{ owners: PokemonOwner[]; market: PokemonMarketInfo | null }> {
+  return apiFetch<{ owners: PokemonOwner[]; market: PokemonMarketInfo | null }>(`/pokemon/${pokemonId}/owners`);
 }
 
 // HIDDEN FEATURE - force_ditto param added
