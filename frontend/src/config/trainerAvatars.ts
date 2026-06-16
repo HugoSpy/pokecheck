@@ -11,6 +11,15 @@ export const TRAINER_AVATAR_MAP: Record<string, string> = {
   trainer_giovanni: '/trainers/trainer_giovanni.gif',
 };
 
+// Resolve the icon a badge should render with: trainer badges show their own
+// animated GIF sprite, every other badge falls back to its stored icon_url (the
+// Pokéball SVG and friends). Centralized here so the profile avatar grid, the
+// badges page and BadgeDetailModal stay in sync without duplicating the mapping.
+// icon_url stays the DB fallback - this only overrides the rendered icon.
+export function badgeIconSrc(badgeId: string, fallback: string | null): string | null {
+  return TRAINER_AVATAR_MAP[badgeId] ?? fallback;
+}
+
 // Display order of the trainer avatar cards (matches the badge IDs above).
 export const TRAINER_AVATAR_IDS = [
   'trainer_red',
