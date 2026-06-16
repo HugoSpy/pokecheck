@@ -48,6 +48,44 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
   res.json(result);
 });
 
+// ── GET /features/history ─────────────────────────────────────────────────────
+// Public paginated list of shipped ideas (status DONE), newest first. The ideas
+// page shows the 3 most recent and loads 10 more per "load more" click. Distinct
+// from the admin-only /admin/features/history (which is unpaginated, for review).
+
+router.get('/history', async (req: Request, res: Response): Promise<void> => {
+  const offset = Math.max(0, parseInt(String(req.query.offset ?? '0'), 10) || 0);
+  const rawLimit = parseInt(String(req.query.limit ?? '3'), 10) || 3;
+  const limit = Math.min(Math.max(rawLimit, 1), 50);
+
+  const [total, features] = await Promise.all([
+    prisma.featureRequest.count({ where: { status: 'DONE' } }),
+    prisma.featureRequest.findMany({
+      where: { status: 'DONE' },
+      include: {
+        votes: { select: { value: true } },
+        creator: { select: { display_name: true, nickname: true } },
+      },
+      orderBy: { done_at: 'desc' },
+      skip: offset,
+      take: limit,
+    }),
+  ]);
+
+  res.json({
+    features: features.map(f => ({
+      id: f.id,
+      title: f.title,
+      description: f.description,
+      done_at: f.done_at,
+      creator: f.creator.nickname ?? f.creator.display_name,
+      score: f.votes.reduce((sum, v) => sum + v.value, 0),
+    })),
+    hasMore: offset + features.length < total,
+    total,
+  });
+});
+
 // ── POST /features/propose ────────────────────────────────────────────────────
 
 router.post('/propose', async (req: Request, res: Response): Promise<void> => {

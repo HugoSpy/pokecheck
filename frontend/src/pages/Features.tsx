@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { getFeatures, voteFeature, proposeFeature, sortFeatures } from '../api/features';
-import type { Feature } from '../api/features';
+import { getFeatures, getDoneFeatures, voteFeature, proposeFeature, sortFeatures } from '../api/features';
+import type { Feature, DoneFeature } from '../api/features';
 import { useUserCtx } from '../context/UserContext';
 import FeatureCard, { applyVoteOptimistic } from '../components/FeatureCard';
 import { Lightbulb } from '../components/icons';
@@ -9,6 +9,8 @@ import './Features.css';
 
 const TITLE_MAX = 100;
 const DESC_MAX = 1000;
+const DONE_INITIAL = 3; // shipped ideas shown on first load
+const DONE_PAGE = 10;   // shipped ideas added per "load more" click
 
 export default function Features() {
   const { profile } = useUserCtx();
@@ -19,6 +21,12 @@ export default function Features() {
   const [votingId, setVotingId] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [toast, setToast] = useState<{ msg: string; type: 'success' | 'error' } | null>(null);
+
+  // Shipped ideas (status DONE), shown smaller below the active list, paginated.
+  const [done, setDone] = useState<DoneFeature[]>([]);
+  const [doneTotal, setDoneTotal] = useState(0);
+  const [doneHasMore, setDoneHasMore] = useState(false);
+  const [loadingDone, setLoadingDone] = useState(false);
   // Mirror of votingId readable inside the polling interval closure, so a
   // background refresh never stomps an in-flight optimistic vote.
   const votingRef = useRef<string | null>(null);
@@ -43,7 +51,31 @@ export default function Features() {
     }
   }
 
-  useEffect(() => { load(); }, []);
+  async function loadDoneInitial() {
+    try {
+      const r = await getDoneFeatures(0, DONE_INITIAL);
+      setDone(r.features);
+      setDoneHasMore(r.hasMore);
+      setDoneTotal(r.total);
+    } catch { /* silent - the active list is the priority */ }
+  }
+
+  async function loadMoreDone() {
+    if (loadingDone) return;
+    setLoadingDone(true);
+    try {
+      const r = await getDoneFeatures(done.length, DONE_PAGE);
+      setDone(prev => [...prev, ...r.features]);
+      setDoneHasMore(r.hasMore);
+      setDoneTotal(r.total);
+    } catch (e) {
+      showToast((e as Error).message ?? 'Erreur de chargement', 'error');
+    } finally {
+      setLoadingDone(false);
+    }
+  }
+
+  useEffect(() => { load(); loadDoneInitial(); }, []);
 
   // Live score polling: every 3s pull fresh scores/votes and re-rank. Silent on
   // error; skipped while a vote is mid-flight so it doesn't clobber the optimistic
@@ -118,6 +150,37 @@ export default function Features() {
             <FeatureCard key={f.id} feature={f} onVote={handleVote} voting={votingId === f.id} />
           ))}
         </div>
+      )}
+
+      {done.length > 0 && (
+        <section className="feat-done">
+          <h2 className="feat-done-title">
+            ✓ Idées réalisées
+            <span className="feat-done-count">{doneTotal}</span>
+          </h2>
+          <div className="feat-done-list">
+            {done.map(d => (
+              <div key={d.id} className="feat-done-card">
+                <div className="feat-done-card-head">
+                  <span className="feat-done-card-title">{d.title}</span>
+                  {d.done_at && (
+                    <span className="feat-done-date">{new Date(d.done_at).toLocaleDateString('fr-FR')}</span>
+                  )}
+                </div>
+                <p className="feat-done-card-desc">{d.description}</p>
+                <div className="feat-done-card-meta">
+                  <span>par {d.creator}</span>
+                  <span className="feat-done-score">{d.score > 0 ? `+${d.score}` : d.score} pts</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          {doneHasMore && (
+            <button className="btn btn-ghost feat-done-more" onClick={loadMoreDone} disabled={loadingDone}>
+              {loadingDone ? 'Chargement…' : 'Voir plus'}
+            </button>
+          )}
+        </section>
       )}
 
       {modalOpen && (
