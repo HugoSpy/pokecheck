@@ -136,17 +136,26 @@ export default function Pokedex() {
 
   // Instances that are safe to sell without lowering the score: every copy of a
   // variant (species + shiny) beyond the first. Keeping one preserves the Pokédex
-  // entry and its points.
+  // entry and its points. Restricted to the active filters (rarity/gen/type/shiny/
+  // search) so "select all" only targets the duplicates the user is actually
+  // looking at — never the whole collection. All copies of a variant share
+  // rarity/gen/type/name/shiny, so a variant passes or fails the filter as a block
+  // and the grouping (one kept copy per variant) stays correct.
   const duplicateInstanceIds = useMemo(() => {
     const seenVariants = new Set<string>();
     const extras = new Set<string>();
     for (const p of pokemons) {
+      if (filterGen !== null && p.generation !== filterGen) continue;
+      if (filterRarity !== null && p.rarity !== filterRarity) continue;
+      if (filterType !== null && !p.types.includes(filterType)) continue;
+      if (filterShiny && !p.is_shiny) continue;
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) continue;
       const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
       if (seenVariants.has(key)) extras.add(p.instanceId);
       else seenVariants.add(key);
     }
     return extras;
-  }, [pokemons]);
+  }, [pokemons, filterGen, filterRarity, filterType, filterShiny, search]);
 
   const selectedTotal = useMemo(() =>
     pokemons
