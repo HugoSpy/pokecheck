@@ -27,11 +27,35 @@ interface GridFilter {
   rarity: string | null;
   type: string | null;
   shiny: boolean;
+  duplicates: boolean;
 }
-const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, type: null, shiny: false };
+const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, type: null, shiny: false, duplicates: false };
+
+// Extra copies in a list: for each variant (species + shiny) the oldest copy is
+// kept and every other copy is an "extra". Drives the Doublons filter so a trade
+// surfaces the surplus a side could give away while keeping one of each.
+function duplicateExtraIds(list: UserPokemonInstance[]): Set<string> {
+  const oldest = new Map<string, number>();
+  for (const p of list) {
+    const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+    const t = new Date(p.obtainedAt).getTime();
+    const cur = oldest.get(key);
+    if (cur === undefined || t < cur) oldest.set(key, t);
+  }
+  const kept = new Set<string>();
+  const extras = new Set<string>();
+  for (const p of list) {
+    const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+    if (new Date(p.obtainedAt).getTime() === oldest.get(key) && !kept.has(key)) kept.add(key);
+    else extras.add(p.instanceId);
+  }
+  return extras;
+}
 
 function applyGridFilter(list: UserPokemonInstance[], f: GridFilter): UserPokemonInstance[] {
+  const extras = f.duplicates ? duplicateExtraIds(list) : null;
   return list.filter(p => {
+    if (extras && !extras.has(p.instanceId)) return false;
     if (f.search && !p.name.toLowerCase().includes(f.search.toLowerCase())) return false;
     if (f.gen !== null && p.generation !== f.gen) return false;
     if (f.rarity !== null && p.rarity !== f.rarity) return false;
@@ -253,6 +277,8 @@ export default function Trades() {
   const displayedTheirs = applyGridFilter(theirPokemons, theirsFilter);
   const mineTypes = typesOf(tradeableMine);
   const theirsTypes = typesOf(theirPokemons);
+  const mineDupCount = duplicateExtraIds(tradeableMine).size;
+  const theirsDupCount = duplicateExtraIds(theirPokemons).size;
 
   const mineById = new Map(tradeableMine.map(p => [p.instanceId, p]));
   const theirsById = new Map(theirPokemons.map(p => [p.instanceId, p]));
@@ -401,7 +427,7 @@ export default function Trades() {
               <div className="trades-empty">Aucun Pokémon échangeable.</div>
             ) : (
               <>
-                <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} />
+                <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} duplicateCount={mineDupCount} />
                 <div className="mini-grid">
                   {displayedMine.map(p => (
                     p.instanceId === favoriteId ? (
@@ -448,7 +474,7 @@ export default function Trades() {
               <div className="trades-empty">Cet élève n'a aucun Pokémon.</div>
             ) : (
               <>
-                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} types={theirsTypes} />
+                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} types={theirsTypes} duplicateCount={theirsDupCount} />
                 <div className="mini-grid">
                   {displayedTheirs.map(p => (
                     <PokemonCard
@@ -665,7 +691,7 @@ function TradeResults({ items, onClose, onPokedex }: {
 
 // Independent display filter bar for one propose-trade grid (reuses the Pokédex
 // filter classes for visual consistency). Filters apply instantly.
-function GridFilters({ filter, onChange, types }: { filter: GridFilter; onChange: (f: GridFilter) => void; types: string[] }) {
+function GridFilters({ filter, onChange, types, duplicateCount }: { filter: GridFilter; onChange: (f: GridFilter) => void; types: string[]; duplicateCount: number }) {
   const set = (patch: Partial<GridFilter>) => onChange({ ...filter, ...patch });
   return (
     <div className="pokedex-filters trade-grid-filters">
@@ -726,6 +752,10 @@ function GridFilters({ filter, onChange, types }: { filter: GridFilter; onChange
             className={`filter-chip shiny-chip${filter.shiny ? ' active' : ''}`}
             onClick={() => set({ shiny: !filter.shiny })}
           >✨ Shiny</button>
+          <button
+            className={`filter-chip${filter.duplicates ? ' active' : ''}`}
+            onClick={() => set({ duplicates: !filter.duplicates })}
+          >Doublons ({duplicateCount})</button>
         </div>
       </div>
     </div>
