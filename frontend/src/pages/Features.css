@@ -1,9 +1,51 @@
 /* ── Feature requests / suggestions ─────────────────────────────────────────── */
 
 .feat-page {
-  max-width: 760px;
+  max-width: 1080px;
   margin: 0 auto;
   padding: 24px 16px 96px;
+}
+
+/* Two columns: proposed ideas (left, wider) + shipped ideas (right, narrower).
+   Collapses to a single stacked column on narrow screens. */
+.feat-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 28px;
+  align-items: start;
+}
+
+.feat-col {
+  min-width: 0;
+}
+
+.feat-col-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 0 14px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* The shipped column sticks while scrolling the (usually longer) active list. */
+.feat-col-done {
+  position: sticky;
+  top: 16px;
+}
+
+@media (max-width: 860px) {
+  .feat-columns {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .feat-col-done {
+    position: static;
+  }
 }
 
 .feat-header {
@@ -364,19 +406,8 @@
 
 /* ── Shipped ideas (status DONE) ─────────────────────────────────────────────
    Compact, lower-emphasis cards below the active suggestions list. */
-.feat-done {
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
-}
-
+/* Shipped column heading: reuses .feat-col-title layout, green accent. */
 .feat-done-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 0 16px;
-  font-size: var(--text-md);
-  font-weight: 700;
   color: var(--success);
 }
 
