@@ -66,6 +66,19 @@ export async function getFeatures(): Promise<Feature[]> {
   return apiFetch<Feature[]>('/features');
 }
 
+export interface DoneFeature {
+  id: string;
+  title: string;
+  description: string;
+  done_at: string | null;
+  creator: string;
+  score: number;
+}
+
+export async function getDoneFeatures(offset: number, limit: number): Promise<{ features: DoneFeature[]; hasMore: boolean; total: number }> {
+  return apiFetch<{ features: DoneFeature[]; hasMore: boolean; total: number }>(`/features/history?offset=${offset}&limit=${limit}`);
+}
+
 export async function proposeFeature(title: string, description: string): Promise<{ id: string; status: FeatureStatus }> {
   return apiFetch<{ id: string; status: FeatureStatus }>('/features/propose', {
     method: 'POST',
