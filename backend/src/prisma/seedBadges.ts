@@ -49,12 +49,14 @@ const BADGES: BadgeSeed[] = [
   { id: 'starters_gen6', name: 'Trio Kalos',   description: 'Possède Marisson, Feunnec et Grenousse',      category: 'starters', coin_reward: 500 },
   { id: 'starters_gen7', name: 'Trio Alola',   description: 'Possède Brindibou, Flamiaou et Otaquin',      category: 'starters', coin_reward: 500 },
   // Dresseurs (équipes de dresseurs célèbres - posséder toute l'équipe)
-  { id: 'trainer_red',      name: 'Équipe de Red',      description: 'Possède les 6 Pokémon de Red (Mt. Argenté)',           category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  // Récompense : 1500 si l'équipe contient au moins un légendaire, sinon 700.
+  // Légendaires présents : Cynthia (445 Carchacrok), N (643 Reshiram / 644 Zekrom).
+  { id: 'trainer_red',      name: 'Équipe de Red',      description: 'Possède les 6 Pokémon de Red (Mt. Argenté)',           category: 'trainer', coin_reward: 700,  icon_url: POKEBALL_ICON },
   { id: 'trainer_cynthia',  name: 'Équipe de Cynthia',  description: 'Possède les 6 Pokémon de la Championne Cynthia',       category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
-  { id: 'trainer_misty',    name: "Équipe d'Ondine",    description: "Possède les 6 Pokémon d'Ondine",                       category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
-  { id: 'trainer_n',        name: 'Équipe de N',        description: 'Possède les Pokémon de N — Reshiram ou Zekrom suffit', category: 'trainer', coin_reward: 2500, icon_url: POKEBALL_ICON },
-  { id: 'trainer_brock',    name: 'Équipe de Pierre',   description: 'Possède les 6 Pokémon de Pierre',                      category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
-  { id: 'trainer_giovanni', name: 'Équipe de Giovanni', description: 'Possède les 5 Pokémon de Giovanni',                    category: 'trainer', coin_reward: 1200, icon_url: POKEBALL_ICON },
+  { id: 'trainer_misty',    name: "Équipe d'Ondine",    description: "Possède les 6 Pokémon d'Ondine",                       category: 'trainer', coin_reward: 700,  icon_url: POKEBALL_ICON },
+  { id: 'trainer_n',        name: 'Équipe de N',        description: 'Possède les Pokémon de N — Reshiram ou Zekrom suffit', category: 'trainer', coin_reward: 1500, icon_url: POKEBALL_ICON },
+  { id: 'trainer_brock',    name: 'Équipe de Pierre',   description: 'Possède les 6 Pokémon de Pierre',                      category: 'trainer', coin_reward: 700,  icon_url: POKEBALL_ICON },
+  { id: 'trainer_giovanni', name: 'Équipe de Giovanni', description: 'Possède les 5 Pokémon de Giovanni',                    category: 'trainer', coin_reward: 700,  icon_url: POKEBALL_ICON },
   // Types
   { id: 'all_types', name: 'Collectionneur de types', description: 'Possède au moins 1 Pokémon de chacun des 18 types', category: 'types', coin_reward: 1500 },
   // Légendaires
