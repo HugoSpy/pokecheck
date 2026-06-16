@@ -328,6 +328,20 @@
   outline-offset: 2px;
 }
 
+/* Trainer avatar cards: when locked, silhouette the GIF (grayscale + dim)
+   rather than fading the whole card, so the trainer stays recognizable and its
+   name readable. Overrides the generic .badge-card.locked dimming above. */
+.trainer-avatar-card.locked,
+.trainer-avatar-card.locked:hover {
+  opacity: 1;
+  filter: none;
+}
+.trainer-avatar-card.locked img {
+  filter: grayscale(100%) brightness(0.6);
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Pulsing "reward to claim" dot. */
 .badge-unclaimed-dot {
   position: absolute;

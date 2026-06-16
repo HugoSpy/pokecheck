@@ -4,7 +4,7 @@ import { getMyProfile, getAllBadges, getBadgeProgress, claimDailyLogin, updateUs
 import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MyProfile, AllBadgeEntry, BadgeProgressEntry, UserPokemonInstance } from '../api/types';
-import { TRAINER_AVATAR_MAP, TRAINER_AVATAR_IDS } from '../config/trainerAvatars';
+import { TRAINER_AVATAR_MAP, TRAINER_AVATAR_IDS, badgeIconSrc } from '../config/trainerAvatars';
 import Toast from '../components/Toast';
 import BadgeDetailModal from '../components/BadgeDetailModal';
 import FavoritePokemonModal from '../components/FavoritePokemonModal';
@@ -447,7 +447,7 @@ export default function Profile() {
                 <button
                   key={id}
                   type="button"
-                  className={`badge-card badge-card--clickable${unlocked ? '' : ' locked'}${active ? ' selected' : ''}`}
+                  className={`badge-card badge-card--clickable trainer-avatar-card${unlocked ? '' : ' locked'}${active ? ' selected' : ''}`}
                   // Locked: open the badge detail modal (same trigger as the badge
                   // grid). Unlocked: toggle it as the active avatar.
                   onClick={() => {
@@ -549,7 +549,9 @@ export default function Profile() {
               </button>
               <div className={`badge-category-content${isCollapsed ? ' collapsed' : ''}`}>
                 <div className="badges-grid">
-                {catBadges.map(badge => (
+                {catBadges.map(badge => {
+                  const iconSrc = badgeIconSrc(badge.id, badge.icon_url);
+                  return (
                   <button
                     type="button"
                     key={badge.id}
@@ -560,8 +562,8 @@ export default function Profile() {
                     {!badge.unlocked && <span className="badge-lock-overlay"><Lock size={11} /></span>}
                     {badge.unlocked && !badge.claimed && <span className="badge-unclaimed-dot" aria-label="Récompense à réclamer" />}
                     <div className="badge-card-icon">
-                      {badge.icon_url ? (
-                        <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
+                      {iconSrc ? (
+                        <img src={iconSrc} alt={badge.name} width={40} height={40} />
                       ) : (
                         categoryFallbackEmoji(badge.category)
                       )}
@@ -571,7 +573,8 @@ export default function Profile() {
                       <span className="badge-card-date">{formatDate(badge.unlocked_at)}</span>
                     )}
                   </button>
-                ))}
+                  );
+                })}
                 </div>
               </div>
             </div>
@@ -591,13 +594,14 @@ export default function Profile() {
           {[0, 1, 2].map(i => {
             const badgeId = featuredDraft[i];
             const badge = badgeId ? badgeMap.get(badgeId) : undefined;
+            const iconSrc = badge ? badgeIconSrc(badge.id, badge.icon_url) : null;
             return (
               <div key={i} className={`featured-slot${badge ? ' filled' : ''}`}>
                 {badge ? (
                   <>
                     <div className="badge-card-icon" style={{ fontSize: 28 }}>
-                      {badge.icon_url ? (
-                        <img src={badge.icon_url} alt={badge.name} width={32} height={32} />
+                      {iconSrc ? (
+                        <img src={iconSrc} alt={badge.name} width={32} height={32} />
                       ) : (
                         categoryFallbackEmoji(badge.category)
                       )}
@@ -616,6 +620,7 @@ export default function Profile() {
         <div className="badges-grid">
           {unlockedBadges.map(badge => {
             const selected = featuredDraft.includes(badge.id);
+            const iconSrc = badgeIconSrc(badge.id, badge.icon_url);
             return (
               <div
                 key={badge.id}
@@ -634,8 +639,8 @@ export default function Profile() {
                 title={badge.description}
               >
                 <div className="badge-card-icon">
-                  {badge.icon_url ? (
-                    <img src={badge.icon_url} alt={badge.name} width={40} height={40} />
+                  {iconSrc ? (
+                    <img src={iconSrc} alt={badge.name} width={40} height={40} />
                   ) : (
                     categoryFallbackEmoji(badge.category)
                   )}

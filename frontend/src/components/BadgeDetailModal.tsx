@@ -1,5 +1,6 @@
 import { useEffect, useCallback } from 'react';
 import type { AllBadgeEntry, BadgeProgressEntry, UserPokemonInstance } from '../api/types';
+import { badgeIconSrc } from '../config/trainerAvatars';
 import { Coins } from './icons';
 import PokemonCard from './PokemonCard';
 import './BadgeDetailModal.css';
@@ -49,6 +50,7 @@ export default function BadgeDetailModal({ badge, progress, claiming, onClaim, o
 
   const p = progress?.progress;
   const pct = p && p.required > 0 ? Math.min(100, Math.round((p.current / p.required) * 100)) : 0;
+  const iconSrc = badgeIconSrc(badge.id, badge.icon_url);
 
   return (
     <div className="bdm-backdrop" onClick={onClose}>
@@ -59,8 +61,8 @@ export default function BadgeDetailModal({ badge, progress, claiming, onClaim, o
         <button className="bdm-close" onClick={onClose} aria-label="Fermer">✕</button>
 
         <div className={`bdm-icon${badge.unlocked ? '' : ' locked'}`}>
-          {badge.icon_url
-            ? <img src={badge.icon_url} alt={badge.name} width={56} height={56} />
+          {iconSrc
+            ? <img src={iconSrc} alt={badge.name} width={56} height={56} />
             : fallbackEmoji(badge.category)}
         </div>
 
