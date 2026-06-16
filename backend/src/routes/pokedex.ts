@@ -180,7 +180,22 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
     orderBy: { obtained_at: 'desc' },
   });
 
+  // Distinct species this user owns across their WHOLE collection (ignoring the
+  // tradeable/locked filtering above). Powers the trade "Non-obtenu" filter,
+  // which crosses one side's tradeable list against the other's full Pokédex.
+  // Single grouped query - no N+1.
+  let owned_species_ids: number[] | undefined;
+  if (forTrade) {
+    const distinctSpecies = await prisma.userPokemon.findMany({
+      where: { user_id: userId },
+      select: { pokemon_id: true },
+      distinct: ['pokemon_id'],
+    });
+    owned_species_ids = distinctSpecies.map(s => s.pokemon_id);
+  }
+
   res.json({
+    owned_species_ids,
     user: {
       id: user.id,
       display_name: user.nickname ?? user.display_name,
