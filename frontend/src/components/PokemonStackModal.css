@@ -11,26 +11,21 @@
 
 .psm-panel {
   position: relative;
-  background: #0f0f19;
+  background: #0b0b12;
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 28px 24px 24px;
   width: 100%;
-  max-width: 560px;
-  max-height: 86vh;
+  max-width: min(1080px, 95vw);
+  max-height: 88vh;
   overflow-y: auto;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
   animation: psmIn 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
 
-.psm-panel--shiny {
-  background: linear-gradient(145deg, rgba(212, 175, 55, 0.12), #0f0f19);
-  border-color: rgba(212, 175, 55, 0.5);
-}
-
 @keyframes psmIn {
-  from { opacity: 0; transform: scale(0.9) translateY(12px); }
-  to   { opacity: 1; transform: scale(1)   translateY(0);    }
+  from { opacity: 0; transform: scale(0.94) translateY(12px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
 .psm-close {
@@ -49,6 +44,7 @@
   align-items: center;
   justify-content: center;
   transition: background 150ms, color 150ms;
+  z-index: 2;
 }
 .psm-close:hover {
   background: rgba(255, 255, 255, 0.14);
@@ -92,62 +88,21 @@
   color: var(--text-muted);
 }
 
+/* Responsive 2-3 columns of full detail panels. Each panel is the standard
+   detail-modal panel reused as-is; here we just let it fill its grid cell
+   instead of capping at the 340px standalone width. */
 .psm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  align-items: start;
+  justify-items: center;
 }
 
-.psm-copy {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 12px 10px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: border-color 150ms, transform 150ms, background 150ms;
-  text-align: left;
-}
-.psm-copy:hover {
-  background: rgba(255, 255, 255, 0.07);
-  border-color: var(--border-bright);
-  transform: translateY(-2px);
-}
-
-.psm-copy-sprite {
-  height: 64px;
-  width: auto;
-  max-width: 100%;
-  object-fit: contain;
-  image-rendering: pixelated;
-  margin-bottom: 4px;
-}
-
-.psm-copy-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
+.psm-grid .pdm-panel {
+  max-width: 360px;
   width: 100%;
-}
-
-.psm-copy-label {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  font-weight: 600;
-}
-
-.psm-copy-value {
-  font-family: var(--font-mono, monospace);
-  font-size: 12px;
-  font-weight: 600;
-  color: #e2e8f0;
-  text-align: right;
+  margin: 0;
 }
 
 @media (max-width: 480px) {
@@ -157,7 +112,7 @@
   }
   .psm-panel {
     max-width: 100%;
-    max-height: 90vh;
+    max-height: 92vh;
     border-radius: 20px 20px 0 0;
     padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
   }
@@ -166,6 +121,6 @@
     height: 44px;
   }
   .psm-grid {
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns: 1fr;
   }
 }
