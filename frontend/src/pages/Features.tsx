@@ -140,48 +140,59 @@ export default function Features() {
         </button>
       </header>
 
-      {loading ? (
-        <p className="feat-empty">Chargement…</p>
-      ) : features.length === 0 ? (
-        <p className="feat-empty">Aucune suggestion pour le moment. Soyez le premier à en proposer une !</p>
-      ) : (
-        <div className="feat-list">
-          {features.map(f => (
-            <FeatureCard key={f.id} feature={f} onVote={handleVote} voting={votingId === f.id} />
-          ))}
+      <div className="feat-columns">
+        {/* Left: proposed ideas (vote) */}
+        <div className="feat-col feat-col-active">
+          <h2 className="feat-col-title">En cours de vote</h2>
+          {loading ? (
+            <p className="feat-empty">Chargement…</p>
+          ) : features.length === 0 ? (
+            <p className="feat-empty">Aucune suggestion pour le moment. Soyez le premier à en proposer une !</p>
+          ) : (
+            <div className="feat-list">
+              {features.map(f => (
+                <FeatureCard key={f.id} feature={f} onVote={handleVote} voting={votingId === f.id} />
+              ))}
+            </div>
+          )}
         </div>
-      )}
 
-      {done.length > 0 && (
-        <section className="feat-done">
-          <h2 className="feat-done-title">
-            ✓ Idées réalisées
+        {/* Right: shipped ideas (history) */}
+        <aside className="feat-col feat-col-done">
+          <h2 className="feat-col-title feat-done-title">
+            <span>✓ Idées réalisées</span>
             <span className="feat-done-count">{doneTotal}</span>
           </h2>
-          <div className="feat-done-list">
-            {done.map(d => (
-              <div key={d.id} className="feat-done-card">
-                <div className="feat-done-card-head">
-                  <span className="feat-done-card-title">{d.title}</span>
-                  {d.done_at && (
-                    <span className="feat-done-date">{new Date(d.done_at).toLocaleDateString('fr-FR')}</span>
-                  )}
-                </div>
-                <p className="feat-done-card-desc">{d.description}</p>
-                <div className="feat-done-card-meta">
-                  <span>par {d.creator}</span>
-                  <span className="feat-done-score">{d.score > 0 ? `+${d.score}` : d.score} pts</span>
-                </div>
+          {done.length === 0 ? (
+            <p className="feat-empty">Aucune idée réalisée pour le moment.</p>
+          ) : (
+            <>
+              <div className="feat-done-list">
+                {done.map(d => (
+                  <div key={d.id} className="feat-done-card">
+                    <div className="feat-done-card-head">
+                      <span className="feat-done-card-title">{d.title}</span>
+                      {d.done_at && (
+                        <span className="feat-done-date">{new Date(d.done_at).toLocaleDateString('fr-FR')}</span>
+                      )}
+                    </div>
+                    <p className="feat-done-card-desc">{d.description}</p>
+                    <div className="feat-done-card-meta">
+                      <span>par {d.creator}</span>
+                      <span className="feat-done-score">{d.score > 0 ? `+${d.score}` : d.score} pts</span>
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          {doneHasMore && (
-            <button className="btn btn-ghost feat-done-more" onClick={loadMoreDone} disabled={loadingDone}>
-              {loadingDone ? 'Chargement…' : 'Voir plus'}
-            </button>
+              {doneHasMore && (
+                <button className="btn btn-ghost feat-done-more" onClick={loadMoreDone} disabled={loadingDone}>
+                  {loadingDone ? 'Chargement…' : 'Voir plus'}
+                </button>
+              )}
+            </>
           )}
-        </section>
-      )}
+        </aside>
+      </div>
 
       {modalOpen && (
         <ProposeModal
