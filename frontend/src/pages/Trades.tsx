@@ -28,8 +28,9 @@ interface GridFilter {
   type: string | null;
   shiny: boolean;
   duplicates: boolean;
+  notObtained: boolean;
 }
-const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, type: null, shiny: false, duplicates: false };
+const EMPTY_FILTER: GridFilter = { search: '', gen: null, rarity: null, type: null, shiny: false, duplicates: false, notObtained: false };
 
 // Extra copies in a list: for each variant (species + shiny) the oldest copy is
 // kept and every other copy is an "extra". Drives the Doublons filter so a trade
@@ -52,10 +53,19 @@ function duplicateExtraIds(list: UserPokemonInstance[]): Set<string> {
   return extras;
 }
 
-function applyGridFilter(list: UserPokemonInstance[], f: GridFilter): UserPokemonInstance[] {
+// excludeSpecies: when the "Non-obtenu" filter is on, the set of species owned by
+// the OTHER side (full Pokédex). A Pokémon whose species is in this set is hidden,
+// so the grid only shows what the other side doesn't already own. Null/undefined
+// (no comparison basis available yet) makes the filter a no-op.
+function applyGridFilter(
+  list: UserPokemonInstance[],
+  f: GridFilter,
+  excludeSpecies?: Set<number> | null,
+): UserPokemonInstance[] {
   const extras = f.duplicates ? duplicateExtraIds(list) : null;
   return list.filter(p => {
     if (extras && !extras.has(p.instanceId)) return false;
+    if (f.notObtained && excludeSpecies && excludeSpecies.has(p.id)) return false;
     if (f.search && !p.name.toLowerCase().includes(f.search.toLowerCase())) return false;
     if (f.gen !== null && p.generation !== f.gen) return false;
     if (f.rarity !== null && p.rarity !== f.rarity) return false;
@@ -83,6 +93,9 @@ export default function Trades() {
   const [sent, setSent] = useState<SentTrade[]>([]);
   const [myPokemons, setMyPokemons] = useState<UserPokemonInstance[]>([]);
   const [theirPokemons, setTheirPokemons] = useState<UserPokemonInstance[]>([]);
+  // Distinct species the target user owns across their WHOLE Pokédex - the basis
+  // for the "Non-obtenu" filter on the left (my) grid.
+  const [theirOwnedSpecies, setTheirOwnedSpecies] = useState<Set<number>>(new Set());
 
   const [targetUserId, setTargetUserId] = useState(state?.targetUserId ?? '');
   const [targetUserName, setTargetUserName] = useState(state?.targetUserName ?? '');
@@ -174,6 +187,7 @@ export default function Trades() {
     try {
       const data = await getPublicPokedex(userId, { forTrade: true });
       setTheirPokemons(data.pokemons);
+      setTheirOwnedSpecies(new Set(data.owned_species_ids ?? []));
       setTargetUserId(userId);
       setTargetUserName(data.user.display_name);
       setSelectedTheirsIds([]);
@@ -273,8 +287,15 @@ export default function Trades() {
     p => !p.tradeable_at || new Date(p.tradeable_at) <= new Date()
   );
 
-  const displayedMine = applyGridFilter(tradeableMine, mineFilter);
-  const displayedTheirs = applyGridFilter(theirPokemons, theirsFilter);
+  // Species I own across my whole collection (myPokemons is the full Pokédex) -
+  // the basis for the "Non-obtenu" filter on the right (their) grid.
+  const myOwnedSpecies = new Set(myPokemons.map(p => p.id));
+
+  // "Non-obtenu" crosses each side's tradeable list against the OTHER's full
+  // Pokédex: left = my tradeable not owned by them; right = their tradeable not
+  // owned by me. The basis for the left grid only exists once a target is loaded.
+  const displayedMine = applyGridFilter(tradeableMine, mineFilter, targetUserId ? theirOwnedSpecies : null);
+  const displayedTheirs = applyGridFilter(theirPokemons, theirsFilter, myOwnedSpecies);
   const mineTypes = typesOf(tradeableMine);
   const theirsTypes = typesOf(theirPokemons);
   const mineDupCount = duplicateExtraIds(tradeableMine).size;
@@ -427,7 +448,7 @@ export default function Trades() {
               <div className="trades-empty">Aucun Pokémon échangeable.</div>
             ) : (
               <>
-                <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} duplicateCount={mineDupCount} />
+                <GridFilters filter={mineFilter} onChange={setMineFilter} types={mineTypes} duplicateCount={mineDupCount} notObtainedEnabled={!!targetUserId} notObtainedHint="Tes Pokémon que ce dresseur n'a pas encore" />
                 <div className="mini-grid">
                   {displayedMine.map(p => (
                     p.instanceId === favoriteId ? (
@@ -474,7 +495,7 @@ export default function Trades() {
               <div className="trades-empty">Cet élève n'a aucun Pokémon.</div>
             ) : (
               <>
-                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} types={theirsTypes} duplicateCount={theirsDupCount} />
+                <GridFilters filter={theirsFilter} onChange={setTheirsFilter} types={theirsTypes} duplicateCount={theirsDupCount} notObtainedEnabled notObtainedHint="Ses Pokémon que tu n'as pas encore" />
                 <div className="mini-grid">
                   {displayedTheirs.map(p => (
                     <PokemonCard
@@ -691,7 +712,7 @@ function TradeResults({ items, onClose, onPokedex }: {
 
 // Independent display filter bar for one propose-trade grid (reuses the Pokédex
 // filter classes for visual consistency). Filters apply instantly.
-function GridFilters({ filter, onChange, types, duplicateCount }: { filter: GridFilter; onChange: (f: GridFilter) => void; types: string[]; duplicateCount: number }) {
+function GridFilters({ filter, onChange, types, duplicateCount, notObtainedEnabled, notObtainedHint }: { filter: GridFilter; onChange: (f: GridFilter) => void; types: string[]; duplicateCount: number; notObtainedEnabled: boolean; notObtainedHint: string }) {
   const set = (patch: Partial<GridFilter>) => onChange({ ...filter, ...patch });
   return (
     <div className="pokedex-filters trade-grid-filters">
@@ -756,6 +777,12 @@ function GridFilters({ filter, onChange, types, duplicateCount }: { filter: Grid
             className={`filter-chip${filter.duplicates ? ' active' : ''}`}
             onClick={() => set({ duplicates: !filter.duplicates })}
           >Doublons ({duplicateCount})</button>
+          <button
+            className={`filter-chip${filter.notObtained ? ' active' : ''}`}
+            onClick={() => set({ notObtained: !filter.notObtained })}
+            disabled={!notObtainedEnabled}
+            title={notObtainedEnabled ? notObtainedHint : 'Sélectionne un dresseur pour activer'}
+          >Non-obtenu</button>
         </div>
       </div>
     </div>

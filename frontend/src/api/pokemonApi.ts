@@ -66,9 +66,11 @@ export async function getMyPokedex(): Promise<{ user: UserInfo; pokemons: UserPo
 export async function getPublicPokedex(
   userId: string,
   opts?: { forTrade?: boolean },
-): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[] }> {
+): Promise<{ user: UserInfo; pokemons: UserPokemonInstance[]; owned_species_ids?: number[] }> {
   // forTrade excludes Pokémon locked in a pending trade so they can't be picked
-  // as a trade target. The public profile view omits it (shows everything).
+  // as a trade target, and returns owned_species_ids (the user's full-collection
+  // distinct species) for the trade "Non-obtenu" filter. The public profile view
+  // omits it (shows everything).
   const qs = opts?.forTrade ? '?for_trade=1' : '';
-  return apiFetch<{ user: UserInfo; pokemons: UserPokemonInstance[] }>(`/pokedex/${userId}${qs}`);
+  return apiFetch<{ user: UserInfo; pokemons: UserPokemonInstance[]; owned_species_ids?: number[] }>(`/pokedex/${userId}${qs}`);
 }
