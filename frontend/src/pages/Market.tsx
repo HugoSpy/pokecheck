@@ -49,6 +49,7 @@ export default function Market() {
   const [filterRarity, setFilterRarity] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterShiny, setFilterShiny] = useState(false);
+  const [filterDuplicates, setFilterDuplicates] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('recent');
 
   // Sell tab multi-select (bulk listing at a single shared price)
@@ -211,9 +212,37 @@ export default function Market() {
     return [...types].sort();
   }, [sellablePokemons]);
 
+  // Extra copies that are safe to list without lowering the score: for each
+  // variant (species + shiny), keep the oldest copy and treat every other copy
+  // as an "extra". Computed over all owned Pokémon so the kept copy is the
+  // score-contributing one even if it happens to be locked/already listed.
+  const duplicateExtraIds = useMemo(() => {
+    const oldestByVariant = new Map<string, number>();
+    for (const p of myPokemons) {
+      const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+      const t = new Date(p.obtainedAt).getTime();
+      const cur = oldestByVariant.get(key);
+      if (cur === undefined || t < cur) oldestByVariant.set(key, t);
+    }
+    const keptOne = new Set<string>();
+    const extras = new Set<string>();
+    for (const p of myPokemons) {
+      const key = `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+      // The single oldest copy per variant is kept; ties resolved by instanceId
+      // so exactly one is kept even when timestamps are equal.
+      if (new Date(p.obtainedAt).getTime() === oldestByVariant.get(key) && !keptOne.has(key)) {
+        keptOne.add(key);
+      } else {
+        extras.add(p.instanceId);
+      }
+    }
+    return extras;
+  }, [myPokemons]);
+
   // Same filters/sort as the buy & mine tabs, applied to the user's own Pokémon.
   const filteredSellable = useMemo(() => {
     const filtered = sellablePokemons.filter(p => {
+      if (filterDuplicates && !duplicateExtraIds.has(p.instanceId)) return false;
       if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
       if (filterGen !== null && p.generation !== filterGen) return false;
       if (filterRarity !== null && p.rarity !== filterRarity) return false;
@@ -230,7 +259,7 @@ export default function Market() {
         default:           return 0;
       }
     });
-  }, [sellablePokemons, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
+  }, [sellablePokemons, search, filterGen, filterRarity, filterType, filterShiny, filterDuplicates, duplicateExtraIds, sortBy]);
 
   // Selectable for "select all": filtered sellable minus the favorite (never sold).
   const selectableSellIds = useMemo(
@@ -362,6 +391,12 @@ export default function Market() {
                 className={`filter-chip${filterShiny ? ' active' : ''}`}
                 onClick={() => setFilterShiny(v => !v)}
               >✨ Shiny</button>
+              {tab === 'sell' && (
+                <button
+                  className={`filter-chip${filterDuplicates ? ' active' : ''}`}
+                  onClick={() => setFilterDuplicates(v => !v)}
+                >Doublons ({duplicateExtraIds.size})</button>
+              )}
             </div>
           </div>
         </div>
