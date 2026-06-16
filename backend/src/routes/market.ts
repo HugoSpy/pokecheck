@@ -1,11 +1,28 @@
 import { Router, Request, Response } from 'express';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import rateLimit from 'express-rate-limit';
 import { authMiddleware } from '../middleware/authMiddleware';
 import { spendCoins, addCoins } from '../services/coinService';
 import { recalculateUserPokedexValue } from '../services/pokedexValue';
 import { checkBadges } from '../services/badgeService';
 
 const router = Router();
+
+const MAX_PRICE = 1_000_000;
+
+// Bulk listing is light-rate-limited per user (each call already lists up to 50).
+// Keyed by JWT user id, not IP, because students share a Cloudflare egress IP.
+const bulkListLimiter = rateLimit({
+  windowMs: 1_000,
+  max: 3,
+  keyGenerator: (req) => req.user?.userId ?? req.ip ?? 'unknown',
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please slow down.' },
+});
+
+const MAX_BULK_LIST = 50;
 
 router.get('/', async (_req: Request, res: Response): Promise<void> => {
   const listings = await prisma.marketListing.findMany({
@@ -46,6 +63,94 @@ router.get('/', async (_req: Request, res: Response): Promise<void> => {
   res.json(enriched);
 });
 
+// POST /market/list/bulk - list up to 50 owned Pokémon at the SAME price in one
+// Serializable transaction. Declared BEFORE '/list' is irrelevant (distinct path)
+// but kept near it for clarity. Validation is fail-all: if any Pokémon is invalid
+// (not owned, favorite, locked, already listed or in a pending trade) the whole
+// batch is rejected, so the caller never ends up with a partial listing.
+router.post('/list/bulk', authMiddleware, bulkListLimiter, async (req: Request, res: Response): Promise<void> => {
+  const userId = req.user!.userId;
+  const { ids, price_coins } = req.body as { ids?: unknown; price_coins?: unknown };
+
+  if (typeof price_coins !== 'number' || !Number.isFinite(price_coins) || price_coins <= 0 || price_coins > MAX_PRICE) {
+    res.status(400).json({ error: `price_coins must be between 1 and ${MAX_PRICE}` });
+    return;
+  }
+  if (!Array.isArray(ids) || ids.length === 0 || !ids.every(id => typeof id === 'string')) {
+    res.status(400).json({ error: 'ids must be a non-empty array of strings' });
+    return;
+  }
+  const uniqueIds = [...new Set(ids as string[])];
+  if (uniqueIds.length > MAX_BULK_LIST) {
+    res.status(400).json({ error: `Cannot list more than ${MAX_BULK_LIST} Pokémon at once` });
+    return;
+  }
+
+  let listed: number;
+  try {
+    listed = await prisma.$transaction(async tx => {
+      const owned = await tx.userPokemon.findMany({
+        where: { id: { in: uniqueIds }, user_id: userId },
+      });
+      // Every id must resolve to a Pokémon the caller currently owns.
+      if (owned.length !== uniqueIds.length) {
+        throw Object.assign(new Error('Un ou plusieurs Pokémon ne vous appartiennent pas ou n\'existent plus'), { status: 403 });
+      }
+
+      // The favorite Pokémon can never be sold - a market listing is a sale.
+      const seller = await tx.user.findUnique({ where: { id: userId }, select: { favorite_pokemon_id: true } });
+      if (seller?.favorite_pokemon_id && uniqueIds.includes(seller.favorite_pokemon_id)) {
+        throw Object.assign(new Error('Impossible de vendre votre Pokémon favori'), { status: 400 });
+      }
+
+      // Locked Pokémon (tradeable_at in the future) cannot be listed yet.
+      const now = new Date();
+      if (owned.some(up => up.tradeable_at && up.tradeable_at > now)) {
+        throw Object.assign(new Error('Un Pokémon n\'est pas encore échangeable'), { status: 400 });
+      }
+
+      // Refuse if any Pokémon is tied to a pending trade (TradeItem covers
+      // multi-Pokémon trades the legacy from/to columns would miss).
+      const pendingTradeItem = await tx.tradeItem.findFirst({
+        where: { pokemon_id: { in: uniqueIds }, trade: { status: 'pending' } },
+      });
+      if (pendingTradeItem) {
+        throw Object.assign(new Error('Un Pokémon est engagé dans un échange en attente'), { status: 400 });
+      }
+
+      // Refuse if any Pokémon already has an active listing.
+      const alreadyListed = await tx.marketListing.findFirst({
+        where: { pokemon_id: { in: uniqueIds }, status: 'active' },
+      });
+      if (alreadyListed) {
+        throw Object.assign(new Error('Un Pokémon est déjà en vente sur le marché'), { status: 409 });
+      }
+
+      const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      const result = await tx.marketListing.createMany({
+        data: uniqueIds.map(pokemonId => ({
+          seller_id: userId,
+          pokemon_id: pokemonId,
+          price_coins,
+          status: 'active',
+          expires_at: expiresAt,
+        })),
+      });
+      return result.count;
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+  } catch (err) {
+    const e = err as { status?: number; code?: string; message?: string };
+    if (e.status === 400) { res.status(400).json({ error: e.message }); return; }
+    if (e.status === 403) { res.status(403).json({ error: e.message }); return; }
+    if (e.status === 409) { res.status(409).json({ error: e.message }); return; }
+    // P2034 = serialization failure from a concurrent write - caller can retry.
+    if (e.code === 'P2034') { res.status(429).json({ error: 'Too many requests, please slow down.' }); return; }
+    throw err;
+  }
+
+  res.status(201).json({ listed });
+});
+
 router.post('/list', authMiddleware, async (req: Request, res: Response): Promise<void> => {
   const userId = req.user!.userId;
   const { userPokemonId, price_coins } = req.body as {
@@ -56,7 +161,6 @@ router.post('/list', authMiddleware, async (req: Request, res: Response): Promis
   // M3 - Cap price to prevent griefing: a user could list a pokemon at INT_MAX
   // to effectively remove it from the market forever (no one can afford it).
   // 1 000 000 coins is well above any achievable balance in normal play.
-  const MAX_PRICE = 1_000_000;
   if (!userPokemonId || typeof price_coins !== 'number' || price_coins <= 0 || price_coins > MAX_PRICE) {
     res.status(400).json({ error: `userPokemonId and price_coins (1–${MAX_PRICE}) are required` });
     return;

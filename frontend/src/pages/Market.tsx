@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { getMarketListings, createListing, buyListing, cancelListing } from '../api/marketApi';
+import { getMarketListings, createListingsBulk, buyListing, cancelListing } from '../api/marketApi';
 import { getMyPokedex } from '../api/pokemonApi';
 import { useUserCtx } from '../context/UserContext';
 import type { MarketListing, UserPokemonInstance } from '../api/types';
@@ -51,9 +51,10 @@ export default function Market() {
   const [filterShiny, setFilterShiny] = useState(false);
   const [sortBy, setSortBy] = useState<SortKey>('recent');
 
-  // Sell form state
-  const [selectedPokemon, setSelectedPokemon] = useState<UserPokemonInstance | null>(null);
-  const [price, setPrice] = useState('');
+  // Sell tab multi-select (bulk listing at a single shared price)
+  const [sellSelectedIds, setSellSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkPrice, setBulkPrice] = useState('');
+  const [bulkListing, setBulkListing] = useState(false);
 
   const userId = profile?.id ?? null;
 
@@ -113,21 +114,35 @@ export default function Market() {
     }
   }
 
-  async function handleCreateListing(e: React.FormEvent) {
-    e.preventDefault();
-    if (!selectedPokemon || !price) return;
-    setActionLoading('create');
+  function toggleSellSelect(instanceId: string) {
+    setSellSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(instanceId)) next.delete(instanceId);
+      else next.add(instanceId);
+      return next;
+    });
+  }
+
+  async function handleBulkList() {
+    const ids = [...sellSelectedIds];
+    const priceNum = Number(bulkPrice);
+    if (ids.length === 0 || !priceNum || priceNum <= 0 || bulkListing) return;
+    if (ids.length > 5 &&
+        !window.confirm(`Mettre en vente ${ids.length} Pokémon à ${priceNum.toLocaleString()} coins chacun ?`)) {
+      return;
+    }
+    setBulkListing(true);
     try {
-      await createListing(selectedPokemon.instanceId, Number(price));
+      const res = await createListingsBulk(ids, priceNum);
       await refresh();
-      setSelectedPokemon(null);
-      setPrice('');
+      setSellSelectedIds(new Set());
+      setBulkPrice('');
       setTab('mine');
-      showToast('Annonce créée !', 'success');
+      showToast(`${res.listed} Pokémon mis en vente !`, 'success');
     } catch (e) {
-      showToast((e as Error).message ?? 'Erreur lors de la création', 'error');
+      showToast((e as Error).message ?? 'Erreur lors de la mise en vente', 'error');
     } finally {
-      setActionLoading(null);
+      setBulkListing(false);
     }
   }
 
@@ -172,6 +187,57 @@ export default function Market() {
     return [...types].sort();
   }, [activeListings]);
 
+  // Pokemon available for sale: exclude those already listed and those still
+  // locked (tradeable_at in the future) - the backend rejects listing a locked
+  // Pokémon anyway (400), so don't even offer them here.
+  const sellablePokemons = useMemo(() => {
+    const listedInstanceIds = new Set(
+      listings
+        .filter(l => l.status === 'active' && l.seller_id === userId)
+        .map(l => l.userPokemon?.instanceId)
+        .filter(Boolean)
+    );
+    const now = Date.now();
+    return myPokemons.filter(p =>
+      !listedInstanceIds.has(p.instanceId) &&
+      !(p.tradeable_at && new Date(p.tradeable_at).getTime() > now)
+    );
+  }, [myPokemons, listings, userId]);
+
+  // Type chips for the sell tab reflect the user's own Pokémon, not the market.
+  const sellableTypes = useMemo(() => {
+    const types = new Set<string>();
+    sellablePokemons.forEach(p => p.types.forEach(t => types.add(t)));
+    return [...types].sort();
+  }, [sellablePokemons]);
+
+  // Same filters/sort as the buy & mine tabs, applied to the user's own Pokémon.
+  const filteredSellable = useMemo(() => {
+    const filtered = sellablePokemons.filter(p => {
+      if (search && !p.name.toLowerCase().includes(search.toLowerCase())) return false;
+      if (filterGen !== null && p.generation !== filterGen) return false;
+      if (filterRarity !== null && p.rarity !== filterRarity) return false;
+      if (filterType !== null && !p.types.includes(filterType)) return false;
+      if (filterShiny && !p.is_shiny) return false;
+      return true;
+    });
+    return [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'price_asc':  return getSellPrice(a) - getSellPrice(b);
+        case 'price_desc': return getSellPrice(b) - getSellPrice(a);
+        case 'number':     return a.id - b.id;
+        case 'recent':     return new Date(b.obtainedAt).getTime() - new Date(a.obtainedAt).getTime();
+        default:           return 0;
+      }
+    });
+  }, [sellablePokemons, search, filterGen, filterRarity, filterType, filterShiny, sortBy]);
+
+  // Selectable for "select all": filtered sellable minus the favorite (never sold).
+  const selectableSellIds = useMemo(
+    () => filteredSellable.filter(p => p.instanceId !== profile?.favorite_pokemon_id).map(p => p.instanceId),
+    [filteredSellable, profile?.favorite_pokemon_id]
+  );
+
   if (loading) {
     return (
       <div className="loading-screen">
@@ -184,21 +250,6 @@ export default function Market() {
   if (error) {
     return <div className="error-banner">Erreur : {error}</div>;
   }
-
-  // Pokemon available for sale: exclude those already listed and those still
-  // locked (tradeable_at in the future) - the backend rejects listing a locked
-  // Pokémon anyway (400), so don't even offer them here.
-  const listedInstanceIds = new Set(
-    listings
-      .filter(l => l.status === 'active' && l.seller_id === userId)
-      .map(l => l.userPokemon?.instanceId)
-      .filter(Boolean)
-  );
-  const now = Date.now();
-  const sellablePokemons = myPokemons.filter(p =>
-    !listedInstanceIds.has(p.instanceId) &&
-    !(p.tradeable_at && new Date(p.tradeable_at).getTime() > now)
-  );
 
   return (
     <div className="market-page">
@@ -236,10 +287,10 @@ export default function Market() {
         </button>
       </div>
 
-      {/* ── Filters (buy + mine tabs) ── */}
+      {/* ── Filters (all tabs) ── */}
       {/* Wrapped in .pokedex-page so the larger Pokédex filter styling
           (.pokedex-page .filter-chip etc.) applies here too. */}
-      {(tab === 'buy' || tab === 'mine') && (
+      {(
         <div className="pokedex-page">
         <div className="pokedex-filters">
           <div className="market-filters-top">
@@ -293,7 +344,7 @@ export default function Market() {
           <div className="filter-row">
             <div className="filter-label">Type</div>
             <div className="filter-group filter-types">
-              {allTypes.map(t => (
+              {(tab === 'sell' ? sellableTypes : allTypes).map(t => (
                 <button
                   key={t}
                   className={`filter-chip type-chip${filterType === t ? ' active' : ''}`}
@@ -446,22 +497,40 @@ export default function Market() {
       {tab === 'sell' && (
         <div className="market-section market-sell-section">
           <div className="market-sell-header">
-            <span className="market-sell-label">Sélectionnez un Pokémon à vendre</span>
-            <span className="market-sell-count">{sellablePokemons.length} disponibles</span>
+            <span className="market-sell-label">Sélectionnez les Pokémon à vendre</span>
+            <div className="market-sell-tools">
+              <span className="market-sell-count">{filteredSellable.length} affichés</span>
+              <button
+                type="button"
+                className="filter-chip"
+                onClick={() => setSellSelectedIds(new Set(selectableSellIds))}
+                disabled={selectableSellIds.length === 0}
+              >
+                Tout sélectionner ({selectableSellIds.length})
+              </button>
+              {sellSelectedIds.size > 0 && (
+                <button
+                  type="button"
+                  className="filter-chip"
+                  onClick={() => setSellSelectedIds(new Set())}
+                >
+                  Désélectionner
+                </button>
+              )}
+            </div>
           </div>
 
-          {sellablePokemons.length === 0 ? (
-            <div className="market-empty">Aucun Pokémon disponible à la vente.</div>
+          {filteredSellable.length === 0 ? (
+            <div className="market-empty">Aucun Pokémon ne correspond à ces filtres.</div>
           ) : (
             <div className="market-sell-grid">
-              {sellablePokemons.map(p => {
-                const isSelected = selectedPokemon?.instanceId === p.instanceId;
+              {filteredSellable.map(p => {
+                const isSelected = sellSelectedIds.has(p.instanceId);
                 const isFavorite = p.instanceId === profile?.favorite_pokemon_id;
                 const marketPrice = getSellPrice(p);
                 const toggle = () => {
                   if (isFavorite) return;
-                  setSelectedPokemon(isSelected ? null : p);
-                  setPrice(String(marketPrice));
+                  toggleSellSelect(p.instanceId);
                 };
                 return (
                   <div
@@ -501,57 +570,33 @@ export default function Market() {
             </div>
           )}
 
-          {selectedPokemon && (
-            <form className="market-sell-form" onSubmit={handleCreateListing}>
-              <div className="market-sell-form-selected">
-                <img
-                  src={selectedPokemon.sprite_url}
-                  alt={selectedPokemon.name}
-                  className="market-sell-form-sprite"
-                />
-                <div className="market-sell-form-info">
-                  <span className="market-sell-form-name">{selectedPokemon.name}</span>
-                  <RarityBadge rarity={selectedPokemon.rarity} size="sm" />
-                </div>
-              </div>
-
-              <div className="market-sell-form-row">
-                <label className="market-sell-form-label" htmlFor="sell-price">
-                  Prix (coins)
-                </label>
-                <input
-                  id="sell-price"
-                  type="number"
-                  min={1}
-                  value={price}
-                  onChange={e => setPrice(e.target.value)}
-                  className="market-price-input"
-                  placeholder="Ex: 150"
-                  required
-                />
-              </div>
-
-              <div className="market-sell-form-actions">
-                <button
-                  type="button"
-                  className="btn btn-ghost"
-                  onClick={() => { setSelectedPokemon(null); setPrice(''); }}
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="btn btn-primary"
-                  disabled={!price || Number(price) <= 0 || actionLoading === 'create'}
-                >
-                  {actionLoading === 'create' ? (
-                    <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
-                  ) : (
-                    'Mettre en vente'
-                  )}
-                </button>
-              </div>
-            </form>
+          {sellSelectedIds.size > 0 && (
+            <div className="market-sell-bulk-bar">
+              <span className="market-sell-bulk-count">
+                {sellSelectedIds.size} sélectionné{sellSelectedIds.size > 1 ? 's' : ''}
+              </span>
+              <input
+                type="number"
+                min={1}
+                value={bulkPrice}
+                onChange={e => setBulkPrice(e.target.value)}
+                className="market-price-input"
+                placeholder="Prix unique (coins)"
+                aria-label="Prix unique pour tous les Pokémon sélectionnés"
+              />
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleBulkList}
+                disabled={!bulkPrice || Number(bulkPrice) <= 0 || bulkListing}
+              >
+                {bulkListing ? (
+                  <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} />
+                ) : (
+                  `Mettre en vente (${sellSelectedIds.size})`
+                )}
+              </button>
+            </div>
           )}
         </div>
       )}

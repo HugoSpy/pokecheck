@@ -12,6 +12,13 @@ export async function createListing(userPokemonId: string, price_coins: number):
   });
 }
 
+export async function createListingsBulk(ids: string[], price_coins: number): Promise<{ listed: number }> {
+  return apiFetch<{ listed: number }>('/market/list/bulk', {
+    method: 'POST',
+    body: JSON.stringify({ ids, price_coins }),
+  });
+}
+
 export async function buyListing(listingId: string): Promise<{ success: boolean; coins_remaining: number; new_badges: string[] }> {
   return apiFetch<{ success: boolean; coins_remaining: number; new_badges: string[] }>(`/market/buy/${listingId}`, {
     method: 'POST',
