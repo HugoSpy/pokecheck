@@ -57,18 +57,18 @@ export default function PokemonStackModal({ instances, onClose, onSell }: Props)
     : undefined;
 
   return (
-    <div className="psm-backdrop" onClick={onClose}>
-      <div className="psm-panel" onClick={e => e.stopPropagation()}>
-        <button className="psm-close" onClick={onClose} aria-label="Fermer">✕</button>
+    <div className="pstk-backdrop" onClick={onClose}>
+      <div className="pstk-panel" onClick={e => e.stopPropagation()}>
+        <button className="pstk-close" onClick={onClose} aria-label="Fermer">✕</button>
 
-        <div className="psm-header">
-          <h2 className="psm-title">{rep.name}</h2>
-          <div className="psm-rarity-row">
+        <div className="pstk-header">
+          <h2 className="pstk-title">{rep.name}</h2>
+          <div className="pstk-rarity-row">
             <RarityBadge rarity={rep.rarity} size="md" />
-            <span className="psm-count">×{total}</span>
+            <span className="pstk-count">×{total}</span>
           </div>
           {total > MAX_SHOWN && (
-            <div className="psm-sample-note">
+            <div className="pstk-sample-note">
               {MAX_SHOWN} exemplaires affichés au hasard sur {total}
             </div>
           )}
@@ -76,7 +76,7 @@ export default function PokemonStackModal({ instances, onClose, onSell }: Props)
 
         {/* Each copy is a full detail panel, identical to the standalone modal,
             just repeated and laid out in a responsive 2-3 column grid. */}
-        <div className="psm-grid">
+        <div className="pstk-grid">
           {shown.map(p => (
             <PokemonDetailCard key={p.instanceId} pokemon={p} onSell={handleSell} />
           ))}

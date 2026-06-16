@@ -1,4 +1,4 @@
-.psm-backdrop {
+.pstk-backdrop {
   position: fixed;
   inset: 0;
   z-index: 1000;
@@ -9,7 +9,7 @@
   padding: 16px;
 }
 
-.psm-panel {
+.pstk-panel {
   position: relative;
   background: #0b0b12;
   border: 1px solid var(--border);
@@ -28,7 +28,7 @@
   to   { opacity: 1; transform: scale(1)    translateY(0);    }
 }
 
-.psm-close {
+.pstk-close {
   position: absolute;
   top: 12px;
   right: 12px;
@@ -46,12 +46,12 @@
   transition: background 150ms, color 150ms;
   z-index: 2;
 }
-.psm-close:hover {
+.pstk-close:hover {
   background: rgba(255, 255, 255, 0.14);
   color: #fff;
 }
 
-.psm-header {
+.pstk-header {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -59,7 +59,7 @@
   margin-bottom: 20px;
 }
 
-.psm-title {
+.pstk-title {
   font-family: var(--font-condensed, 'Barlow Condensed', sans-serif);
   font-size: 26px;
   font-weight: 700;
@@ -69,13 +69,13 @@
   margin: 0;
 }
 
-.psm-rarity-row {
+.pstk-rarity-row {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.psm-count {
+.pstk-count {
   font-family: var(--font-condensed);
   font-size: 18px;
   font-weight: 700;
@@ -83,7 +83,7 @@
   letter-spacing: 0.04em;
 }
 
-.psm-sample-note {
+.pstk-sample-note {
   font-size: 12px;
   color: var(--text-muted);
 }
@@ -91,7 +91,7 @@
 /* Responsive 2-3 columns of full detail panels. Each panel is the standard
    detail-modal panel reused as-is; here we just let it fill its grid cell
    instead of capping at the 340px standalone width. */
-.psm-grid {
+.pstk-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 16px;
@@ -99,28 +99,28 @@
   justify-items: center;
 }
 
-.psm-grid .pdm-panel {
+.pstk-grid .pdm-panel {
   max-width: 360px;
   width: 100%;
   margin: 0;
 }
 
 @media (max-width: 480px) {
-  .psm-backdrop {
+  .pstk-backdrop {
     padding: 0;
     align-items: flex-end;
   }
-  .psm-panel {
+  .pstk-panel {
     max-width: 100%;
     max-height: 92vh;
     border-radius: 20px 20px 0 0;
     padding-bottom: max(24px, env(safe-area-inset-bottom, 24px));
   }
-  .psm-close {
+  .pstk-close {
     width: 44px;
     height: 44px;
   }
-  .psm-grid {
+  .pstk-grid {
     grid-template-columns: 1fr;
   }
 }
