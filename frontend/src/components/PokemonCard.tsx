@@ -12,8 +12,12 @@ interface Props {
   onSelect?: (pokemon: UserPokemonInstance) => void;
   onSell?: (instanceId: string) => Promise<void>;
   /** When this card stands for a group of identical copies, the group size
-   *  (renders a ×N badge). Used by the Pokédex "doublons" filter. */
+   *  (renders a ×N badge). Used by the Pokédex "doublons" filter and the
+   *  "stacker les doublons" toggle. */
   duplicateCount?: number;
+  /** When set (and not in select mode), clicking the card calls this instead of
+   *  opening the built-in detail modal. Used to open the stacked-copies modal. */
+  onCardClick?: (pokemon: UserPokemonInstance) => void;
 }
 
 const RARITY_COLOR: Record<string, string> = {
@@ -25,9 +29,17 @@ const RARITY_COLOR: Record<string, string> = {
 
 const SHINY_GOLD = '#d4af37';
 
-export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect, onSell, duplicateCount }: Props) {
+export default function PokemonCard({ pokemon, selected = false, selectable = false, onSelect, onSell, duplicateCount, onCardClick }: Props) {
   const [imgError,    setImgError]    = useState(false);
   const [showDetail,  setShowDetail]  = useState(false);
+
+  // Click priority: select mode (bulk-sell) > custom handler (stacked group) >
+  // built-in detail modal.
+  const handleActivate = () => {
+    if (selectable) onSelect?.(pokemon);
+    else if (onCardClick) onCardClick(pokemon);
+    else setShowDetail(true);
+  };
   const accentColor = RARITY_COLOR[pokemon.rarity] ?? '#9ca3af';
   const isLocked = pokemon.tradeable_at && new Date(pokemon.tradeable_at) > new Date();
   const isShiny = pokemon.is_shiny ?? false;
@@ -46,11 +58,11 @@ export default function PokemonCard({ pokemon, selected = false, selectable = fa
       <PokemonDetailModal pokemon={pokemon} onClose={() => setShowDetail(false)} onSell={onSell} />
     )}
     <div
-      onClick={() => selectable ? onSelect?.(pokemon) : setShowDetail(true)}
+      onClick={handleActivate}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
-          selectable ? onSelect?.(pokemon) : setShowDetail(true);
+          handleActivate();
         }
       }}
       role="button"

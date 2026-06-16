@@ -5,6 +5,7 @@ import { useUserCtx } from '../context/UserContext';
 import type { UserInfo, UserPokemonInstance } from '../api/types';
 import { getSellPrice } from '../api/types';
 import PokemonCard from '../components/PokemonCard';
+import PokemonStackModal from '../components/PokemonStackModal';
 import Toast from '../components/Toast';
 import { Search } from '../components/icons';
 import { TYPE_FR, RARITY_FR, RARITIES, TYPE_COLORS } from '../utils/pokemon';
@@ -16,6 +17,19 @@ import './Pokedex.css';
 const BULK_SELL_CHUNK = 50; // backend caps each /sell/bulk call at 50 ids
 
 const GENERATIONS = [1, 2, 3, 4, 5, 6, 7];
+
+// Persisted preference: collapse identical copies into one card (×N badge).
+const STACK_KEY = 'pokecheck_pokedex_stack_duplicates';
+
+// Copies stack by species + shiny: a shiny and a non-shiny of the same Pokémon
+// stay distinct (consistent with scoring, which counts one per species+shiny).
+const stackKey = (p: UserPokemonInstance) => `${p.id}-${p.is_shiny ? 's' : 'n'}`;
+
+interface StackGroup {
+  key: string;
+  rep: UserPokemonInstance;
+  instances: UserPokemonInstance[];
+}
 
 export default function Pokedex() {
   const [user, setUser] = useState<UserInfo | null>(null);
@@ -85,6 +99,17 @@ export default function Pokedex() {
   const [filterType, setFilterType] = useState<string | null>(null);
   const [filterShiny, setFilterShiny] = useState(false);
   const [search, setSearch] = useState('');
+
+  // "Stacker les doublons" toggle - persisted in localStorage, restored on mount.
+  const [stackDuplicates, setStackDuplicates] = useState<boolean>(() => {
+    try { return localStorage.getItem(STACK_KEY) === 'true'; } catch { return false; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem(STACK_KEY, String(stackDuplicates)); } catch { /* ignore */ }
+  }, [stackDuplicates]);
+
+  // Open stacked-copies modal: the species+shiny key whose copies are shown.
+  const [stackModalKey, setStackModalKey] = useState<string | null>(null);
 
   useEffect(() => {
     getMyPokedex()
@@ -211,6 +236,25 @@ export default function Pokedex() {
       return true;
     }),
   [pokemons, filterDuplicates, duplicateReps, filterGen, filterRarity, filterType, filterShiny, search]);
+
+  // Stacking runs AFTER the filters: we group the already-filtered list by
+  // species+shiny, keeping first-encountered order so the grid stays stable. The
+  // first copy of each group is the displayed representative.
+  const stackedGroups = useMemo<StackGroup[]>(() => {
+    if (!stackDuplicates) return [];
+    const map = new Map<string, StackGroup>();
+    for (const p of filtered) {
+      const key = stackKey(p);
+      const g = map.get(key);
+      if (g) g.instances.push(p);
+      else map.set(key, { key, rep: p, instances: [p] });
+    }
+    return [...map.values()];
+  }, [stackDuplicates, filtered]);
+
+  const stackModalInstances = useMemo(
+    () => stackModalKey ? stackedGroups.find(g => g.key === stackModalKey)?.instances ?? null : null,
+    [stackModalKey, stackedGroups]);
 
   const legendaryCount = pokemons.filter(p => p.rarity === 'LEGENDARY').length;
   const shinyCount = pokemons.filter(p => p.is_shiny).length;
@@ -350,6 +394,15 @@ export default function Pokedex() {
             >
               Doublons ({duplicateSpeciesCount})
             </button>
+            <button
+              className={`filter-chip${stackDuplicates ? ' active' : ''}`}
+              onClick={() => setStackDuplicates(!stackDuplicates)}
+              role="switch"
+              aria-checked={stackDuplicates}
+              title="Regrouper les exemplaires identiques en une seule carte"
+            >
+              🗂 Stacker les doublons
+            </button>
           </div>
         </div>
 
@@ -377,7 +430,11 @@ export default function Pokedex() {
 
       {/* Count + selection toolbar */}
       <div className="pokedex-count">
-        <span>{filtered.length} résultat{filtered.length !== 1 ? 's' : ''}</span>
+        <span>
+          {stackDuplicates
+            ? `${stackedGroups.length} carte${stackedGroups.length !== 1 ? 's' : ''} (${filtered.length} exemplaire${filtered.length !== 1 ? 's' : ''})`
+            : `${filtered.length} résultat${filtered.length !== 1 ? 's' : ''}`}
+        </span>
         <div className="pokedex-select-tools">
           {!selectMode ? (
             <button className="filter-chip" onClick={() => setSelectMode(true)}>
@@ -403,6 +460,23 @@ export default function Pokedex() {
         <div className="pokedex-empty">
           <div style={{ marginBottom: 12 }}><Search size={40} /></div>
           Aucun Pokémon ne correspond à ces filtres.
+        </div>
+      ) : stackDuplicates ? (
+        <div className="pokedex-grid">
+          {stackedGroups.map(g => (
+            <PokemonCard
+              key={g.key}
+              pokemon={g.rep}
+              selectable={selectMode}
+              selected={selectedIds.has(g.rep.instanceId)}
+              onSelect={toggleSelect}
+              onSell={handleSell}
+              duplicateCount={g.instances.length}
+              // Stacked cards (×N) open the copies modal; singletons fall back to
+              // the normal detail modal handled inside PokemonCard.
+              onCardClick={g.instances.length > 1 ? () => setStackModalKey(g.key) : undefined}
+            />
+          ))}
         </div>
       ) : (
         <div className="pokedex-grid">
@@ -434,6 +508,14 @@ export default function Pokedex() {
             {bulkSelling ? 'Vente…' : `Vendre tout (${selectedTotal.toLocaleString()} coins)`}
           </button>
         </div>
+      )}
+
+      {stackModalInstances && (
+        <PokemonStackModal
+          instances={stackModalInstances}
+          onClose={() => setStackModalKey(null)}
+          onSell={handleSell}
+        />
       )}
 
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
