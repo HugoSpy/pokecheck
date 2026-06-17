@@ -130,7 +130,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
       id: true, display_name: true, nickname: true, total_score: true,
       trade_count: true, featured_badges: true, trainer_gender: true, trainer_avatar: true,
       favorite_pokemon: {
-        include: { pokemon: { select: { id: true, name: true, sprite_url: true } } },
+        include: { pokemon: { select: { id: true, name: true, sprite_url: true, height_m: true } } },
       },
     },
   });
@@ -210,6 +210,7 @@ router.get('/:userId', async (req: Request, res: Response): Promise<void> => {
         pokemon: {
           id: user.favorite_pokemon.pokemon.id,
           name: user.favorite_pokemon.pokemon.name,
+          height_m: user.favorite_pokemon.pokemon.height_m,
           sprite_url: user.favorite_pokemon.is_shiny
             ? user.favorite_pokemon.pokemon.sprite_url.replace('/normal/', '/shiny/')
             : user.favorite_pokemon.pokemon.sprite_url,

@@ -15,8 +15,24 @@ function animatedGifUrl(fav: FavoritePokemonInfo): string {
     : `https://projectpokemon.org/images/normal-sprite/${slug}.gif`;
 }
 
+// Average trainer height in metres - the reference the companion is scaled
+// against so a Pokémon looks proportionally sized next to the human sprite.
+const HUMAN_REF_M = 1.7;
+// Base on-screen height (px) of the companion at scale 1 (a ~1.7m Pokémon).
+const FAV_BASE_H = 132;
+// Clamp so a tiny Pokémon (Caterpie 0.3m) stays visible and a giant one
+// (Wailord 14.5m, Onix 8.8m) never completely buries the trainer.
+const FAV_MIN_SCALE = 0.45;
+const FAV_MAX_SCALE = 1.9;
+
+function favoriteScale(heightM?: number | null): number {
+  if (!heightM || heightM <= 0) return 1;
+  return Math.min(FAV_MAX_SCALE, Math.max(FAV_MIN_SCALE, heightM / HUMAN_REF_M));
+}
+
 // Trainer avatar + favorite Pokémon companion, shown on the public profile.
-// The companion sits slightly behind and beside the trainer.
+// The companion stands beside the trainer on the same ground line, scaled to
+// its real-world size relative to a human.
 function TrainerDisplay({ user }: { user: UserInfo }) {
   const fav = user.favorite_pokemon;
   const [gifError, setGifError] = useState(false);
@@ -30,6 +46,11 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
       : null);
   if (!avatarSrc) return null;
 
+  const scale = fav ? favoriteScale(fav.pokemon.height_m) : 1;
+  // Reserve horizontal room so the (absolutely positioned) companion isn't
+  // clipped; widens with scale for large Pokémon.
+  const spacerWidth = Math.round(Math.max(150, FAV_BASE_H * scale * 0.95));
+
   return (
     <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'flex-end', marginBottom: 10, minHeight: 192 }}>
       {fav && (
@@ -40,9 +61,13 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
           onError={() => setGifError(true)}
           style={{
             position: 'absolute',
-            left: 104,
-            bottom: 8,
-            height: 128,
+            // Peeks out from behind the trainer's right side, feet on the
+            // same ground line (transform-origin anchors growth upward/right).
+            left: 116,
+            bottom: 0,
+            height: FAV_BASE_H,
+            transform: `scale(${scale})`,
+            transformOrigin: 'left bottom',
             imageRendering: 'pixelated',
             zIndex: 0,
             opacity: 0.95,
@@ -58,7 +83,7 @@ function TrainerDisplay({ user }: { user: UserInfo }) {
         style={{ position: 'relative', height: 192, imageRendering: 'pixelated', zIndex: 1 }}
       />
       {/* Spacer so the companion isn't clipped by the inline-flex box */}
-      {fav && <div style={{ width: 160 }} />}
+      {fav && <div style={{ width: spacerWidth }} />}
     </div>
   );
 }

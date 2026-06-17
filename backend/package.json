@@ -11,6 +11,7 @@
     "seed:events": "ts-node --transpile-only src/prisma/seedEvents.ts",
     "seed:badges": "ts-node --transpile-only src/prisma/seedBadges.ts",
     "seed:test-accounts": "ts-node --transpile-only src/prisma/seed-test-accounts.ts",
+    "backfill:height": "ts-node --transpile-only src/prisma/backfillHeight.ts",
     "simulate:drops": "ts-node src/scripts/simulateDrops.ts",
     "pokedex:recalculate": "ts-node --transpile-only src/prisma/recalculate-pokedex-values.ts",
     "prisma:generate": "prisma generate",

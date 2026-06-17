@@ -67,6 +67,7 @@ model Pokemon {
   bst        Int
   sprite_url String
   types      String[]
+  height_m   Float?
 
   owned_by UserPokemon[]
 }
