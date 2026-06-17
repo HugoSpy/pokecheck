@@ -29,7 +29,7 @@ export interface UserPokemonInstance extends PokemonInfo {
 export interface FavoritePokemonInfo {
   instanceId: string;
   is_shiny: boolean;
-  pokemon: { id: number; name: string; sprite_url: string };
+  pokemon: { id: number; name: string; sprite_url: string; height_m?: number | null };
 }
 
 export interface UserInfo {
