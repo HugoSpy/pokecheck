@@ -506,10 +506,10 @@ export default function Profile() {
 
           {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
             <Link to="/events/pack?shiny=1" className="btn btn-primary">
-              Ouvrir le pack Shiny ✨
+              Ouvrir le pack Canicule 🔥
             </Link>
           ) : (
-            <span className="claim-done">Pack Shiny - Disponible à 00h00</span>
+            <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
           )}
         </div>
       </section>

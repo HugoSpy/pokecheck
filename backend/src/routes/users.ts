@@ -267,8 +267,10 @@ router.get('/me', authMiddleware, async (req: Request, res: Response): Promise<v
   res.json({ ...rest, display_name: nickname ?? rest.display_name });
 });
 
-// ── Free daily Shiny pack (reset at Paris midnight) ──────────────────────────
-const SHINY_EVENT_NAME = 'Shiny Surge';
+// ── Free daily pack (reset at Paris midnight) ────────────────────────────────
+// Currently the "Canicule" event (Fire-type pool). Shiny Surge remains a normal
+// paid event via /event/draw.
+const SHINY_EVENT_NAME = 'Canicule';
 
 // The DB stores timestamps in UTC. The pack resets at midnight Paris time, and
 // Paris is UTC+2 in summer (CEST), so midnight Paris == 22:00 UTC. The last reset

@@ -113,7 +113,7 @@ export default function EventPackOpen() {
       setPhase('rolling');
     } catch (err) {
       const e = err as Error & { status?: number };
-      if (e.status === 429) setError('Pack Shiny déjà récupéré aujourd\'hui.');
+      if (e.status === 429) setError('Pack Canicule déjà récupéré aujourd\'hui.');
       else setError(e.status === 402 ? 'Coins insuffisants.' : (err as Error).message);
       setPhase('idle');
     }
