@@ -8,6 +8,7 @@ import { TRAINER_AVATAR_MAP, TRAINER_AVATAR_IDS, badgeIconSrc } from '../config/
 import Toast from '../components/Toast';
 import BadgeDetailModal from '../components/BadgeDetailModal';
 import FavoritePokemonModal from '../components/FavoritePokemonModal';
+import BoosterPack3D from '../components/BoosterPack3D';
 import { Coins, Lock } from '../components/icons';
 import './Profile.css';
 
@@ -504,13 +505,17 @@ export default function Profile() {
             </button>
           )}
 
-          {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
-            <Link to="/events/pack?shiny=1" className="btn btn-primary">
-              Ouvrir le pack Canicule 🔥
-            </Link>
-          ) : (
-            <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
-          )}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {/* Mini booster 3D (idle float + hover tilt) à côté du claim. */}
+            <BoosterPack3D textureUrl="/texture_pack_canicule.png" width={56} height={84} />
+            {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
+              <Link to="/events/pack?shiny=1" className="btn btn-primary">
+                Ouvrir le pack Canicule
+              </Link>
+            ) : (
+              <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
+            )}
+          </div>
         </div>
       </section>
 
