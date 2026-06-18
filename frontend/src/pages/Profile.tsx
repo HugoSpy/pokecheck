@@ -505,20 +505,20 @@ export default function Profile() {
             </button>
           )}
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
-              <Link to="/events/pack?shiny=1" className="btn btn-primary">
-                Ouvrir le pack Canicule
-              </Link>
-            ) : (
-              <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
-            )}
-            {/* Booster 3D rendu en pleine résolution (300x450) puis réduit en CSS
-                pour rester net. Idle float + hover tilt conservés. */}
-            <div style={{ width: 112, height: 168, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <div style={{ transform: 'scale(0.3733)', transformOrigin: 'center', lineHeight: 0 }}>
-                <BoosterPack3D textureUrl="/texture_pack_canicule.png" />
-              </div>
+          {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
+            <Link to="/events/pack?shiny=1" className="btn btn-primary">
+              Ouvrir le pack Canicule
+            </Link>
+          ) : (
+            <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
+          )}
+
+          {/* Booster 3D rendu en pleine résolution (300x450) puis réduit en CSS
+              pour rester net. Poussé à droite, aligné sur la même ligne que les
+              boutons. Idle float + hover tilt conservés. */}
+          <div style={{ marginLeft: 'auto', width: 224, height: 336, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <div style={{ transform: 'scale(0.7467)', transformOrigin: 'center', lineHeight: 0 }}>
+              <BoosterPack3D textureUrl="/texture_pack_canicule.png" />
             </div>
           </div>
         </div>
