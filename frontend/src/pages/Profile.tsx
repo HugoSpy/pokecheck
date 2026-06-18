@@ -484,42 +484,44 @@ export default function Profile() {
           <Coins size={18} /> Solde &amp; Streak
         </h2>
 
-        <div className="coins-display">{profile.coins.toLocaleString('fr-FR')} <span className="coins-unit">coins</span></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="coins-display">{profile.coins.toLocaleString('fr-FR')} <span className="coins-unit">coins</span></div>
 
-        <div className="profile-meta">
-          <span className="streak-display">🔥 {profile.streak_days} jour{profile.streak_days !== 1 ? 's' : ''} de streak</span>
-          <span>Dernière connexion&nbsp;: {formatDate(profile.last_login)}</span>
-        </div>
-
-        <div className="profile-claim-row">
-          {claimResult?.already_claimed ? (
-            <span className="claim-done">Déjà récupéré aujourd'hui ✓</span>
-          ) : (
-            <button
-              className="btn btn-primary"
-              onClick={handleClaim}
-              disabled={!!claimResult?.already_claimed || claimLoading}
-            >
-              {claimLoading ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
-              Récupérer mes coins du jour
-            </button>
-          )}
-
-          {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
-            <Link to="/events/pack?shiny=1" className="btn btn-primary">
-              Ouvrir le pack Canicule
-            </Link>
-          ) : (
-            <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
-          )}
-
-          {/* Booster 3D rendu en pleine résolution (300x450) puis réduit en CSS
-              pour rester net. Poussé à droite, aligné sur la même ligne que les
-              boutons. Idle float + hover tilt conservés. */}
-          <div style={{ marginLeft: 'auto', width: 224, height: 336, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <div style={{ transform: 'scale(0.7467)', transformOrigin: 'center', lineHeight: 0 }}>
-              <BoosterPack3D textureUrl="/texture_pack_canicule.png" />
+            <div className="profile-meta">
+              <span className="streak-display">🔥 {profile.streak_days} jour{profile.streak_days !== 1 ? 's' : ''} de streak</span>
+              <span>Dernière connexion&nbsp;: {formatDate(profile.last_login)}</span>
             </div>
+
+            <div className="profile-claim-row">
+              {claimResult?.already_claimed ? (
+                <span className="claim-done">Déjà récupéré aujourd'hui ✓</span>
+              ) : (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleClaim}
+                  disabled={!!claimResult?.already_claimed || claimLoading}
+                >
+                  {claimLoading ? <span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> : null}
+                  Récupérer mes coins du jour
+                </button>
+              )}
+
+              {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
+                <Link to="/events/pack?shiny=1" className="btn btn-primary">
+                  Ouvrir le pack Canicule
+                </Link>
+              ) : (
+                <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
+              )}
+            </div>
+          </div>
+
+          {/* Booster 3D Canicule compact, centré verticalement avec le contenu
+              à gauche. Taille fixe + overflow hidden = pas de débordement.
+              Idle float + hover tilt conservés. */}
+          <div style={{ flexShrink: 0, width: 135, height: 210, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <BoosterPack3D textureUrl="/texture_pack_canicule.png" width={135} height={210} />
           </div>
         </div>
       </section>
