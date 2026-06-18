@@ -10,8 +10,10 @@ type BoosterPack3DProps = {
   textureMaterialName?: string | null;
   textureMeshName?: string;
   transparentMeshName?: string;
-  /** Canvas render size in px. Defaults preserve the original 300x450 used by
-   *  Shop.tsx / Battle.tsx. Keep a ~2:3 ratio to match the booster plane. */
+  /** Optional CSS *display* size in px (visual size only). When set, the canvas
+   *  still renders at a high internal resolution and is downscaled via CSS, so
+   *  small boosters stay crisp. When omitted (Shop.tsx / Battle.tsx), the canvas
+   *  keeps its original 300x450 buffer and is sized by their own CSS. */
   width?: number;
   height?: number;
 };
@@ -34,8 +36,8 @@ function disposeObject(object: THREE.Object3D): void {
 export default function BoosterPack3D({
   textureUrl = '/booster-gen-4.png',
   textureFlipY = true,
-  width = CANVAS_WIDTH,
-  height = CANVAS_HEIGHT,
+  width,
+  height,
 }: BoosterPack3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,8 +51,20 @@ export default function BoosterPack3D({
     const mouse = { x: 0, y: 0, active: false };
     const tilt = { x: 0, y: 0 };
 
+    // Decouple internal render resolution (kept high for crispness) from the CSS
+    // display size. When a display size is given (e.g. the compact booster in
+    // Profile), we still render ~CANVAS_HEIGHT px tall and let the browser
+    // downscale via CSS, instead of shrinking the WebGL buffer (which looked
+    // blurry/pixelated). Shop.tsx / Battle.tsx pass no size: original 300x450
+    // buffer, display handled by their own CSS.
+    const hasDisplaySize = width != null && height != null;
+    const renderHeight = CANVAS_HEIGHT;
+    const renderWidth = hasDisplaySize
+      ? Math.round(CANVAS_HEIGHT * (width / height))
+      : CANVAS_WIDTH;
+
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(35, renderWidth / renderHeight, 0.1, 100);
     camera.position.set(0, 0.05, 5.2);
 
     const renderer = new THREE.WebGLRenderer({
@@ -59,8 +73,14 @@ export default function BoosterPack3D({
       antialias: true,
     });
     renderer.setClearColor(0x000000, 0);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height, false);
+    // Use the device pixel ratio (capped) so high-density screens stay sharp.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 3));
+    renderer.setSize(renderWidth, renderHeight, false);
+    if (hasDisplaySize) {
+      // Visual size only - the high-res buffer is downscaled into this box.
+      currentCanvas.style.width = `${width}px`;
+      currentCanvas.style.height = `${height}px`;
+    }
 
     scene.add(new THREE.AmbientLight(0xffffff, 3.0));
 
@@ -76,12 +96,16 @@ export default function BoosterPack3D({
     scene.add(packGroup);
 
     const textureLoader = new THREE.TextureLoader();
+    // Anisotropic filtering keeps the texture sharp at oblique angles / small sizes.
+    const maxAnisotropy = renderer.capabilities.getMaxAnisotropy();
     const texture = textureLoader.load(textureUrl, (loadedTexture) => {
       loadedTexture.flipY = textureFlipY;
       loadedTexture.colorSpace = THREE.SRGBColorSpace;
+      loadedTexture.anisotropy = maxAnisotropy;
       loadedTexture.needsUpdate = true;
     });
     texture.flipY = textureFlipY;
+    texture.anisotropy = maxAnisotropy;
 
     const geometry = new THREE.PlaneGeometry(1.8, 2.8);
     const material = new THREE.MeshStandardMaterial({
@@ -143,8 +167,8 @@ export default function BoosterPack3D({
     <canvas
       ref={canvasRef}
       className="booster-pack-3d"
-      width={width}
-      height={height}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
       aria-label="Booster pack 3D interactif"
     />
   );
