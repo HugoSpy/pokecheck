@@ -506,8 +506,6 @@ export default function Profile() {
           )}
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {/* Mini booster 3D (idle float + hover tilt) à côté du claim. */}
-            <BoosterPack3D textureUrl="/texture_pack_canicule.png" width={56} height={84} />
             {shinyPackAvailable(profile.last_shiny_pack_claimed_at) ? (
               <Link to="/events/pack?shiny=1" className="btn btn-primary">
                 Ouvrir le pack Canicule
@@ -515,6 +513,13 @@ export default function Profile() {
             ) : (
               <span className="claim-done">Pack Canicule - Disponible à 00h00</span>
             )}
+            {/* Booster 3D rendu en pleine résolution (300x450) puis réduit en CSS
+                pour rester net. Idle float + hover tilt conservés. */}
+            <div style={{ width: 112, height: 168, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <div style={{ transform: 'scale(0.3733)', transformOrigin: 'center', lineHeight: 0 }}>
+                <BoosterPack3D textureUrl="/texture_pack_canicule.png" />
+              </div>
+            </div>
           </div>
         </div>
       </section>

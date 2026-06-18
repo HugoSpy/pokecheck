@@ -10,10 +10,6 @@ type BoosterPack3DProps = {
   textureMaterialName?: string | null;
   textureMeshName?: string;
   transparentMeshName?: string;
-  /** Render size (px). Defaults keep the original 300x450; the 2:3 ratio
-   *  matches the booster plane, so any same-ratio size stays correctly framed. */
-  width?: number;
-  height?: number;
 };
 
 function disposeObject(object: THREE.Object3D): void {
@@ -34,8 +30,6 @@ function disposeObject(object: THREE.Object3D): void {
 export default function BoosterPack3D({
   textureUrl = '/booster-gen-4.png',
   textureFlipY = true,
-  width = CANVAS_WIDTH,
-  height = CANVAS_HEIGHT,
 }: BoosterPack3DProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -50,7 +44,7 @@ export default function BoosterPack3D({
     const tilt = { x: 0, y: 0 };
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(35, width / height, 0.1, 100);
+    const camera = new THREE.PerspectiveCamera(35, CANVAS_WIDTH / CANVAS_HEIGHT, 0.1, 100);
     camera.position.set(0, 0.05, 5.2);
 
     const renderer = new THREE.WebGLRenderer({
@@ -60,7 +54,7 @@ export default function BoosterPack3D({
     });
     renderer.setClearColor(0x000000, 0);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(width, height, false);
+    renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT, false);
 
     scene.add(new THREE.AmbientLight(0xffffff, 3.0));
 
@@ -137,14 +131,14 @@ export default function BoosterPack3D({
       texture.dispose();
       renderer.dispose();
     };
-  }, [textureFlipY, textureUrl, width, height]);
+  }, [textureFlipY, textureUrl]);
 
   return (
     <canvas
       ref={canvasRef}
       className="booster-pack-3d"
-      width={width}
-      height={height}
+      width={CANVAS_WIDTH}
+      height={CANVAS_HEIGHT}
       aria-label="Booster pack 3D interactif"
     />
   );
