@@ -81,14 +81,9 @@ export const TRADE_BADGES: Array<{ id: string; threshold: number }> = [
 export const POKEDEX_BADGES: Array<{ id: string; threshold: number }> = [
   { id: 'pokedex_10',  threshold: 10  },
   { id: 'pokedex_50',  threshold: 50  },
-  { id: 'pokedex_100', threshold: 100 },
   { id: 'pokedex_150', threshold: 150 },
-  { id: 'pokedex_200', threshold: 200 },
   { id: 'pokedex_300', threshold: 300 },
-  { id: 'pokedex_400', threshold: 400 },
   { id: 'pokedex_500', threshold: 500 },
-  { id: 'pokedex_600', threshold: 600 },
-  { id: 'pokedex_700', threshold: 700 },
   { id: 'pokedex_809', threshold: 809 },
 ];
 
@@ -104,34 +99,6 @@ export const ALL_TYPES = [
 
 export const TYPE_BADGE_TIERS = [5, 10, 25];
 
-// Lategame distinct-species-per-type tiers, beyond the 5/10/25 midgame set. Only
-// tiers reachable given the Gen 1-7 species count per type are listed (validated
-// against pokeschool_dev). id format: type_{type}_{tier}. Types absent here (or
-// with an empty list) get only the "complete" badge below.
-export const TYPE_LATEGAME_TIERS: Record<string, number[]> = {
-  water:    [50, 75, 100],
-  normal:   [50, 75, 100],
-  flying:   [50, 75],
-  grass:    [50, 75],
-  psychic:  [50, 75],
-  bug:      [50, 75],
-  poison:   [50],
-  ground:   [50],
-  fire:     [50],
-  rock:     [50],
-  fighting: [50],
-  // steel, electric, fairy, dark, dragon, ghost, ice: < 50 species → no tier
-};
-
-// "Complete the type" - threshold is the exact distinct-species count of that
-// type in Gen 1-7 (validated against pokeschool_dev). Every type gets one.
-// id format: type_{type}_all.
-export const TYPE_TOTAL: Record<string, number> = {
-  water: 131, normal: 109, flying: 98, grass: 97, psychic: 82, bug: 77,
-  poison: 66, ground: 64, fire: 64, rock: 60, fighting: 54,
-  steel: 49, electric: 48, fairy: 47, dark: 46, dragon: 45, ghost: 43, ice: 34,
-};
-
 // Distinct-species-per-rarity tiers. Commun has no tier-5 badge (too easy).
 // id format: rarity_{rarity-lowercase}_{tier}.
 export const RARITY_COLLECTION: Record<string, number[]> = {
@@ -139,29 +106,6 @@ export const RARITY_COLLECTION: Record<string, number[]> = {
   RARE:      [5, 10, 25, 50],
   EPIC:      [5, 10, 25, 50],
   LEGENDARY: [5, 10, 25, 50],
-};
-
-// Lategame distinct-species-per-rarity tiers, beyond the 5/10/25/50 midgame set
-// above. Only tiers reachable given the Gen 1-7 species count per rarity are
-// listed (COMMON tops out at 113, LEGENDARY at 50 → no ≥100 tier).
-// id format: rarity_{rarity-lowercase}_{tier}.
-export const RARITY_LATEGAME_TIERS: Record<string, number[]> = {
-  COMMON:    [100],
-  RARE:      [100, 150, 200, 250, 300],
-  EPIC:      [100, 150, 200, 250, 300],
-  LEGENDARY: [],
-};
-
-// "Collect them all" per rarity - threshold is the exact distinct-species count
-// of that rarity in Gen 1-7 (validated against pokeschool_dev). id format:
-// rarity_{rarity-lowercase}_all. NOTE: rarity_legendary_all shares its threshold
-// (50) with the existing rarity_legendary_50 tier since there are exactly 50
-// legendaries - both unlock on the same action.
-export const RARITY_TOTAL: Record<string, number> = {
-  COMMON:    113,
-  RARE:      310,
-  EPIC:      336,
-  LEGENDARY: 50,
 };
 
 // Distinct-species-per-generation tiers. Tier 100 only applies to generations
@@ -282,18 +226,6 @@ export async function checkBadges(userId: string): Promise<string[]> {
     }
   }
 
-  // Lategame rarity tiers (100+) and "collect them all" per rarity
-  for (const [rarity, tiers] of Object.entries(RARITY_LATEGAME_TIERS)) {
-    const count = speciesByRarity.get(rarity)?.size ?? 0;
-    for (const tier of tiers) {
-      if (count >= tier) await unlock(`rarity_${rarity.toLowerCase()}_${tier}`);
-    }
-  }
-  for (const [rarity, total] of Object.entries(RARITY_TOTAL)) {
-    const count = speciesByRarity.get(rarity)?.size ?? 0;
-    if (count >= total) await unlock(`rarity_${rarity.toLowerCase()}_all`);
-  }
-
   // Pokédex size badges
   for (const { id, threshold } of POKEDEX_BADGES) {
     if (distinctPokemonCount >= threshold) await unlock(id);
@@ -338,12 +270,6 @@ export async function checkBadges(userId: string): Promise<string[]> {
     for (const threshold of TYPE_BADGE_TIERS) {
       if (distinctCount >= threshold) await unlock(`type_${type}_${threshold}`);
     }
-    // Lategame type tiers (50/75/100, per-type) and "complete the type" badge
-    for (const tier of TYPE_LATEGAME_TIERS[type] ?? []) {
-      if (distinctCount >= tier) await unlock(`type_${type}_${tier}`);
-    }
-    const total = TYPE_TOTAL[type];
-    if (total !== undefined && distinctCount >= total) await unlock(`type_${type}_all`);
   }
 
   // Legendary badges

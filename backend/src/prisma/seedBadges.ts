@@ -1,14 +1,6 @@
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import {
-  STARTER_EVO,
-  RARITY_COLLECTION,
-  RARITY_LATEGAME_TIERS,
-  RARITY_TOTAL,
-  TYPE_LATEGAME_TIERS,
-  TYPE_TOTAL,
-  GENERATION_COLLECTION_TIERS,
-} from '../services/badgeService';
+import { STARTER_EVO, RARITY_COLLECTION, GENERATION_COLLECTION_TIERS } from '../services/badgeService';
 
 const prisma = new PrismaClient();
 
@@ -77,17 +69,12 @@ const BADGES: BadgeSeed[] = [
   { id: 'legendary_gen6',   name: 'Maître Kalos',          description: 'Possède tous les légendaires Gen 6',                 category: 'legendary', coin_reward: 2000 },
   { id: 'legendary_gen7',   name: 'Maître Alola',          description: 'Possède tous les légendaires Gen 7',                 category: 'legendary', coin_reward: 2000 },
   // Pokédex
-  { id: 'pokedex_10',  name: 'Débutant',            description: 'Possède 10 Pokémon différents',  category: 'pokedex', coin_reward: 100   },
-  { id: 'pokedex_50',  name: 'Explorateur',         description: 'Possède 50 Pokémon différents',  category: 'pokedex', coin_reward: 300   },
-  { id: 'pokedex_100', name: 'Passionné',           description: 'Possède 100 Pokémon différents', category: 'pokedex', coin_reward: 500   },
-  { id: 'pokedex_150', name: 'Collectionneur',      description: 'Possède 150 Pokémon différents', category: 'pokedex', coin_reward: 700   },
-  { id: 'pokedex_200', name: 'Aventurier',          description: 'Possède 200 Pokémon différents', category: 'pokedex', coin_reward: 1000  },
-  { id: 'pokedex_300', name: 'Expert',              description: 'Possède 300 Pokémon différents', category: 'pokedex', coin_reward: 1500  },
-  { id: 'pokedex_400', name: 'Spécialiste',         description: 'Possède 400 Pokémon différents', category: 'pokedex', coin_reward: 2200  },
-  { id: 'pokedex_500', name: 'Maître Pokémon',      description: 'Possède 500 Pokémon différents', category: 'pokedex', coin_reward: 3000  },
-  { id: 'pokedex_600', name: 'Grand Collectionneur', description: 'Possède 600 Pokémon différents', category: 'pokedex', coin_reward: 4500  },
-  { id: 'pokedex_700', name: 'Élite du Pokédex',    description: 'Possède 700 Pokémon différents', category: 'pokedex', coin_reward: 6500  },
-  { id: 'pokedex_809', name: 'Pokédex Complet',     description: 'Possède les 809 espèces',        category: 'pokedex', coin_reward: 10000 },
+  { id: 'pokedex_10',  name: 'Débutant',        description: 'Possède 10 Pokémon différents',  category: 'pokedex', coin_reward: 100   },
+  { id: 'pokedex_50',  name: 'Explorateur',     description: 'Possède 50 Pokémon différents',  category: 'pokedex', coin_reward: 300   },
+  { id: 'pokedex_150', name: 'Collectionneur',  description: 'Possède 150 Pokémon différents', category: 'pokedex', coin_reward: 700   },
+  { id: 'pokedex_300', name: 'Expert',          description: 'Possède 300 Pokémon différents', category: 'pokedex', coin_reward: 1500  },
+  { id: 'pokedex_500', name: 'Maître Pokémon',  description: 'Possède 500 Pokémon différents', category: 'pokedex', coin_reward: 3000  },
+  { id: 'pokedex_809', name: 'Pokédex Complet', description: 'Possède les 809 espèces',        category: 'pokedex', coin_reward: 10000 },
   // Générations complètes
   { id: 'gen1_complete', name: 'Complétion Kanto',  description: 'Possède les 151 Pokémon de Kanto',  category: 'generation', coin_reward: 5000 },
   { id: 'gen2_complete', name: 'Complétion Johto',  description: 'Possède les 100 Pokémon de Johto',  category: 'generation', coin_reward: 5000 },
@@ -180,66 +167,6 @@ for (const { key, fr } of RARITY_BADGE_DEFS) {
       coin_reward: meta.coins[key],
     });
   }
-}
-
-// ── Lategame rarity badges: high tiers (100+) + "collect them all" ──
-// Prefix & coins keyed by tier; coins missing for a rarity ⇒ that rarity has no
-// such tier (see RARITY_LATEGAME_TIERS, e.g. COMMON only reaches 100).
-const RARITY_LATE_TIER_META: Record<number, { prefix: string; coins: Record<string, number> }> = {
-  100: { prefix: 'Vétéran des',  coins: { common: 1000, rare: 1500, epic: 2500 } },
-  150: { prefix: 'Champion des', coins: {               rare: 2000, epic: 3000 } },
-  200: { prefix: 'Élite des',    coins: {               rare: 2500, epic: 4000 } },
-  250: { prefix: 'Virtuose des', coins: {               rare: 3500, epic: 5000 } },
-  300: { prefix: 'Légende des',  coins: {               rare: 4500, epic: 6500 } },
-};
-const RARITY_ALL_COINS: Record<string, number> = { common: 2000, rare: 6000, epic: 8000, legendary: 6000 };
-for (const { key, fr } of RARITY_BADGE_DEFS) {
-  for (const tier of RARITY_LATEGAME_TIERS[key.toUpperCase()]) {
-    const meta = RARITY_LATE_TIER_META[tier];
-    BADGES.push({
-      id: `rarity_${key}_${tier}`,
-      name: `${meta.prefix} ${fr}`,
-      description: `Possède ${tier} Pokémon ${fr} distincts`,
-      category: 'rarity',
-      coin_reward: meta.coins[key],
-    });
-  }
-  const total = RARITY_TOTAL[key.toUpperCase()];
-  BADGES.push({
-    id: `rarity_${key}_all`,
-    name: `Tous les ${fr}`,
-    description: `Possède les ${total} Pokémon ${fr} de la Gen 1–7`,
-    category: 'rarity',
-    coin_reward: RARITY_ALL_COINS[key],
-  });
-}
-
-// ── Lategame type badges: high tiers (50/75/100) + "complete the type" ──
-// The complete badge's reward scales with the type's real species count.
-const TYPE_LATE_TIER_META: Record<number, { prefix: string; coins: number }> = {
-  50:  { prefix: 'Expert',       coins: 600  },
-  75:  { prefix: 'Maître',       coins: 900  },
-  100: { prefix: 'Grand Maître', coins: 1300 },
-};
-for (const t of TYPE_BADGE_TYPES) {
-  for (const tier of TYPE_LATEGAME_TIERS[t.key] ?? []) {
-    const meta = TYPE_LATE_TIER_META[tier];
-    BADGES.push({
-      id: `type_${t.key}_${tier}`,
-      name: `${meta.prefix} ${t.art}${t.fr}`,
-      description: `Possède ${tier} espèces distinctes de type ${t.fr}`,
-      category: 'types',
-      coin_reward: meta.coins,
-    });
-  }
-  const total = TYPE_TOTAL[t.key];
-  BADGES.push({
-    id: `type_${t.key}_all`,
-    name: `Champion ${t.art}${t.fr}`,
-    description: `Possède les ${total} Pokémon de type ${t.fr} (tous)`,
-    category: 'types',
-    coin_reward: Math.round((total * 12) / 50) * 50,
-  });
 }
 
 async function main() {
