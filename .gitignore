@@ -10,3 +10,13 @@ graphify-out/
 frontend/tsconfig.tsbuildinfo
 # stray local export
 PokeCheck App.html
+
+# Local documentation and tooling
+/video/
+/CLAUDE.md
+/cadrage.md
+/MOBILE_AUDIT.md
+/tmp/
+/.claude/
+/.agent/
+/.agents/
